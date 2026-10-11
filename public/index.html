@@ -98,7 +98,7 @@ body{
 .dashboard{margin-top:18px;display:grid;gap:16px;grid-template-columns:repeat(12,1fr);}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 14px 44px var(--shadow);padding:20px;transition:box-shadow .25s,transform .25s;backdrop-filter:blur(10px);}
 .card:hover{box-shadow:0 22px 60px var(--shadow-lg);transform:translateY(-2px);}
-.s3{grid-column:span 3;}.s4{grid-column:span 4;}.s6{grid-column:span 6;}.s12{grid-column:span 12;}
+.s3{grid-column:span 6;}.s4{grid-column:span 4;}.s6{grid-column:span 6;}.s12{grid-column:span 12;}
 
 /* ── CARD HEADER ── */
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:8px;}
@@ -289,6 +289,14 @@ body{
 .wx-detail-chip{background:var(--panel-strong);border:1px solid var(--border);border-radius:12px;padding:10px 12px;text-align:center;}
 .wx-detail-val{font:800 1.1rem Inter,sans-serif;color:var(--primary-dk);}
 .wx-detail-lbl{font:500 .7rem Inter,sans-serif;color:var(--muted);margin-top:2px;}
+.wx-forecast-title{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font:800 .82rem Inter,sans-serif;color:var(--primary-dk);margin-top:13px;}
+.wx-forecast-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:8px;}
+.wx-day{min-width:0;background:var(--panel-strong);border:1px solid var(--border);border-radius:12px;padding:9px 7px;text-align:center;}
+.wx-day b,.wx-day strong,.wx-day small{display:block;}
+.wx-day b{font:800 .74rem Inter,sans-serif;color:var(--primary-dk);}
+.wx-day strong{font:800 .76rem Inter,sans-serif;margin:5px 0;color:var(--text);}
+.wx-day small{font:500 .64rem Inter,sans-serif;line-height:1.45;color:var(--muted);}
+@media(max-width:900px){.wx-forecast-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
   </style>
 </head>
 <body>
@@ -404,6 +412,10 @@ body{
       <div class="wx-detail-val" id="wxUV">--</div>
       <div class="wx-detail-lbl" data-i18n="uv_index">☀️ UV Index</div>
     </div>
+  </div>
+  <div id="wxForecastWrap" style="display:none;">
+    <div class="wx-forecast-title"><span data-i18n="wx_forecast">5-day forecast</span><span class="note">Model · high/low · rain · ET₀</span></div>
+    <div id="wxForecast" class="wx-forecast-grid"></div>
   </div>
   <div class="sp"></div>
   <div class="ib" style="padding:10px 14px;">
@@ -686,7 +698,7 @@ body{
     <div class="sp"></div>
     <div class="ib" id="irrAdvice"></div>
   </div>
-  <div class="ib" style="margin-top:12px;"><b style="font-size:.83rem;">ℹ️ About</b><p class="note" style="margin-top:4px;">Based on FAO-56 Penman-Monteith guidelines for Indian conditions. Weather data adjusts calculations automatically when location is enabled.</p></div>
+  <div class="ib" style="margin-top:12px;"><b style="font-size:.83rem;">ℹ️ About</b><p class="note" style="margin-top:4px;">Generic crop-stage planning estimates. Current model weather applies a rough adjustment when loaded; this is not a field-calibrated water requirement. Check soil moisture and local guidance before irrigating.</p></div>
 </div>
 
 </section>
@@ -1985,7 +1997,7 @@ var IRR={Wheat:{Germination:25,Vegetative:40,Flowering:55,'Grain Filling':45,Mat
 var SOIL_F={Loamy:1.0,Sandy:1.25,'Black Cotton':0.85,Clay:0.90,Silt:0.95};
 var FREQ_MAP={Germination:3,Vegetative:5,Flowering:4,'Grain Filling':5,Maturity:7};
 
-q('irrCalcBtn').addEventListener('click',function(){
+function calculateIrrigation(showToast){
   var crop=q('irrCrop').value,stage=q('irrStage').value,area=parseFloat(q('irrArea').value)||1,soil=q('irrSoil').value;
   var base=(IRR[crop]&&IRR[crop][stage])||50,sf=SOIL_F[soil]||1;
   var wxF=1;if(wxData){if(wxData.temp>35)wxF+=.15;if(wxData.hum>80)wxF-=.10;}
@@ -1998,8 +2010,10 @@ q('irrCalcBtn').addEventListener('click',function(){
   var wxNote=wxData?'Weather adjusted: temp='+Math.round(wxData.temp)+'°C, hum='+wxData.hum+'%.':'Enable location for weather adjustment.';
   q('irrAdvice').innerHTML='<b style="font-size:.85rem;">💡 Irrigation Advice — '+crop+' ('+stage+')</b><ul class="note" style="margin-top:8px;padding-left:16px;display:grid;gap:5px;"><li>Apply <b>'+mmPerHa+' mm/ha</b> at each irrigation event.</li><li>For <b>'+area+' acre'+(area>1?'s':'')+' ('+ha+' ha)</b>, total per event: <b>'+kL+' kL</b>.</li><li>Irrigate every <b>'+freq+' days</b> during '+stage+'.</li><li>'+soil+' soil factor: ×'+sf+'. '+wxNote+'</li><li>Check moisture at 10–15 cm depth before each irrigation.</li></ul>';
   q('irrResult').style.display='block';
-  toast('💧','Irrigation calculated for '+crop+'!');
-});
+  if(showToast!==false)toast('💧','Irrigation calculated for '+crop+'!');
+}
+window.calculateIrrigation=calculateIrrigation;
+q('irrCalcBtn').addEventListener('click',function(){calculateIrrigation(true);});
 
 /* ═══════════════════════════════════════════════════════════════
    SCROLL SPY
@@ -2198,6 +2212,8 @@ var LANGS={
 
 var currentLang='en';
 
+var WX_FORECAST_LABELS={en:'5-day forecast',hi:'5-दिन का पूर्वानुमान',ta:'5 நாள் முன்னறிவிப்பு',te:'5 రోజుల సూచన',kn:'5 ದಿನಗಳ ಮುನ್ಸೂಚನೆ',ml:'5 ദിവസത്തെ പ്രവചനം',bn:'5 দিনের পূর্বাভাস',mr:'5 दिवसांचा अंदाज',gu:'5 દિવસની આગાહી',pa:'5 ਦਿਨਾਂ ਦੀ ਭਵਿੱਖਬਾਣੀ',or:'5 ଦିନର ପୂର୍ବାନୁମାନ'};
+Object.keys(LANGS).forEach(function(code){LANGS[code].wx_forecast=WX_FORECAST_LABELS[code]||WX_FORECAST_LABELS.en;});
 function toggleLangMenu(){
   var m=q('langMenu');
   m.classList.toggle('open');
@@ -2342,6 +2358,18 @@ renderPests(PESTS);
   });
   translationObserver.observe(document.body, {childList:true, subtree:true});
 
+  var renderWeatherForecast = function(rows){
+    var wrap=$("wxForecastWrap"), grid=$("wxForecast");
+    if(!wrap || !grid)return;
+    if(!Array.isArray(rows) || !rows.length){grid.innerHTML="";wrap.style.display="none";return;}
+    var display=function(value,digits,suffix){return value==null?"—":Number(value).toFixed(digits)+suffix;};
+    grid.innerHTML=rows.map(function(item){
+      var weekday=new Date(String(item.date||"")+"T12:00:00").toLocaleDateString(undefined,{weekday:"short"});
+      return '<div class="wx-day"><b>'+escapeHtml(weekday)+'</b><strong>'+display(item.maxC,0,'°')+' / '+display(item.minC,0,'°')+'</strong><small>Rain '+display(item.precipitationMm,1,' mm')+'<br>ET₀ '+display(item.et0Mm,1,' mm')+'</small></div>';
+    }).join("");
+    wrap.style.display="block";
+  };
+
   window.loadWeather = async function(locationOverride){
     var farm = {};
     try { farm = JSON.parse(localStorage.getItem("nx.farm") || "{}"); } catch(_){}
@@ -2363,6 +2391,9 @@ renderPests(PESTS);
       $("wxLoc").textContent = "";
       $("wxMeta").textContent = "Weather is not loaded until you choose a farm location.";
       $("wxCropNote").textContent = "Save a town or use the location button to request a forecast.";
+      renderWeatherForecast([]);
+      if(typeof window.calculateIrrigation==="function" && $("irrResult").style.display!=="none")window.calculateIrrigation(false);
+      if(typeof renderAdvisory==="function")renderAdvisory(generateAdvisory(window.soilData));
       return;
     }
     $("wxCity").textContent = "Loading weather model data…";
@@ -2389,6 +2420,8 @@ renderPests(PESTS);
         maxT:day.maxC, minT:day.minC, uvIndex:day.uvMax,
         forecast:data.forecast || [], fetchedAt:data.fetchedAt
       };
+      renderWeatherForecast(window.wxData.forecast);
+      if(typeof window.calculateIrrigation==="function" && $("irrResult").style.display!=="none")window.calculateIrrigation(false);
       $("wxCropNote").textContent = data.sourceNote + (day.et0Mm != null ? " Today's reference ET₀: " + day.et0Mm + " mm." : "");
       if(typeof renderAdvisory === "function")renderAdvisory(generateAdvisory(window.soilData));
     }catch(error){
@@ -2401,6 +2434,8 @@ renderPests(PESTS);
       $("wxFeels").textContent = "--°C"; $("wxUV").textContent = "--";
       $("wxIcon").textContent = "⚠️";
       $("wxCropNote").textContent = "No substitute or default weather values are shown.";
+      renderWeatherForecast([]);
+      if(typeof window.calculateIrrigation==="function" && $("irrResult").style.display!=="none")window.calculateIrrigation(false);
       if(typeof renderAdvisory === "function")renderAdvisory(generateAdvisory(window.soilData));
     }
   };
