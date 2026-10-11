@@ -23,8 +23,8 @@ export default async function(req,res) {
   const mimeType = match[1], data = match[2];
   const prompt = `You are assisting an agricultural extension worker. Examine the attached photo carefully. This is differential screening, NOT a definitive laboratory diagnosis. User crop hint: ${cropHint || "not provided"}. Additional context: ${context || "none"}.
 Return ONLY valid JSON with this exact shape:
-{"isAgriculturalImage":true,"crop":"best identification or Unknown","imageQuality":"good|limited|poor","observations":["visible evidence only"],"candidates":[{"name":"candidate disease/pest or Healthy/abiotic stress/uncertain","likelihood":"high|moderate|low","relativeScore":0,"why":"visible evidence and uncertainty"}],"nextStep":"safe practical next step","needsExpertReview":true}
-Include a variable number of plausible differential candidates (1 to 10 depending on the image; do not pad the list). If the photo is not clearly a crop/plant, set isAgriculturalImage=false and candidates=[]. Do not invent symptoms that are not visible. relativeScore is only a relative model estimate, not a calibrated statistical probability; do not imply accuracy validation. Do not give pesticide names, dosage, or chemical treatment. Distinguish disease from nutrient deficiency, water stress, pest damage, and normal/healthy appearance when possible. If uncertain, say so.`;
+{"isAgriculturalImage":true,"crop":"best identification or Unknown","imageQuality":"good|limited|poor","observations":["visible evidence only"],"candidates":[{"name":"candidate disease/pest or Healthy/abiotic stress/uncertain","likelihood":"high|moderate|low","relativeScore":0,"why":"visible evidence and uncertainty","management":["practical management step"],"prevention":["prevention step"]}],"nextStep":"safe practical next step","needsExpertReview":true}
+Include a variable number of plausible differential candidates (1 to 10 depending on the image; do not pad the list). If the photo is not clearly a crop/plant, set isAgriculturalImage=false and candidates=[]. Do not invent symptoms that are not visible. relativeScore is only a relative model estimate, not a calibrated statistical probability; do not imply accuracy validation. For each candidate, provide 2 to 4 crop-relevant, lower-risk management steps and 1 to 3 prevention steps. Prioritize integrated pest management, sanitation, removing severely affected material when appropriate, drainage or irrigation adjustments only when supported by evidence, monitoring, and local extension review. Do not recommend pesticide names, dosages, or spray schedules. Do not promise a cure. Distinguish disease from nutrient deficiency, water stress, pest damage, and healthy appearance. If uncertain, label the advice conditional on confirming the diagnosis.`;
   try {
     const r = await ai.fetch({
       provider: "google",
@@ -47,7 +47,9 @@ Include a variable number of plausible differential candidates (1 to 10 dependin
       name:clean(c.name,100) || "Uncertain",
       likelihood:["high","moderate","low"].includes(c.likelihood)?c.likelihood:"low",
       relativeScore:Number.isFinite(Number(c.relativeScore))?Math.max(0,Math.min(100,Number(c.relativeScore))):null,
-      why:clean(c.why,400)
+      why:clean(c.why,400),
+      management:Array.isArray(c.management)?c.management.slice(0,4).map(v=>clean(v,300)).filter(Boolean):[],
+      prevention:Array.isArray(c.prevention)?c.prevention.slice(0,3).map(v=>clean(v,300)).filter(Boolean):[]
     }));
     result.observations = Array.isArray(result.observations) ? result.observations.slice(0,8).map(v=>clean(v,200)) : [];
     result.crop = clean(result.crop,80) || "Unknown";

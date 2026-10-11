@@ -1822,6 +1822,8 @@ async function analyzePhotoDataUrl(dataUrl, contextText){
     candidates.forEach(function(c,i){
       var refs=Array.isArray(c.verifiedReferences)?c.verifiedReferences:[];
       html+='<div class="pr" style="align-items:flex-start"><div><b>'+(i+1)+'. '+esc(c.name)+'</b><p>Relative likelihood: <b>'+esc(c.likelihood)+'</b>'+(c.relativeScore!==null?' · model-relative score '+Number(c.relativeScore).toFixed(0)+'/100':'')+'</p><p style="margin-top:4px;color:var(--muted)">'+esc(c.why||'No further visual evidence supplied.')+'</p>';
+      if(Array.isArray(c.management)&&c.management.length){html+='<p style="margin-top:8px"><b>Suggested management (confirm the diagnosis first)</b></p><ul>'+c.management.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul>';}
+      if(Array.isArray(c.prevention)&&c.prevention.length){html+='<p style="margin-top:8px"><b>Prevention</b></p><ul>'+c.prevention.map(function(s){return '<li>'+esc(s)+'</li>';}).join('')+'</ul>';}
       if(refs.length){html+='<p style="margin-top:6px"><b>Verified reference match:</b></p>'+refs.map(function(ref){return '<p>'+esc(ref.source_name||'Agricultural reference')+': '+esc(ref.treatment_guidance||'See source')+(ref.source_url?' · <a target="_blank" rel="noopener" href="'+esc(ref.source_url)+'">Open source</a>':'')+'</p>';}).join('');}
       else html+='<p style="margin-top:6px;color:var(--warn)">No matching verified treatment record in FarmWise database.</p>';
       html+='</div><span class="tag">'+esc(c.likelihood)+'</span></div>';
