@@ -1450,7 +1450,7 @@ function getFertAdvice(d){
 q('recBtn').addEventListener('click',async function(){
   if(!soilData){toast('⚠️','No current sensor/soil-test values are available.');return;}
   q('recLoading').style.display='block';q('cropGrid').innerHTML='';q('fertDiv').style.display='none';
-  q('recStatus').textContent='Querying verified FarmWise PostgreSQL records…';
+  q('recStatus').textContent='Querying FarmWise PostgreSQL crop guidance…';
   try{
     var profile={};try{profile=JSON.parse(localStorage.getItem(farmProfileStorageKey())||'{}');}catch(_){profile={};}
     var params=new URLSearchParams({nitrogen:String(soilData.N),phosphorus:String(soilData.P),potassium:String(soilData.K)});
@@ -1464,12 +1464,12 @@ q('recBtn').addEventListener('click',async function(){
     q('recLoading').style.display='none';
     if(!response.ok||!result.available)throw new Error(result.message||'Database request failed.');
     if(!result.recommendations||!result.recommendations.length){
-      q('cropGrid').innerHTML='<div style="grid-column:1/-1;padding:22px;border:1px solid var(--border);border-radius:14px;background:var(--surface);"><b>Not enough verified data to recommend a crop</b><p style="margin-top:8px;">FarmWise queried its PostgreSQL database, but no verified record matches these measured values and farm details. It will not invent a crop ranking or match percentage.</p><p style="margin-top:8px;font-size:.8rem;color:var(--muted);">Source: '+(result.source||'FarmWise PostgreSQL')+' · Checked: '+new Date(result.fetchedAt||Date.now()).toLocaleString()+'</p><p style="margin-top:8px;">Next: add crop- and region-specific recommendations reviewed against an ICAR/KVK or state agricultural university source and calibrated soil-test method.</p></div>';
-      q('recStatus').textContent='Database checked · no verified match';
+      q('cropGrid').innerHTML='<div style="grid-column:1/-1;padding:22px;border:1px solid var(--border);border-radius:14px;background:var(--surface);"><b>No matching crop guidance in the database</b><p style="margin-top:8px;">FarmWise queried PostgreSQL but found no records for this region/season/soil context. It will not invent a crop ranking or match percentage.</p><p style="margin-top:8px;font-size:.8rem;color:var(--muted);">Source: '+escapeHTML(result.source||'FarmWise PostgreSQL')+' · Checked: '+new Date(result.fetchedAt||Date.now()).toLocaleString()+'</p><p style="margin-top:8px;">Add crop-specific, source-backed guidance for this context. Numeric suitability requires appropriate NPK/pH/moisture ranges and compatible measurement units.</p></div>';
+      q('recStatus').textContent='Database checked · no matching guidance';
       return;
     }
-    q('cropGrid').innerHTML=result.recommendations.map(function(c){return '<div class="crop-card"><div class="crop-nm">'+c.crop_name+'</div><div class="crop-mt">Verified reference record · no fabricated score</div><div class="crop-dt">'+c.guidance+'</div><div class="crop-dt" style="margin-top:8px;font-weight:600;">Source: '+c.source_name+'</div>'+(c.source_url?'<a href="'+c.source_url+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'')+'</div>';}).join('');
-    q('recStatus').textContent=result.count+' verified database record(s)';
+    q('cropGrid').innerHTML=result.recommendations.map(function(c){return '<div class="crop-card"><div class="crop-nm">'+escapeHTML(c.crop_name||'Unknown crop')+'</div><div class="crop-mt">'+escapeHTML(c.recordStatus||'Provisional database record')+'</div><div class="crop-dt" style="margin-top:6px;"><b>Assessment:</b> '+escapeHTML(c.fitStatus||'Soil fit not established')+'</div><div class="crop-dt">'+escapeHTML(c.guidance||'No guidance stored')+'</div><div class="crop-dt" style="margin-top:8px;font-weight:600;">Source: '+escapeHTML(c.source_name||'Not supplied')+'</div>'+(c.source_url?'<a href="'+escapeHTML(c.source_url)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'')+'</div>';}).join('');
+    q('recStatus').textContent=result.count+' database candidate(s) · '+(result.assessment==='numeric_soil_fit_unavailable'?'soil fit not established':result.assessment==='context_only'?'context-only matches':'see candidate assessments');
   }catch(error){
     q('recLoading').style.display='none';q('recStatus').textContent='Database unavailable';
     q('cropGrid').innerHTML='<div style="grid-column:1/-1;padding:20px;border:1px solid var(--danger);border-radius:14px;"><b>Could not retrieve verified crop recommendations</b><p style="margin-top:8px;">'+String(error.message||'Unknown error')+'</p><p style="margin-top:8px;">No fallback score or simulated recommendation was shown.</p></div>';
