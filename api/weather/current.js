@@ -40,7 +40,7 @@ export default async function (req, res) {
   const weatherUrl = new URL("https://api.open-meteo.com/v1/forecast");
   weatherUrl.searchParams.set("latitude", String(lat));
   weatherUrl.searchParams.set("longitude", String(lon));
-  weatherUrl.searchParams.set("current", "temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,weather_code");
+  weatherUrl.searchParams.set("current", "temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,weather_code,soil_temperature_0_to_7cm,soil_moisture_0_to_7cm");
   weatherUrl.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum,uv_index_max,et0_fao_evapotranspiration");
   weatherUrl.searchParams.set("timezone", "auto");
   weatherUrl.searchParams.set("forecast_days", "5");
@@ -66,7 +66,7 @@ export default async function (req, res) {
   return res.json({
     available: true,
     source: "Open-Meteo",
-    sourceNote: "Forecast model data; not a farm weather-station measurement.",
+    sourceNote: "Forecast and current-condition model data. Topsoil moisture and temperature are estimates, not field-sensor readings.",
     location: { label: place, latitude: lat, longitude: lon, timezone: payload.timezone || null },
     current: {
       time: current.time || null,
@@ -75,7 +75,11 @@ export default async function (req, res) {
       feelsLikeC: asNumber(current.apparent_temperature),
       windKmh: asNumber(current.wind_speed_10m),
       precipitationMm: asNumber(current.precipitation),
-      weatherCode: asNumber(current.weather_code)
+      weatherCode: asNumber(current.weather_code),
+      soilTemperatureC: asNumber(current.soil_temperature_0_to_7cm),
+      soilMoisturePct: asNumber(current.soil_moisture_0_to_7cm) === null
+        ? null
+        : Math.round(current.soil_moisture_0_to_7cm * 1000) / 10
     },
     forecast,
     fetchedAt: new Date().toISOString()

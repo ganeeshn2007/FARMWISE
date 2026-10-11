@@ -433,7 +433,7 @@ body{
   </div>
   <div class="sp"></div>
   <div class="ib" style="padding:10px 14px;">
-    <span class="note" id="wxCropNote" data-i18n="wx_crop_note">💡 Weather-aware scoring activates after sensor read.</span>
+    <span class="note" id="wxCropNote">💡 Weather-aware scoring activates after sensor read.</span>
   </div>
 </div>
 
@@ -478,6 +478,17 @@ body{
       <button id="simBtn" class="btn btn-blue">🔌 Connect ESP32</button>
       <button id="dlPdfBtn" class="btn btn-primary">📄 Download PDF Report</button>
     </div>
+  </div>
+  <div class="ib" id="modelSoilPanel" style="margin-bottom:15px;">
+    <div class="ch" style="margin-bottom:10px;">
+      <div class="ct"><div class="ico">🌱</div><span data-i18n="model_soil_title">Weather model · topsoil 0–7 cm</span></div>
+      <span class="tag">MODEL ESTIMATE</span>
+    </div>
+    <div class="g2" style="gap:12px;">
+      <div class="sensor-card N"><div class="s-lbl"><span data-i18n="model_soil_moisture">Modelled soil moisture</span></div><div class="s-val" id="modelSoilMoisture">—</div><div class="s-unit">volumetric water content</div></div>
+      <div class="sensor-card P"><div class="s-lbl"><span data-i18n="model_soil_temperature">Modelled soil temperature</span></div><div class="s-val" id="modelSoilTemp">—</div><div class="s-unit">°C at 0–7 cm depth</div></div>
+    </div>
+    <p class="note" style="margin-top:9px;"><span data-i18n="model_soil_note">Estimated model values only; not a physical field sensor.</span> <span id="modelSoilMeta"></span></p>
   </div>
   <div class="ib" style="margin-bottom:15px;">
     <b style="font-size:.83rem;">🔧 Manual Entry — backup / testing only</b>
@@ -2038,7 +2049,11 @@ function calculateIrrigation(showToast){
     '<div class="irr-card"><div class="irr-val">'+mmPerHa+'</div><div class="irr-unit">mm per hectare</div><div class="irr-lbl">Water depth per event</div></div>'+
     '<div class="irr-card"><div class="irr-val">'+kL+' kL</div><div class="irr-unit">kilolitres per event</div><div class="irr-lbl">For '+area+' acre'+(area>1?'s':'')+' ('+ha+' ha)</div></div>'+
     '<div class="irr-card"><div class="irr-val">'+freq+'</div><div class="irr-unit">days between irrigations</div><div class="irr-lbl">'+stage+' stage — '+crop+'</div></div>';
-  var wxNote=wxData?'Weather adjusted: temp='+Math.round(wxData.temp)+'°C, hum='+wxData.hum+'%.':'Enable location for weather adjustment.';
+  var wxNote=wxData
+    ? 'Weather model inputs: '+Math.round(wxData.temp)+'°C, '+(wxData.hum==null?'humidity unavailable':wxData.hum+'% humidity')+
+      (wxData.et0!=null?'; reference ET₀ '+Number(wxData.et0).toFixed(1)+' mm/day':'')+
+      (wxData.soilMoisturePct!=null?'; estimated 0–7 cm soil moisture '+Number(wxData.soilMoisturePct).toFixed(1)+'% (not a field reading)':'')+'.'
+    : 'No location weather model is available; no weather adjustment was applied.';
   q('irrAdvice').innerHTML='<b style="font-size:.85rem;">💡 Irrigation Advice — '+crop+' ('+stage+')</b><ul class="note" style="margin-top:8px;padding-left:16px;display:grid;gap:5px;"><li>Apply <b>'+mmPerHa+' mm/ha</b> at each irrigation event.</li><li>For <b>'+area+' acre'+(area>1?'s':'')+' ('+ha+' ha)</b>, total per event: <b>'+kL+' kL</b>.</li><li>Irrigate every <b>'+freq+' days</b> during '+stage+'.</li><li>'+soil+' soil factor: ×'+sf+'. '+wxNote+'</li><li>Check moisture at 10–15 cm depth before each irrigation.</li></ul>';
   q('irrResult').style.display='block';
   if(showToast!==false)toast('💧','Irrigation calculated for '+crop+'!');
@@ -2337,30 +2352,92 @@ renderPests(PESTS);
     if(el){ el.textContent = text; el.style.color = isError ? "var(--danger)" : "var(--muted)"; }
   };
 
+  var FARMWISE_LIVE_I18N = {
+    en:{model_soil_title:"Weather model · topsoil 0–7 cm",model_soil_moisture:"Topsoil moisture",model_soil_temperature:"Topsoil temperature",model_soil_note:"Estimated model values only; not a physical field sensor reading."},
+    hi:{model_soil_title:"मौसम मॉडल · ऊपरी मिट्टी 0–7 सेमी",model_soil_moisture:"मॉडल से अनुमानित मिट्टी की नमी",model_soil_temperature:"मॉडल से अनुमानित मिट्टी का तापमान",model_soil_note:"केवल मॉडल अनुमान; खेत के भौतिक सेंसर की रीडिंग नहीं।"},
+    ta:{model_soil_title:"வானிலை மாதிரி · மேல்மண் 0–7 செ.மீ.",model_soil_moisture:"மாதிரி மண் ஈரப்பதம்",model_soil_temperature:"மாதிரி மண் வெப்பநிலை",model_soil_note:"மாதிரி மதிப்பீடு மட்டுமே; வயல் சென்சார் அளவீடு அல்ல."},
+    te:{model_soil_title:"వాతావరణ నమూనా · పైమట్టి 0–7 సెం.మీ.",model_soil_moisture:"మోడల్ మట్టి తేమ",model_soil_temperature:"మోడల్ మట్టి ఉష్ణోగ్రత",model_soil_note:"మోడల్ అంచనా మాత్రమే; ఇది పొలంలోని భౌతిక సెన్సార్ రీడింగ్ కాదు."},
+    kn:{model_soil_title:"ಹವಾಮಾನ ಮಾದರಿ · ಮೇಲ್ಮಣ್ಣು 0–7 ಸೆಂ.ಮೀ.",model_soil_moisture:"ಮಾದರಿ ಮಣ್ಣಿನ ತೇವಾಂಶ",model_soil_temperature:"ಮಾದರಿ ಮಣ್ಣಿನ ತಾಪಮಾನ",model_soil_note:"ಮಾದರಿ ಅಂದಾಜು ಮಾತ್ರ; ಹೊಲದ ಭೌತಿಕ ಸೆನ್ಸರ್ ಓದು ಅಲ್ಲ."},
+    ml:{model_soil_title:"കാലാവസ്ഥാ മാതൃക · മേൽമണ്ണ് 0–7 സെ.മീ.",model_soil_moisture:"മാതൃകാ മണ്ണിലെ ഈർപ്പം",model_soil_temperature:"മാതൃകാ മണ്ണിന്റെ താപനില",model_soil_note:"മാതൃകാ കണക്ക് മാത്രം; വയലിലെ സെൻസർ അളവല്ല."},
+    bn:{model_soil_title:"আবহাওয়ার মডেল · উপরিভাগের মাটি ০–৭ সেমি",model_soil_moisture:"মডেল মাটির আর্দ্রতা",model_soil_temperature:"মডেল মাটির তাপমাত্রা",model_soil_note:"শুধু মডেলের অনুমান; মাঠের সেন্সর মাপ নয়।"},
+    mr:{model_soil_title:"हवामान मॉडेल · वरची माती ०–७ सेमी",model_soil_moisture:"मॉडेल मातीतील ओलावा",model_soil_temperature:"मॉडेल मातीचे तापमान",model_soil_note:"फक्त मॉडेलचा अंदाज; शेतातील सेन्सरचे मोजमाप नाही."},
+    gu:{model_soil_title:"હવામાન મોડેલ · ઉપરની જમીન 0–7 સે.મી.",model_soil_moisture:"મોડેલ જમીનની ભેજ",model_soil_temperature:"મોડેલ જમીનનું તાપમાન",model_soil_note:"માત્ર મોડેલનો અંદાજ; ખેતરના સેન્સરનું માપ નથી."},
+    pa:{model_soil_title:"ਮੌਸਮ ਮਾਡਲ · ਉੱਪਰਲੀ ਮਿੱਟੀ 0–7 ਸੈ.ਮੀ.",model_soil_moisture:"ਮਾਡਲ ਮਿੱਟੀ ਦੀ ਨਮੀ",model_soil_temperature:"ਮਾਡਲ ਮਿੱਟੀ ਦਾ ਤਾਪਮਾਨ",model_soil_note:"ਸਿਰਫ਼ ਮਾਡਲ ਅਨੁਮਾਨ; ਖੇਤ ਦੇ ਸੈਂਸਰ ਦੀ ਮਾਪ ਨਹੀਂ।"},
+    or:{model_soil_title:"ପାଣିପାଗ ମଡେଲ୍ · ଉପର ମାଟି ୦–୭ ସେ.ମି.",model_soil_moisture:"ମଡେଲ୍ ମାଟି ଆର୍ଦ୍ରତା",model_soil_temperature:"ମଡେଲ୍ ମାଟି ତାପମାତ୍ରା",model_soil_note:"କେବଳ ମଡେଲ୍ ଅନୁମାନ; କ୍ଷେତ୍ର ସେନ୍ସର ମାପ ନୁହେଁ।"}
+  };
+  Object.keys(FARMWISE_LIVE_I18N).forEach(function(code){
+    if(LANGS[code])Object.keys(FARMWISE_LIVE_I18N[code]).forEach(function(key){LANGS[code][key]=FARMWISE_LIVE_I18N[code][key];});
+  });
+
+  var translateNode = function(node){
+    if(!node || !node.getAttribute)return;
+    var dictionary = LANGS[currentLang] || {};
+    var translated = dictionary[node.getAttribute("data-i18n")];
+    if(translated === undefined)return;
+    if(!node.children || node.children.length === 0){
+      if(node.textContent !== translated)node.textContent = translated;
+      return;
+    }
+    var textNodes = Array.prototype.slice.call(node.childNodes).filter(function(child){return child.nodeType === 3;});
+    var label = textNodes.find(function(child){return child.nodeValue.trim();}) || textNodes[0];
+    if(label){
+      label.nodeValue = translated;
+      textNodes.forEach(function(child){if(child !== label && child.nodeValue.trim())child.nodeValue = "";});
+      return;
+    }
+    var nestedLabel = node.querySelector(":scope > .farmwise-i18n-label");
+    if(!nestedLabel){
+      nestedLabel = document.createElement("span");
+      nestedLabel.className = "farmwise-i18n-label";
+      node.appendChild(nestedLabel);
+    }
+    nestedLabel.textContent = translated;
+  };
+
+  var translateTree = function(root){
+    if(!window.LANGS || !LANGS[currentLang] || !root)return;
+    var nodes = [];
+    if(root.nodeType === 1 && root.matches && root.matches("[data-i18n]"))nodes.push(root);
+    if(root.querySelectorAll)nodes = nodes.concat(Array.prototype.slice.call(root.querySelectorAll("[data-i18n]")));
+    nodes.forEach(translateNode);
+  };
+
   window.setLanguage = function(lang){
     if(!window.LANGS || !LANGS[lang])return;
     currentLang = lang;
     try { localStorage.setItem("farmwise.language", lang); } catch(_){}
     document.documentElement.lang = lang;
+    translateTree(document.body);
+
     var dictionary = LANGS[lang];
-    document.querySelectorAll("[data-i18n]").forEach(function(node){
-      var key = node.getAttribute("data-i18n");
-      if(dictionary[key] !== undefined && node.textContent !== dictionary[key]) node.textContent = dictionary[key];
-    });
     var sections = {
-      weather:dictionary.live_weather, farm:dictionary.farm_profile,
+      auth:dictionary.farmer_login, weather:dictionary.live_weather, farm:dictionary.farm_profile,
       soil:dictionary.soil_sensor, history:dictionary.history, chart:dictionary.trends,
-      rec:dictionary.crop_rec, scan:dictionary.disease_scan,
-      advisory:dictionary.advisory, market:dictionary.market,
+      rec:dictionary.crop_rec, scan:dictionary.disease_scan, ai:dictionary.ai_assistant,
+      results:dictionary.ai_results, advisory:dictionary.advisory, market:dictionary.market,
       pests:dictionary.pests, irr:dictionary.irrigation
     };
     Object.keys(sections).forEach(function(id){
       var heading = $(id) && $(id).querySelector(".ct");
       if(!heading || !sections[id])return;
-      var icon = heading.querySelector(".ico");
-      heading.textContent = "";
-      if(icon)heading.appendChild(icon);
-      heading.appendChild(document.createTextNode(sections[id]));
+      var label = heading.querySelector(":scope > .farmwise-heading-label") || heading.querySelector(":scope > [data-i18n]");
+      if(!label){
+        Array.prototype.slice.call(heading.childNodes).forEach(function(child){if(child.nodeType === 3 && child.nodeValue.trim())child.nodeValue="";});
+        label = document.createElement("span");
+        label.className = "farmwise-heading-label";
+        var icon = heading.querySelector(".ico");
+        if(icon)icon.insertAdjacentElement("afterend", label); else heading.appendChild(label);
+      }
+      label.textContent = sections[id];
+    });
+
+    var buttonLabels = {
+      dlPdfBtn:dictionary.download_pdf, analyzeManualBtn:dictionary.analyze,
+      recBtn:dictionary.get_rec, aistBtn:dictionary.ask
+    };
+    Object.keys(buttonLabels).forEach(function(id){
+      var button = $(id);
+      if(button && buttonLabels[id])button.textContent = buttonLabels[id];
     });
     document.querySelectorAll(".lang-opt").forEach(function(option){
       option.classList.toggle("active", option.dataset.lang === lang);
@@ -2371,19 +2448,9 @@ renderPests(PESTS);
     if(themeWord && dictionary.dark)themeWord.textContent = dictionary.dark;
   };
 
-  var translateTree = function(root){
-    if(!window.LANGS || !LANGS[currentLang])return;
-    var nodes = [];
-    if(root.nodeType === 1 && root.matches && root.matches("[data-i18n]"))nodes.push(root);
-    if(root.querySelectorAll)nodes = nodes.concat(Array.prototype.slice.call(root.querySelectorAll("[data-i18n]")));
-    nodes.forEach(function(node){
-      var translated = LANGS[currentLang][node.getAttribute("data-i18n")];
-      if(translated !== undefined && node.textContent !== translated)node.textContent = translated;
-    });
-  };
   var translationObserver = new MutationObserver(function(mutations){
     mutations.forEach(function(mutation){
-      mutation.addedNodes.forEach(function(node){ if(node.nodeType === 1)translateTree(node); });
+      mutation.addedNodes.forEach(function(node){if(node.nodeType === 1)translateTree(node);});
     });
   });
   translationObserver.observe(document.body, {childList:true, subtree:true});
@@ -2416,6 +2483,9 @@ renderPests(PESTS);
       $("wxTemp").textContent = "-- °C";
       $("wxHum").textContent = "--%"; $("wxWind").textContent = "--";
       $("wxFeels").textContent = "--°C"; $("wxUV").textContent = "--";
+      $("modelSoilMoisture").textContent = "—";
+      $("modelSoilTemp").textContent = "—";
+      $("modelSoilMeta").textContent = "";
       $("wxIcon").textContent = "🌤️";
       $("wxCity").textContent = "📍 Add a town in Farm Profile";
       $("wxLoc").textContent = "";
@@ -2428,12 +2498,21 @@ renderPests(PESTS);
     }
     $("wxCity").textContent = "Loading weather model data…";
     $("wxMeta").textContent = "Requesting current conditions and a five-day forecast.";
+    $("modelSoilMoisture").textContent = "—";
+    $("modelSoilTemp").textContent = "—";
+    $("modelSoilMeta").textContent = "Loading model values…";
     try{
       var response = await fetch("/api/weather/current?" + params.toString(), {headers:{"Accept":"application/json"}});
       var data = await response.json();
       if(!response.ok || !data.available)throw new Error(data.message || "Weather data is unavailable.");
       var c = data.current, day = (data.forecast || [])[0] || {};
       var temp = c.temperatureC, humidity = c.humidityPct, wind = c.windKmh;
+      var modelMoisture = c.soilMoisturePct, modelSoilTemp = c.soilTemperatureC;
+      $("modelSoilMoisture").textContent = modelMoisture == null ? "—" : Number(modelMoisture).toFixed(1) + "%";
+      $("modelSoilTemp").textContent = modelSoilTemp == null ? "—" : Number(modelSoilTemp).toFixed(1);
+      $("modelSoilMeta").textContent = (modelMoisture == null && modelSoilTemp == null)
+        ? "No soil-model values returned for this location."
+        : data.source + " · " + localTime(c.time || data.fetchedAt);
       $("wxTemp").textContent = Math.round(temp) + " °C";
       $("wxIcon").textContent = (window.WX_ICONS && WX_ICONS[c.weatherCode]) || "🌤️";
       $("wxCity").textContent = "📍 " + data.location.label;
@@ -2446,6 +2525,7 @@ renderPests(PESTS);
       window.wxData = {
         temp:temp, hum:humidity, wind:wind, code:c.weatherCode, feels:c.feelsLikeC,
         rain:c.precipitationMm, rainSum:day.precipitationMm, et0:day.et0Mm,
+        soilMoisturePct:modelMoisture, soilTempC:modelSoilTemp,
         city:data.location.label, lat:data.location.latitude, lon:data.location.longitude,
         maxT:day.maxC, minT:day.minC, uvIndex:day.uvMax,
         forecast:data.forecast || [], fetchedAt:data.fetchedAt
@@ -2457,6 +2537,9 @@ renderPests(PESTS);
     }catch(error){
       window.wxData = null;
       $("wxTemp").textContent = "-- °C";
+      $("modelSoilMoisture").textContent = "—";
+      $("modelSoilTemp").textContent = "—";
+      $("modelSoilMeta").textContent = "Weather source unavailable.";
       $("wxCity").textContent = "Weather source unavailable";
       $("wxMeta").textContent = error.message;
       $("wxLoc").textContent = "";
@@ -2564,7 +2647,19 @@ renderPests(PESTS);
       return wxData ? "Weather model for "+wxData.city+": "+Math.round(wxData.temp)+"°C, humidity "+(wxData.hum == null ? "not reported" : wxData.hum+"%")+", wind "+(wxData.wind == null ? "not reported" : Math.round(wxData.wind)+" km/h")+". These are model values, not a field station reading." : "Weather is not loaded. Save a town in Farm Profile or press Use my location. No default weather is shown.";
     }
     if(/soil|sensor|nitrogen|phosphorus|potassium|npk/.test(lower)){
-      return soilData ? "Latest displayed "+(soilData.source||"farm")+" values: nitrogen "+soilData.N+", phosphorus "+soilData.P+", potassium "+soilData.K+" mg/kg, measured "+(soilData.timestamp||"time not reported")+". pH and moisture are not included unless a connected source reports them." : "There is no verified NPK reading yet. Connect an ESP32 sensor or enter values from a soil test. The dashboard will not make up a reading.";
+      var soilAnswers=[];
+      if(soilData){
+        soilAnswers.push("Latest displayed "+(soilData.source||"farm")+" NPK values: nitrogen "+soilData.N+", phosphorus "+soilData.P+", potassium "+soilData.K+" mg/kg, measured "+(soilData.timestamp||"time not reported")+".");
+      }else{
+        soilAnswers.push("There is no verified NPK reading yet. Connect an ESP32 sensor or enter values from a soil test; FarmWise will not make up a reading.");
+      }
+      if(wxData && (wxData.soilMoisturePct!=null || wxData.soilTempC!=null)){
+        var modelParts=[];
+        if(wxData.soilMoisturePct!=null)modelParts.push("topsoil moisture "+Number(wxData.soilMoisturePct).toFixed(1)+"%");
+        if(wxData.soilTempC!=null)modelParts.push("topsoil temperature "+Number(wxData.soilTempC).toFixed(1)+"°C");
+        soilAnswers.push("Separately, Open-Meteo estimates "+modelParts.join(" and ")+" for the 0–7 cm layer. Those are weather-model estimates, not field-sensor measurements.");
+      }
+      return soilAnswers.join(" ");
     }
     if(/market|price|mandi|sell|crop price/.test(lower)){
       if(!marketRows.length)return "Official market prices are not connected. Add a data.gov.in API key in Hatchable project setup, then load the Market section. Its data is reported daily, not as a real-time exchange quote.";
