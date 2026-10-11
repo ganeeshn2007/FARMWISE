@@ -1,0 +1,3 @@
+[[secret]]
+name = "NEXUS_DEVICE_TOKEN"
+expose = true
