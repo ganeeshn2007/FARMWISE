@@ -1855,6 +1855,10 @@ function runDiseaseScan(contextText, imageBlob, skipValidation){
       cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
       URL.revokeObjectURL(objectUrl);
 
+      // Always send uploaded image pixels to the server-side vision model.
+      // Local color heuristics must not decide or block disease analysis.
+      analyzePhotoDataUrl(cv.toDataURL('image/jpeg',0.88), contextText);
+      return;
       isPlantImage(cv, function(result){
         if(!result.ok){
           showDiseaseResult(null, 'not_plant', result.reason);
@@ -1926,6 +1930,9 @@ q('capBtn').addEventListener('click',function(){
   anCv.height = Math.round(cv.height * scale);
   anCv.getContext('2d').drawImage(cv, 0, 0, anCv.width, anCv.height);
 
+  // Send camera pixels directly to the vision endpoint; let the model screen relevance.
+  analyzePhotoDataUrl(anCv.toDataURL('image/jpeg',0.92), 'Live camera capture — crop plant or leaf.');
+  return;
   isPlantImage(anCv, function(result){
     if(!result.ok){
       showDiseaseResult(null, 'not_plant', result.reason);
