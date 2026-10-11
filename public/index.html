@@ -1057,7 +1057,7 @@ q('saveFarmBtn').addEventListener('click',async function(){
   var savedMessage='✅ Saved in this browser.';
   try{
     var A=window.hatchable&&window.hatchable.auth;
-    var session=A?await A.getSession():null;
+    var session=A?await window.hatchable.auth.getSession():null;
     if(session&&session.user){
       var response=await fetch('/api/farm/profile',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(f)});
       var result=await response.json();
@@ -2698,7 +2698,7 @@ renderPests(PESTS);
     if(link)link.href=loginUrl();
     if(!A){if(status)status.textContent="Secure sign-in is unavailable right now.";return null;}
     var session=null;
-    try{session=await A.getSession();}catch(_){if(status)status.textContent="Could not check your account. Refresh and try again.";return null;}
+    try{session=await window.hatchable.auth.getSession();}catch(_){if(status)status.textContent="Could not check your account. Refresh and try again.";return null;}
     var user=session&&session.user;
     var namespace=user?encodeURIComponent(String(user.id)):"anonymous";
     window.farmwiseAccountId=user?String(user.id):null;
@@ -2736,7 +2736,7 @@ renderPests(PESTS);
   $("signOutBtn").addEventListener("click",async function(){
     var A=window.hatchable&&window.hatchable.auth;
     if(!A)return;
-    try{await A.signOut();location.reload();}catch(_){statusText("loginStatus","Could not sign out. Try again.",true);}
+    try{await window.hatchable.auth.signOut();location.reload();}catch(_){statusText("loginStatus","Could not sign out. Try again.",true);}
   });
 
   $("analyzeManualBtn").addEventListener("click",function(event){

@@ -86,7 +86,7 @@ a{display:inline-block;margin-top:18px;color:var(--primary);font-size:13px;text-
   var backLink=document.querySelector('a[href="/"]');
   var previewToken=new URLSearchParams(location.search).get("_preview");
   if(backLink&&previewToken)backLink.href="/?_preview="+encodeURIComponent(previewToken);
-  A.getSession().then(function(s){if(s&&s.user)done();}).catch(function(){});
+  window.hatchable.auth.getSession().then(function(s){if(s&&s.user)done();}).catch(function(){});
   if(A.attachPasskeyAutofill){
     try{A.attachPasskeyAutofill(emailEl).then(function(r){if(r&&r.user)done();}).catch(function(){});}catch(_){}
   }

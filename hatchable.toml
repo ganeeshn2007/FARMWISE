@@ -9,3 +9,11 @@ required = false
 [auth]
 enabled = true
 providers = ["email"]
+
+[db.tables.farm_profiles]
+read = "own"
+write = "own"
+
+[db.tables.sensor_readings]
+read = "own"
+write = "public"
