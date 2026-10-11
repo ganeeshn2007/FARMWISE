@@ -16,8 +16,8 @@ function cleanFilter(value, name) {
 }
 
 export default async function (req, res) {
-  let apiKey = null;
-  try { apiKey = await config.get("DATA_GOV_IN_API_KEY"); } catch (_) {}
+  // Let Hatchable surface its secure Setup prompt if the required secret has not been saved yet.
+  const apiKey = await config.get("DATA_GOV_IN_API_KEY");
   if (typeof apiKey !== "string" || !apiKey.trim()) {
     return res.status(503).json({
       error: "setup_required",
