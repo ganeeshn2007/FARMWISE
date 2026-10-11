@@ -2488,7 +2488,8 @@ renderPests(PESTS);
     var display=function(value,digits,suffix){return value==null?"—":Number(value).toFixed(digits)+suffix;};
     var words=FARMWISE_SOURCE_I18N[currentLang]||FARMWISE_SOURCE_I18N.en;
     grid.innerHTML=rows.map(function(item){
-      var weekday=new Date(String(item.date||"")+"T12:00:00").toLocaleDateString(undefined,{weekday:"short"});
+      var weekdayLocale=({en:"en-IN",hi:"hi-IN",ta:"ta-IN",te:"te-IN",kn:"kn-IN",ml:"ml-IN",bn:"bn-IN",mr:"mr-IN",gu:"gu-IN",pa:"pa-IN",or:"or-IN"}[currentLang]||"en-IN");
+      var weekday=new Date(String(item.date||"")+"T12:00:00").toLocaleDateString(weekdayLocale,{weekday:"short"});
       return '<div class="wx-day"><b>'+escapeHtml(weekday)+'</b><strong>'+display(item.maxC,0,'°')+' / '+display(item.minC,0,'°')+'</strong><small>'+escapeHtml(words.rain)+' '+display(item.precipitationMm,1,' mm')+'<br>'+escapeHtml(words.et0)+' '+display(item.et0Mm,1,' mm')+'</small></div>';
     }).join("");
     wrap.style.display="block";
