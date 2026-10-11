@@ -596,7 +596,7 @@ body{
 <div id="scan" class="card s4" style="scroll-margin-top:130px;">
   <div class="ch"><div class="ct"><div class="ico">📷</div>Crop Disease Scan</div></div>
   <div class="drop-zone" id="dropZone">
-    <div><div style="font-size:38px;margin-bottom:9px;">📸</div><b style="font-size:.87rem;">Preview a plant or crop photo</b><p class="note" style="margin-top:5px;">No validated crop-disease model is connected. FarmWise will not guess a diagnosis from your photo.</p></div>
+    <div><div style="font-size:38px;margin-bottom:9px;">📸</div><b style="font-size:.87rem;">Preview a plant or crop photo</b><p class="note" style="margin-top:5px;">Photo upload and camera capture are available. Disease classification is disabled until a validated crop-specific model is connected; the page will not guess a diagnosis.</p></div>
   </div>
   <input id="fileInput" type="file" accept="image/*" style="display:none;"/>
   <div class="sp"></div>
@@ -944,6 +944,11 @@ var DISEASE_DB=[
 
 /* ─── LOCAL DISEASE ANALYSER — Context-Aware, Accurate ─── */
 function analyzeDiseaseFallback(context){
+  // Safety guard: no validated image classifier is connected, so text heuristics must never claim a visual diagnosis.
+  return {disease:'Diagnosis unavailable — validated model not connected',crop:'Not determined',severity:'Not assessed',confidence:0,
+    sym:'The image may pass a basic color-content check, but that is not plant recognition or disease classification. No validated crop-disease model analyzed this photo.',
+    treatment:'No treatment recommendation issued. Do not apply pesticides based on this scan. Use a local KVK/plant pathology service for confirmation.',
+    prevention:'For a defensible diagnosis, connect and validate a crop-specific vision model, then map its output to reviewed disease references.'};
   var ctx=(context||'').toLowerCase();
   if(ctx.includes('soil sample only')){
     return {disease:'Soil sample detected',crop:'Soil',severity:'Analysis type: soil',confidence:100,
@@ -1442,26 +1447,33 @@ function getFertAdvice(d){
   return a;
 }
 
-q('recBtn').addEventListener('click',function(){
-  if(!soilData){toast('⚠️','Connect the live soil sensor first.');return;}
-  q('recLoading').style.display='block';q('cropGrid').innerHTML='';
-  setTimeout(function(){
+q('recBtn').addEventListener('click',async function(){
+  if(!soilData){toast('⚠️','No current sensor/soil-test values are available.');return;}
+  q('recLoading').style.display='block';q('cropGrid').innerHTML='';q('fertDiv').style.display='none';
+  q('recStatus').textContent='Querying verified FarmWise PostgreSQL records…';
+  try{
+    var profile={};try{profile=JSON.parse(localStorage.getItem(farmProfileStorageKey())||'{}');}catch(_){profile={};}
+    var params=new URLSearchParams({nitrogen:String(soilData.N),phosphorus:String(soilData.P),potassium:String(soilData.K)});
+    if(profile.farmVillage)params.set('region',profile.farmVillage);
+    if(profile.farmSeason)params.set('season',profile.farmSeason);
+    if(profile.farmSoilType)params.set('soilType',profile.farmSoilType);
+    if(soilData.pH!==null&&soilData.pH!==undefined)params.set('ph',String(soilData.pH));
+    if(soilData.moisture!==null&&soilData.moisture!==undefined)params.set('moisture',String(soilData.moisture));
+    var response=await fetch('/api/crops/recommendations?'+params.toString(),{headers:{'accept':'application/json'}});
+    var result=await response.json();
     q('recLoading').style.display='none';
-    var scored=CROPS.map(function(c){return Object.assign({},c,{score:scoreCrop(c,soilData)});}).sort(function(a,b){return b.score-a.score;}).slice(0,6);
-    q('cropGrid').innerHTML=scored.map(function(c,i){
-      return '<div class="crop-card'+(i===0?' best':'')+'">'+
-        '<div class="crop-em">'+c.em+'</div><div class="crop-nm">'+c.name+'</div>'+
-        '<div class="crop-mt">'+c.score+'% match'+(wxData?' (weather-aware)':'')+'</div>'+
-        '<div class="prog"><div class="prog-fill" style="width:'+c.score+'%;"></div></div>'+
-        '<div class="crop-dt">'+c.d+'</div>'+
-        '<div class="crop-dt" style="margin-top:5px;font-weight:600;">📅 '+c.s+' · 💧 '+c.w+'</div></div>';
-    }).join('');
-    var adv=getFertAdvice(soilData);
-    q('fertDiv').style.display='block';
-    q('fertList').innerHTML=adv.map(function(a){return '<div class="pr" style="padding:10px 13px;"><div><b>'+a.t+'</b><p>'+a.d+'</p></div></div>';}).join('');
-    q('recStatus').textContent='Best match: '+scored[0].name+' ('+scored[0].score+'%)';
-    toast('🌾','Recommendations ready! Best: '+scored[0].name);
-  },1100);
+    if(!response.ok||!result.available)throw new Error(result.message||'Database request failed.');
+    if(!result.recommendations||!result.recommendations.length){
+      q('cropGrid').innerHTML='<div style="grid-column:1/-1;padding:22px;border:1px solid var(--border);border-radius:14px;background:var(--surface);"><b>Not enough verified data to recommend a crop</b><p style="margin-top:8px;">FarmWise queried its PostgreSQL database, but no verified record matches these measured values and farm details. It will not invent a crop ranking or match percentage.</p><p style="margin-top:8px;font-size:.8rem;color:var(--muted);">Source: '+(result.source||'FarmWise PostgreSQL')+' · Checked: '+new Date(result.fetchedAt||Date.now()).toLocaleString()+'</p><p style="margin-top:8px;">Next: add crop- and region-specific recommendations reviewed against an ICAR/KVK or state agricultural university source and calibrated soil-test method.</p></div>';
+      q('recStatus').textContent='Database checked · no verified match';
+      return;
+    }
+    q('cropGrid').innerHTML=result.recommendations.map(function(c){return '<div class="crop-card"><div class="crop-nm">'+c.crop_name+'</div><div class="crop-mt">Verified reference record · no fabricated score</div><div class="crop-dt">'+c.guidance+'</div><div class="crop-dt" style="margin-top:8px;font-weight:600;">Source: '+c.source_name+'</div>'+(c.source_url?'<a href="'+c.source_url+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'')+'</div>';}).join('');
+    q('recStatus').textContent=result.count+' verified database record(s)';
+  }catch(error){
+    q('recLoading').style.display='none';q('recStatus').textContent='Database unavailable';
+    q('cropGrid').innerHTML='<div style="grid-column:1/-1;padding:20px;border:1px solid var(--danger);border-radius:14px;"><b>Could not retrieve verified crop recommendations</b><p style="margin-top:8px;">'+String(error.message||'Unknown error')+'</p><p style="margin-top:8px;">No fallback score or simulated recommendation was shown.</p></div>';
+  }
 });
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1606,9 +1618,9 @@ function showDiseaseResult(r, mode, rejectionReason){
     '<p>🌿 Affected Crop: <b>'+r.crop+'</b> &nbsp;|&nbsp; ⚠️ Severity: <b style="color:'+sevColor+';">'+r.severity+'</b></p>'+
     '<p style="margin-top:4px;font-size:.78rem;color:var(--muted);">'+r.sym+'</p></div>'+
     '<span class="tag" style="background:rgba(0,0,0,.05);color:'+confColor+';font-size:.85rem;">'+r.confidence+'%</span></div>'+
-    '<div class="pr"><div><b>💊 Treatment</b><p>'+r.treatment+'</p></div><span class="tag" style="background:var(--primary-soft);color:var(--primary-dk);">Built-in AI</span></div>'+
-    '<div class="pr"><div><b>🛡️ Prevention</b><p>'+(r.prevention||'Practice crop rotation every 2–3 seasons. Use disease-resistant certified varieties. Avoid excess nitrogen fertilisation.')+
-    '</p></div><span class="tag">✅ Accurate</span></div>';
+    '<div class="pr"><div><b>💊 Treatment / next step</b><p>'+r.treatment+'</p></div><span class="tag" style="background:var(--primary-soft);color:var(--primary-dk);">'+(r.confidence?'Reference guidance':'No diagnosis')+'</span></div>'+
+    '<div class="pr"><div><b>🛡️ Prevention / limitation</b><p>'+(r.prevention||'No verified prevention advice is attached to this result.')+
+    '</p></div><span class="tag">'+(r.confidence?'General guidance':'Model required')+'</span></div>';
   toast('🦠',r.disease+' on '+r.crop+' — '+r.confidence+'% confidence');
 }
 
@@ -1826,7 +1838,7 @@ function runDiseaseScan(contextText, imageBlob, skipValidation){
     img.src = objectUrl;
     return;
   }
-  statusEl.textContent = '🔬 Analysing with built-in disease engine...';
+  statusEl.textContent = 'Checking image workflow. No validated disease classifier is connected; this scan cannot identify a disease.';
   statusEl.style.color = 'var(--muted)';
   setTimeout(function(){
     var r = analyzeDiseaseFallback(contextText);

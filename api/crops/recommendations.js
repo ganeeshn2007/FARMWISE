@@ -24,6 +24,11 @@ export default async function (req, res) {
   const region = text(input.region);
   const season = text(input.season);
   const soilType = text(input.soilType);
+  const ph = input.ph === undefined || input.ph === null || input.ph === "" ? null : Number(input.ph);
+  const moisture = input.moisture === undefined || input.moisture === null || input.moisture === "" ? null : Number(input.moisture);
+  if ((ph !== null && (!Number.isFinite(ph) || ph < 0 || ph > 14)) || (moisture !== null && (!Number.isFinite(moisture) || moisture < 0 || moisture > 100))) {
+    return res.status(400).json({ available: false, error: "invalid_soil_condition", message: "pH must be between 0 and 14; moisture must be between 0 and 100 percent." });
+  }
   if ([n,p,k].some(v => v !== null) && [n,p,k].some(v => v === null)) {
     return res.status(400).json({ available: false, error: "incomplete_npk", message: "Provide all three N, P and K values, or omit all three." });
   }
@@ -35,6 +40,14 @@ export default async function (req, res) {
   if (region) add("(region IS NULL OR lower(region) = lower(?))", region);
   if (season) add("(season IS NULL OR lower(season) = lower(?))", season);
   if (soilType) add("(soil_type IS NULL OR lower(soil_type) = lower(?))", soilType);
+  if (ph !== null) {
+    add("(ph_min IS NULL OR ph_min <= ?)", ph);
+    add("(ph_max IS NULL OR ph_max >= ?)", ph);
+  }
+  if (moisture !== null) {
+    add("(moisture_min_pct IS NULL OR moisture_min_pct <= ?)", moisture);
+    add("(moisture_max_pct IS NULL OR moisture_max_pct >= ?)", moisture);
+  }
   if (n !== null) {
     add("(nitrogen_min_mg_kg IS NULL OR nitrogen_min_mg_kg <= ?)", n);
     add("(nitrogen_max_mg_kg IS NULL OR nitrogen_max_mg_kg >= ?)", n);
@@ -50,7 +63,7 @@ export default async function (req, res) {
       available: true,
       source: "FarmWise PostgreSQL crop_knowledge",
       fetchedAt: new Date().toISOString(),
-      input: { nitrogen: n, phosphorus: p, potassium: k, region, season, soilType },
+      input: { nitrogen: n, phosphorus: p, potassium: k, ph, moisture, region, season, soilType },
       count: result.rows.length,
       recommendations: result.rows,
       message: result.rows.length
