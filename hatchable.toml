@@ -4,7 +4,8 @@ required = false
 
 [[secret]]
 name = "DATA_GOV_IN_API_KEY"
-required = false
+required = true
+description = "API key for the official data.gov.in AGMARKNET daily mandi-price dataset. Used only by the server-side market endpoint."
 
 [auth]
 enabled = true

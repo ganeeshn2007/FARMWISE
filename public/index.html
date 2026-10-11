@@ -2940,6 +2940,9 @@ renderPests(PESTS);
     if(user)refreshSensorFromServer();else setSensorConnectionState(false,"Sign in to view account sensor readings");
   }).catch(function(){window.loadWeather();setSensorConnectionState(false,"Account status is unavailable.");});
   window.fetchLiveMarket();
+  // Refresh the official daily mandi feed every 15 minutes while the tab is visible.
+  // The source publishes daily observations; this refreshes retrieval, not market trading ticks.
+  window.setInterval(function(){if(!document.hidden)window.fetchLiveMarket();},900000);
   window.setInterval(refreshSensorFromServer,30000);
   weatherTimer=window.setInterval(function(){window.loadWeather();},900000);
   window.renderMarket();

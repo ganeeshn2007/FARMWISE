@@ -41,9 +41,10 @@ export default async function (req, res) {
   url.searchParams.set("limit", "100");
   url.searchParams.set("offset", "0");
   url.searchParams.set("fields", "state,district,market,commodity,variety,grade,arrival_date,min_price,max_price,modal_price");
-  if (state) url.searchParams.set("filters[State]", state);
-  if (district) url.searchParams.set("filters[District]", district);
-  if (commodity) url.searchParams.set("filters[Commodity]", commodity);
+  url.searchParams.set("sort[arrival_date]", "desc");
+  if (state) url.searchParams.set("filters[state.keyword]", state);
+  if (district) url.searchParams.set("filters[district]", district);
+  if (commodity) url.searchParams.set("filters[commodity]", commodity);
 
   let upstream;
   try {
