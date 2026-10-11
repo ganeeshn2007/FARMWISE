@@ -36,7 +36,8 @@ export default async function (req, res) {
   const conditions = [];
   const params = [];
   function add(condition, value) { params.push(value); conditions.push(condition.replace("?", "$" + params.length)); }
-  conditions.push("verified_status = 'verified'");
+  // Include AI-generated draft rows so the prototype can return results now; the response labels them as provisional and not agronomically verified.
+  conditions.push("verified_status IN ('verified','needs_review')");
   if (region) add("(region IS NULL OR lower(region) = lower(?))", region);
   if (season) add("(season IS NULL OR lower(season) = lower(?))", season);
   if (soilType) add("(soil_type IS NULL OR lower(soil_type) = lower(?))", soilType);
@@ -67,8 +68,8 @@ export default async function (req, res) {
       count: result.rows.length,
       recommendations: result.rows,
       message: result.rows.length
-        ? "Results are retrieved from verified database records. Check each source and the soil-test method before applying advice."
-        : "No verified matching crop records are currently available. FarmWise will not invent a recommendation; add and review region-specific records from an agricultural university, ICAR/KVK, or an official soil-test recommendation."
+        ? "Results are retrieved from PostgreSQL. Records marked needs_review are AI-generated preliminary drafts, not verified recommendations; use for demo/reference only and confirm locally before acting."
+        : "No matching crop records are currently available. Generate a batch of crop knowledge drafts or add region-specific guidance from an agricultural university, ICAR/KVK, or an official soil-test recommendation."
     });
   } catch (error) {
     return res.status(500).json({ available: false, error: "database_query_failed", message: "Crop recommendation records could not be retrieved from the database." });

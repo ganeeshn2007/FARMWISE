@@ -63,7 +63,7 @@ Include a variable number of plausible differential candidates (1 to 10 dependin
       c.verifiedReferences = [];
       try {
         const q = await db.query(
-          "SELECT crop_name,disease_name,treatment_guidance,source_name,source_url,source_published_at FROM disease_references WHERE verified_status='verified' AND lower(disease_name) LIKE '%' || lower($1) || '%' AND ($2 = 'Unknown' OR lower(crop_name) LIKE '%' || lower($2) || '%') LIMIT 3",
+          "SELECT crop_name,disease_name,treatment_guidance,source_name,source_url,source_published_at,verified_status FROM disease_references WHERE verified_status IN ('verified','needs_review') AND lower(disease_name) LIKE '%' || lower($1) || '%' AND ($2 = 'Unknown' OR lower(crop_name) LIKE '%' || lower($2) || '%') LIMIT 3",
           [c.name.slice(0,80), result.crop]
         );
         c.verifiedReferences = q.rows;
