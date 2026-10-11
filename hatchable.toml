@@ -7,6 +7,11 @@ name = "DATA_GOV_IN_API_KEY"
 required = true
 description = "API key for the official data.gov.in AGMARKNET daily mandi-price dataset. Used only by the server-side market endpoint."
 
+[ai]
+required = true
+pin = "google"
+description = "Google vision provider used for FarmWise plant-photo differential screening. Results are not a calibrated disease diagnosis."
+
 [auth]
 enabled = true
 providers = ["email"]

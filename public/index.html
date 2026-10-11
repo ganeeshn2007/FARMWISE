@@ -596,7 +596,7 @@ body{
 <div id="scan" class="card s4" style="scroll-margin-top:130px;">
   <div class="ch"><div class="ct"><div class="ico">📷</div>Crop Disease Scan</div></div>
   <div class="drop-zone" id="dropZone">
-    <div><div style="font-size:38px;margin-bottom:9px;">📸</div><b style="font-size:.87rem;">Preview a plant or crop photo</b><p class="note" style="margin-top:5px;">Photo upload and camera capture are available. Disease classification is disabled until a validated crop-specific model is connected; the page will not guess a diagnosis.</p></div>
+    <div><div style="font-size:38px;margin-bottom:9px;">📸</div><b style="font-size:.87rem;">Preview a plant or crop photo</b><p class="note" style="margin-top:5px;">Upload or capture a crop photo for vision-based differential screening. Results are ranked possibilities, not a validated diagnosis; verified treatment references are shown only when available.</p></div>
   </div>
   <input id="fileInput" type="file" accept="image/*" style="display:none;"/>
   <div class="sp"></div>
@@ -607,7 +607,7 @@ body{
     <button id="camBtn" class="btn btn-ghost btn-sm">📷 Camera</button>
     <button id="capBtn" class="btn btn-primary btn-sm" style="display:none;">⚡ Capture</button>
     <button id="stopBtn" class="btn btn-danger btn-sm" style="display:none;">✕ Stop</button>
-    <button id="quickBtn" class="btn btn-primary btn-sm">Check analysis setup</button>
+    <button id="quickBtn" class="btn btn-primary btn-sm">Photo analysis status</button>
   </div>
   <div id="scanStatus" class="note" style="margin-top:9px;"></div>
 </div>
@@ -1793,6 +1793,51 @@ function isPlantImage(canvas, cb){
   }
 }
 
+async function analyzePhotoDataUrl(dataUrl, contextText){
+  var statusEl=q('scanStatus');
+  statusEl.textContent='🌿 Sending photo to the vision service for a differential screening…';
+  statusEl.style.color='var(--muted)';
+  try{
+    var response=await fetch('/api/crops/analyze-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageData:dataUrl,context:contextText||''})});
+    var payload=await response.json().catch(function(){return {};});
+    if(!response.ok||!payload.available||!payload.result){
+      var msg=payload.message||'Photo analysis is currently unavailable. No diagnosis was produced.';
+      statusEl.textContent='⚠️ '+msg;statusEl.style.color='var(--danger)';
+      q('aiResultsList').innerHTML='<div class="pr"><div><b>Photo analysis unavailable</b><p>'+escapeHTML(msg)+'</p></div><span class="tag">No diagnosis</span></div>';
+      return;
+    }
+    var r=payload.result;
+    if(!r.isAgriculturalImage){
+      statusEl.textContent='⚠️ The vision service could not confirm a crop/plant image. Try a closer, clearer photo.';
+      statusEl.style.color='var(--warn)';
+      q('aiResultsList').innerHTML='<div class="pr"><div><b>Image not confirmed as agricultural</b><p>'+escapeHTML((r.observations||[]).join(' '))+'</p></div><span class="tag">Uncertain</span></div>';
+      return;
+    }
+    var candidates=Array.isArray(r.candidates)?r.candidates:[];
+    statusEl.textContent='Screening completed · '+(r.crop||'Crop uncertain')+' · '+candidates.length+' differential candidate(s). These are not validated diagnoses.';
+    statusEl.style.color='var(--primary)';
+    var esc=escapeHTML;
+    var html='<div class="pr"><div><b>🌿 Crop identification: '+esc(r.crop||'Unknown')+'</b><p>Image quality: '+esc(r.imageQuality||'limited')+'</p><p style="margin-top:4px;color:var(--muted)">Visible observations: '+esc((r.observations||[]).join('; ')||'No clear symptoms reported')+'</p></div><span class="tag">Vision screening</span></div>';
+    if(!candidates.length) html+='<div class="pr"><div><b>No defensible candidate returned</b><p>Try a close-up in daylight and include the crop name. Do not apply treatment based on this scan.</p></div></div>';
+    candidates.forEach(function(c,i){
+      var refs=Array.isArray(c.verifiedReferences)?c.verifiedReferences:[];
+      html+='<div class="pr" style="align-items:flex-start"><div><b>'+(i+1)+'. '+esc(c.name)+'</b><p>Relative likelihood: <b>'+esc(c.likelihood)+'</b>'+(c.relativeScore!==null?' · model-relative score '+Number(c.relativeScore).toFixed(0)+'/100':'')+'</p><p style="margin-top:4px;color:var(--muted)">'+esc(c.why||'No further visual evidence supplied.')+'</p>';
+      if(refs.length){html+='<p style="margin-top:6px"><b>Verified reference match:</b></p>'+refs.map(function(ref){return '<p>'+esc(ref.source_name||'Agricultural reference')+': '+esc(ref.treatment_guidance||'See source')+(ref.source_url?' · <a target="_blank" rel="noopener" href="'+esc(ref.source_url)+'">Open source</a>':'')+'</p>';}).join('');}
+      else html+='<p style="margin-top:6px;color:var(--warn)">No matching verified treatment record in FarmWise database.</p>';
+      html+='</div><span class="tag">'+esc(c.likelihood)+'</span></div>';
+    });
+    html+='<div class="pr"><div><b>Recommended next step</b><p>'+esc(r.nextStep||'Seek local agricultural expert review before treatment.')+'</p><p style="margin-top:6px;color:var(--muted)">'+esc(r.confidenceNote||'Model output is not a calibrated probability.')+'</p></div><span class="tag">Needs validation</span></div>';
+    q('aiResultsList').innerHTML=html;
+  }catch(err){
+    statusEl.textContent='⚠️ Could not reach the photo-analysis service. No diagnosis was produced.';
+    statusEl.style.color='var(--danger)';
+    q('aiResultsList').innerHTML='<div class="pr"><div><b>Photo analysis unavailable</b><p>Check the connection and retry. No diagnosis was produced.</p></div><span class="tag">Unavailable</span></div>';
+  }
+}
+function escapeHTML(value){
+  return String(value==null?'':value).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];});
+}
+
 function runDiseaseScan(contextText, imageBlob, skipValidation){
   var statusEl=q('scanStatus');
   if(imageBlob && !skipValidation){
@@ -1823,10 +1868,7 @@ function runDiseaseScan(contextText, imageBlob, skipValidation){
           statusEl.textContent = '✅ Agricultural image confirmed — '+detected.join(' · ')+'. Analysing...';
            if(result.brown >= 20 && result.green < 8 && result.yellowVeg < 8){ contextText += ' SOIL SAMPLE ONLY — perform soil image guidance, not disease diagnosis.'; }
           statusEl.style.color = 'var(--primary)';
-          setTimeout(function(){
-            var r = analyzeDiseaseFallback(contextText);
-            showDiseaseResult(r);
-          }, 1100);
+          analyzePhotoDataUrl(cv.toDataURL('image/jpeg',0.88),contextText);
         }
       });
     };
@@ -1840,10 +1882,7 @@ function runDiseaseScan(contextText, imageBlob, skipValidation){
   }
   statusEl.textContent = 'Checking image workflow. No validated disease classifier is connected; this scan cannot identify a disease.';
   statusEl.style.color = 'var(--muted)';
-  setTimeout(function(){
-    var r = analyzeDiseaseFallback(contextText);
-    showDiseaseResult(r);
-  }, 900);
+  setNote(statusEl,'Select a photo or capture a camera image to run vision screening.',false);
 }
 
 q('quickBtn').addEventListener('click',function(){
@@ -1903,10 +1942,9 @@ q('capBtn').addEventListener('click',function(){
     statusEl.style.color = 'var(--primary)';
     cv.toBlob(function(blob){
       if(!blob){ setNote(statusEl,'Image capture failed. Try again.',true); return; }
-      setTimeout(function(){
-        var r = analyzeDiseaseFallback('Live camera capture — crop plant or leaf.');
-        showDiseaseResult(r);
-      }, 900);
+      var reader=new FileReader();
+      reader.onload=function(ev){analyzePhotoDataUrl(ev.target.result,'Live camera capture — crop plant or leaf.');};
+      reader.readAsDataURL(blob);
     }, 'image/jpeg', 0.92);
   });
 });
