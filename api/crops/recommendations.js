@@ -31,7 +31,7 @@ export default async function (req, res) {
     return res.status(400).json({ available:false, error:"incomplete_npk", message:"Provide all three N, P and K values, or omit all three." });
   }
 
-  const conditions = ["verified_status IN ('verified','reviewed','needs_review')"];
+  const conditions = ["verified_status IN ('verified','reviewed','needs_review')", "lower(trim(crop_name)) <> 'all crops'"];
   const params = [];
   function add(condition, value) {
     params.push(value);
@@ -40,7 +40,7 @@ export default async function (req, res) {
 
   // Global draft records are useful as preliminary candidates even when a farmer
   // enters a village. Keep records for other specific regions out of the results.
-  if (region) add("(region IS NULL OR lower(trim(region)) IN ('global','worldwide','general','all regions') OR lower(trim(region)) = lower(trim(?)))", region);
+  if (region) add("(region IS NULL OR lower(trim(region)) LIKE 'global%' OR lower(trim(region)) LIKE 'worldwide%' OR lower(trim(region)) IN ('general','all regions') OR lower(trim(region)) = lower(trim(?)))", region);
   if (season) {
     const s = lower(season);
     let seasonPredicate = "(season IS NULL OR lower(trim(season)) IN ('general','varies','global','year-round') OR lower(season) LIKE '%varies%' OR lower(season) LIKE '%year-round%'";
