@@ -2713,10 +2713,35 @@ renderPests(PESTS);
     return "I can summarize FarmWise values already on this page and explain its controls. A generative AI provider is not connected, so I cannot provide AI-generated diagnosis or treatment advice. For crop-specific decisions, contact your local agricultural extension service.";
   };
 
-  window.runDiseaseScan = function(){
-    statusText("scanStatus","Photo review is available, but no validated crop-disease model is connected. FarmWise will not guess a diagnosis.",true);
+  window.runDiseaseScan = async function(){
+    statusText("scanStatus","Image classifier is not connected yet. FarmWise will not label this photo as a confirmed disease.",true);
     var results = $("aiResultsList");
-    if(results)results.innerHTML = '<div class="pr"><div><b>Photo analysis</b><p>No crop-specific diagnosis model is connected.</p></div><span class="tag">Not analyzed</span></div><div class="pr"><div><b>Next step</b><p>Ask a local agricultural extension service to review the crop and symptoms.</p></div><span class="tag">Human review</span></div>';
+    if(results)results.innerHTML = '<div class="pr"><div><b>Image diagnosis</b><p>This photo has not been classified by a validated crop-disease model. No diagnosis or confidence score is being claimed.</p></div><span class="tag">Not classified</span></div><div class="pr"><div><b>Source-linked reference library</b><p>Loading ICAR disease references for research and human review…</p></div><span class="tag">Database</span></div>';
+    try{
+      var response=await fetch("/api/crops/disease-references?status=needs_review",{headers:{"Accept":"application/json"}});
+      var data=await response.json();
+      if(!response.ok || !data.available)throw new Error("Disease reference database is temporarily unavailable.");
+      var refs=Array.isArray(data.references)?data.references:[];
+      var html='<div class="pr"><div><b>Image diagnosis</b><p>No classifier is connected, so this image has not been diagnosed.</p></div><span class="tag">Not classified</span></div>';
+      if(refs.length){
+        html+='<div class="note" style="margin:8px 0">Source-linked research records below are pending expert review. They are not diagnoses of your photo and are not treatment prescriptions.</div>';
+        html+=refs.map(function(r){
+          var title=escapeHtml(r.crop_name+" — "+r.disease_name);
+          var symptoms=escapeHtml(r.symptoms||"No symptom summary available.");
+          var guidance=escapeHtml(r.treatment_guidance||"Consult a local agricultural extension service.");
+          var source=escapeHtml(r.source_name||"Source not specified");
+          var link=r.source_url?'<a href="'+escapeHtml(r.source_url)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':"Source link unavailable";
+          return '<div class="pr" style="display:block;margin-top:9px"><b>'+title+'</b><p style="margin:5px 0">'+symptoms+'</p><p style="margin:5px 0">'+guidance+'</p><p class="note">'+source+' · '+link+' · Pending review</p></div>';
+        }).join("");
+      }else{
+        html+='<div class="pr"><div><b>No reference records returned</b><p>Ask an agricultural extension officer or KVK to review the plant and symptoms.</p></div></div>';
+      }
+      if(results)results.innerHTML=html;
+      statusText("scanStatus","Loaded "+refs.length+" source-linked reference record(s). The photo itself was not classified.",true);
+    }catch(error){
+      if(results)results.innerHTML+='<div class="pr"><div><b>Reference lookup failed</b><p>Try again later or consult a local agricultural extension service. The photo has not been diagnosed.</p></div></div>';
+      statusText("scanStatus","The reference database could not be reached. No diagnosis was generated.",true);
+    }
   };
 
   var categoryFor = function(name){
