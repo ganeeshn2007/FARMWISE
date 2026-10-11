@@ -53,7 +53,7 @@ export default async function (req, res) {
     return res.status(502).json({ error: "market_provider_unavailable", message: "The official market-data service could not be reached." });
   }
   if (!upstream.ok) {
-    return res.status(502).json({ error: "market_provider_error", message: "The official market-data service rejected the request. Check the API key and try again." });
+    return res.status(502).json({ error: "market_provider_error", upstreamStatus: upstream.status, message: upstream.status === 401 || upstream.status === 403 ? "The data.gov.in service denied access. Verify the API key in private Setup and confirm it is enabled for this dataset." : upstream.status === 400 ? "The data.gov.in service rejected the query parameters." : "The official market-data service returned HTTP " + upstream.status + "." });
   }
 
   let data;
