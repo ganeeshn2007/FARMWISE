@@ -1468,11 +1468,11 @@ q('recBtn').addEventListener('click',async function(){
       q('recStatus').textContent='Database checked · no matching guidance';
       return;
     }
-    q('cropGrid').innerHTML=result.recommendations.map(function(c){return '<div class="crop-card"><div class="crop-nm">'+escapeHTML(c.crop_name||'Unknown crop')+'</div><div class="crop-mt">'+escapeHTML(c.recordStatus||'Provisional database record')+'</div><div class="crop-dt" style="margin-top:6px;"><b>Assessment:</b> '+escapeHTML(c.fitStatus||'Soil fit not established')+'</div><div class="crop-dt">'+escapeHTML(c.guidance||'No guidance stored')+'</div><div class="crop-dt" style="margin-top:8px;font-weight:600;">Source: '+escapeHTML(c.source_name||'Not supplied')+'</div>'+(c.source_url?'<a href="'+escapeHTML(c.source_url)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'')+'</div>';}).join('');
+    q('cropGrid').innerHTML=result.recommendations.map(function(c){return '<div class="crop-card"><div class="crop-nm">'+escapeHTML(c.crop_name||'Unknown crop')+'</div><div class="crop-mt">'+escapeHTML(c.recordStatus||'Provisional database record')+'</div><div class="crop-dt" style="margin-top:6px;"><b>Assessment:</b> '+escapeHTML(c.fitStatus||'Soil fit not established')+'</div><div class="crop-dt" style="margin-top:6px;"><b>Soil context:</b> '+escapeHTML(c.soilContext||'No soil context stored')+'</div><div class="crop-dt">'+escapeHTML(c.guidance||'No guidance stored')+'</div><div class="crop-dt" style="margin-top:8px;font-weight:600;">Source: '+escapeHTML(c.source_name||'Not supplied')+'</div>'+(c.source_url?'<a href="'+escapeHTML(c.source_url)+'" target="_blank" rel="noopener noreferrer">Open source ↗</a>':'')+'</div>';}).join('');
     q('recStatus').textContent=result.count+' database candidate(s) · '+(result.assessment==='numeric_soil_fit_unavailable'?'soil fit not established':result.assessment==='context_only'?'context-only matches':'see candidate assessments');
   }catch(error){
     q('recLoading').style.display='none';q('recStatus').textContent='Database unavailable';
-    q('cropGrid').innerHTML='<div style="grid-column:1/-1;padding:20px;border:1px solid var(--danger);border-radius:14px;"><b>Could not retrieve verified crop recommendations</b><p style="margin-top:8px;">'+String(error.message||'Unknown error')+'</p><p style="margin-top:8px;">No fallback score or simulated recommendation was shown.</p></div>';
+    q('cropGrid').innerHTML='<div style="grid-column:1/-1;padding:20px;border:1px solid var(--danger);border-radius:14px;"><b>Could not retrieve crop guidance</b><p style="margin-top:8px;">'+String(error.message||'Unknown error')+'</p><p style="margin-top:8px;">No fallback score or simulated recommendation was shown.</p></div>';
   }
 });
 

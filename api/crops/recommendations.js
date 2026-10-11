@@ -55,7 +55,9 @@ export default async function (req, res) {
     seasonPredicate += ")";
     conditions.push(seasonPredicate);
   }
-  if (soilType) add("(soil_type IS NULL OR lower(trim(soil_type)) = lower(trim(?)))", soilType);
+  // Soil-type descriptions are free text across datasets (e.g. "red soil",
+  // "red loam", "well-drained loam"). Do not silently exclude candidates using
+  // exact string equality; report the stored note so users can interpret it.
 
   // Apply any available numeric ranges, but also return the thresholds so the UI
   // can explicitly flag records whose numeric NPK/pH/moisture requirements are missing.
@@ -96,7 +98,10 @@ export default async function (req, res) {
         fitStatus: !entered.length ? "Context candidate only; no soil values supplied" :
           allNumericRangesPresent ? "Within stored numeric ranges; still check source and local applicability" :
           "Numeric suitability not established; missing stored thresholds for " + missing.join(", "),
-        missingNumericThresholds: missing
+        missingNumericThresholds: missing,
+        soilContext: soilType
+          ? (row.soil_type ? "Farm soil input: " + soilType + "; stored soil note: " + row.soil_type + " (free-text, not a validated match)" : "Farm soil input: " + soilType + "; no crop-specific soil type recorded")
+          : (row.soil_type ? "Stored soil note: " + row.soil_type : "No crop-specific soil type recorded")
       };
     });
     const anyFullyEvaluable = recommendations.some(r => entered.length > 0 && r.missingNumericThresholds.length === 0);
