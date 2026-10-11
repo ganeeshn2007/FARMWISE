@@ -428,7 +428,7 @@ body{
     </div>
   </div>
   <div id="wxForecastWrap" style="display:none;">
-    <div class="wx-forecast-title"><span data-i18n="wx_forecast">5-day forecast</span><span class="note">Model · high/low · rain · ET₀</span></div>
+    <div class="wx-forecast-title"><span data-i18n="wx_forecast">5-day forecast</span><span class="note" id="wxForecastCaption">Model · high/low · rain · ET₀</span></div>
     <div id="wxForecast" class="wx-forecast-grid"></div>
   </div>
   <div class="sp"></div>
@@ -1242,8 +1242,10 @@ function setSensorConnectionState(online,text){
   if(dot)dot.innerHTML=(online
     ? '<span class="pulse" style="width:8px;height:8px;margin-right:0;"></span>&nbsp;'
     : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:5px;"></span>')+detail;
+  window.farmwiseSensorOnline=!!online;
   var sourceStatus=q('sensorSourceStatus');
-  if(sourceStatus)sourceStatus.textContent=online?'ESP32 connected · '+detail:detail;
+  if(window.farmwiseRefreshSourceLabels)window.farmwiseRefreshSourceLabels();
+  else if(sourceStatus)sourceStatus.textContent=online?'ESP32 connected · '+detail:detail;
 }
 
 function showSerialUnsupported(){
@@ -2361,6 +2363,35 @@ renderPests(PESTS);
   Object.keys(FARMWISE_LIVE_I18N).forEach(function(code){
     if(LANGS[code])Object.keys(FARMWISE_LIVE_I18N[code]).forEach(function(key){LANGS[code][key]=FARMWISE_LIVE_I18N[code][key];});
   });
+  var FARMWISE_SOURCE_I18N={
+    en:{wp:"Add a farm town to load live weather",wl:"Loading live forecast…",wr:"Live forecast loaded",we:"Weather source unavailable",sn:"ESP32 reading needed",sy:"ESP32 connected",mk:"Needs an official data.gov.in API key",ml:"Connecting to official daily prices…",my:"Official daily prices loaded",me:"No matching official prices",mx:"Market source unavailable",rain:"Rain",et0:"ET₀",fc:"Model · high/low · rain · ET₀"},
+    hi:{wp:"लाइव मौसम के लिए खेत का शहर चुनें",wl:"लाइव पूर्वानुमान लोड हो रहा है…",wr:"लाइव पूर्वानुमान उपलब्ध",we:"मौसम स्रोत उपलब्ध नहीं",sn:"ESP32 रीडिंग की आवश्यकता",sy:"ESP32 जुड़ा है",mk:"दैनिक कीमतों के लिए data.gov.in API कुंजी चाहिए",ml:"आधिकारिक दैनिक कीमतें लोड हो रही हैं…",my:"आधिकारिक दैनिक कीमतें लोड हुईं",me:"कोई मेल खाती आधिकारिक कीमतें नहीं",mx:"बाजार स्रोत उपलब्ध नहीं",rain:"वर्षा",et0:"ET₀",fc:"मॉडल · अधिकतम/न्यूनतम · वर्षा · ET₀"},
+    ta:{wp:"நேரடி வானிலைக்கு பண்ணை ஊரைத் தேர்ந்தெடுக்கவும்",wl:"நேரடி முன்னறிவிப்பு ஏற்றப்படுகிறது…",wr:"நேரடி முன்னறிவிப்பு கிடைக்கிறது",we:"வானிலைத் தரவு கிடைக்கவில்லை",sn:"ESP32 அளவீடு தேவை",sy:"ESP32 இணைக்கப்பட்டது",mk:"தினசரி விலைகளுக்கு data.gov.in API key தேவை",ml:"அதிகாரப்பூர்வ தினசரி விலைகள் ஏற்றப்படுகின்றன…",my:"அதிகாரப்பூர்வ தினசரி விலைகள் ஏற்றப்பட்டன",me:"பொருந்தும் அதிகாரப்பூர்வ விலைகள் இல்லை",mx:"சந்தைத் தரவு கிடைக்கவில்லை",rain:"மழை",et0:"ET₀",fc:"மாதிரி · அதிகபட்சம்/குறைந்தபட்சம் · மழை · ET₀"},
+    te:{wp:"లైవ్ వాతావరణం కోసం పొలం పట్టణాన్ని ఎంచుకోండి",wl:"లైవ్ సూచన లోడ్ అవుతోంది…",wr:"లైవ్ సూచన అందుబాటులో ఉంది",we:"వాతావరణ మూలం అందుబాటులో లేదు",sn:"ESP32 రీడింగ్ అవసరం",sy:"ESP32 కనెక్ట్ అయింది",mk:"రోజువారీ ధరలకు data.gov.in API కీ అవసరం",ml:"అధికారిక రోజువారీ ధరలు లోడ్ అవుతున్నాయి…",my:"అధికారిక రోజువారీ ధరలు లోడ్ అయ్యాయి",me:"సరిపోలిన అధికారిక ధరలు లేవు",mx:"మార్కెట్ మూలం అందుబాటులో లేదు",rain:"వర్షం",et0:"ET₀",fc:"మోడల్ · గరిష్ఠం/కనిష్ఠం · వర్షం · ET₀"},
+    kn:{wp:"ಲೈವ್ ಹವಾಮಾನಕ್ಕಾಗಿ ಹೊಲದ ಊರನ್ನು ಆಯ್ಕೆಮಾಡಿ",wl:"ಲೈವ್ ಮುನ್ಸೂಚನೆ ಲೋಡ್ ಆಗುತ್ತಿದೆ…",wr:"ಲೈವ್ ಮುನ್ಸೂಚನೆ ಲಭ್ಯವಿದೆ",we:"ಹವಾಮಾನ ಮೂಲ ಲಭ್ಯವಿಲ್ಲ",sn:"ESP32 ಓದು ಅಗತ್ಯ",sy:"ESP32 ಸಂಪರ್ಕಿಸಲಾಗಿದೆ",mk:"ದೈನಂದಿನ ಬೆಲೆಗಳಿಗೆ data.gov.in API ಕೀ ಅಗತ್ಯ",ml:"ಅಧಿಕೃತ ದೈನಂದಿನ ಬೆಲೆಗಳು ಲೋಡ್ ಆಗುತ್ತಿವೆ…",my:"ಅಧಿಕೃತ ದೈನಂದಿನ ಬೆಲೆಗಳು ಲೋಡ್ ಆಗಿವೆ",me:"ಹೊಂದುವ ಅಧಿಕೃತ ಬೆಲೆಗಳಿಲ್ಲ",mx:"ಮಾರುಕಟ್ಟೆ ಮೂಲ ಲಭ್ಯವಿಲ್ಲ",rain:"ಮಳೆ",et0:"ET₀",fc:"ಮಾದರಿ · ಗರಿಷ್ಠ/ಕನಿಷ್ಠ · ಮಳೆ · ET₀"},
+    ml:{wp:"തത്സമയ കാലാവസ്ഥയ്ക്ക് ഫാം പട്ടണം തിരഞ്ഞെടുക്കുക",wl:"തത്സമയ പ്രവചനം ലോഡ് ചെയ്യുന്നു…",wr:"തത്സമയ പ്രവചനം ലഭ്യമാണ്",we:"കാലാവസ്ഥാ ഉറവിടം ലഭ്യമല്ല",sn:"ESP32 റീഡിംഗ് ആവശ്യമാണ്",sy:"ESP32 കണക്റ്റ് ചെയ്തു",mk:"ദൈനംദിന വിലകൾക്ക് data.gov.in API കീ ആവശ്യമാണ്",ml:"ഔദ്യോഗിക ദൈനംദിന വിലകൾ ലോഡ് ചെയ്യുന്നു…",my:"ഔദ്യോഗിക ദൈനംദിന വിലകൾ ലോഡ് ചെയ്തു",me:"പൊരുത്തപ്പെടുന്ന ഔദ്യോഗിക വിലകളില്ല",mx:"വിപണി ഉറവിടം ലഭ്യമല്ല",rain:"മഴ",et0:"ET₀",fc:"മോഡൽ · ഉയർന്ന/താഴ്ന്ന · മഴ · ET₀"},
+    bn:{wp:"লাইভ আবহাওয়ার জন্য খামারের শহর বেছে নিন",wl:"লাইভ পূর্বাভাস লোড হচ্ছে…",wr:"লাইভ পূর্বাভাস পাওয়া যাচ্ছে",we:"আবহাওয়ার উৎস পাওয়া যাচ্ছে না",sn:"ESP32 রিডিং দরকার",sy:"ESP32 সংযুক্ত",mk:"দৈনিক দামের জন্য data.gov.in API key দরকার",ml:"সরকারি দৈনিক দাম লোড হচ্ছে…",my:"সরকারি দৈনিক দাম লোড হয়েছে",me:"মেলে এমন সরকারি দাম নেই",mx:"বাজারের উৎস পাওয়া যাচ্ছে না",rain:"বৃষ্টি",et0:"ET₀",fc:"মডেল · সর্বোচ্চ/সর্বনিম্ন · বৃষ্টি · ET₀"},
+    mr:{wp:"थेट हवामानासाठी शेताचे गाव निवडा",wl:"थेट अंदाज लोड होत आहे…",wr:"थेट अंदाज उपलब्ध आहे",we:"हवामान स्रोत उपलब्ध नाही",sn:"ESP32 रीडिंग आवश्यक",sy:"ESP32 जोडले आहे",mk:"दैनिक किमतींसाठी data.gov.in API key आवश्यक",ml:"अधिकृत दैनिक किमती लोड होत आहेत…",my:"अधिकृत दैनिक किमती लोड झाल्या",me:"जुळणाऱ्या अधिकृत किमती नाहीत",mx:"बाजार स्रोत उपलब्ध नाही",rain:"पाऊस",et0:"ET₀",fc:"मॉडेल · कमाल/किमान · पाऊस · ET₀"},
+    gu:{wp:"લાઇવ હવામાન માટે ખેતરનું ગામ પસંદ કરો",wl:"લાઇવ આગાહી લોડ થઈ રહી છે…",wr:"લાઇવ આગાહી ઉપલબ્ધ છે",we:"હવામાન સ્રોત ઉપલબ્ધ નથી",sn:"ESP32 રીડિંગ જરૂરી છે",sy:"ESP32 જોડાયેલ છે",mk:"દૈનિક ભાવ માટે data.gov.in API key જરૂરી છે",ml:"સત્તાવાર દૈનિક ભાવ લોડ થઈ રહ્યા છે…",my:"સત્તાવાર દૈનિક ભાવ લોડ થયા",me:"મેળ ખાતા સત્તાવાર ભાવ નથી",mx:"બજાર સ્રોત ઉપલબ્ધ નથી",rain:"વરસાદ",et0:"ET₀",fc:"મોડેલ · વધુ/ઓછું · વરસાદ · ET₀"},
+    pa:{wp:"ਲਾਈਵ ਮੌਸਮ ਲਈ ਖੇਤ ਦਾ ਸ਼ਹਿਰ ਚੁਣੋ",wl:"ਲਾਈਵ ਪੇਸ਼ਗੋਈ ਲੋਡ ਹੋ ਰਹੀ ਹੈ…",wr:"ਲਾਈਵ ਪੇਸ਼ਗੋਈ ਉਪਲਬਧ ਹੈ",we:"ਮੌਸਮ ਸਰੋਤ ਉਪਲਬਧ ਨਹੀਂ",sn:"ESP32 ਰੀਡਿੰਗ ਦੀ ਲੋੜ",sy:"ESP32 ਜੁੜਿਆ ਹੈ",mk:"ਰੋਜ਼ਾਨਾ ਕੀਮਤਾਂ ਲਈ data.gov.in API key ਚਾਹੀਦੀ ਹੈ",ml:"ਅਧਿਕਾਰਤ ਰੋਜ਼ਾਨਾ ਕੀਮਤਾਂ ਲੋਡ ਹੋ ਰਹੀਆਂ ਹਨ…",my:"ਅਧਿਕਾਰਤ ਰੋਜ਼ਾਨਾ ਕੀਮਤਾਂ ਲੋਡ ਹੋ ਗਈਆਂ",me:"ਕੋਈ ਮਿਲਦੀਆਂ ਅਧਿਕਾਰਤ ਕੀਮਤਾਂ ਨਹੀਂ",mx:"ਮੰਡੀ ਸਰੋਤ ਉਪਲਬਧ ਨਹੀਂ",rain:"ਮੀਂਹ",et0:"ET₀",fc:"ਮਾਡਲ · ਵੱਧ/ਘੱਟ · ਮੀਂਹ · ET₀"},
+    or:{wp:"ଲାଇଭ୍ ପାଣିପାଗ ପାଇଁ ଚାଷ ଗାଁ ବାଛନ୍ତୁ",wl:"ଲାଇଭ୍ ପୂର୍ବାନୁମାନ ଲୋଡ୍ ହେଉଛି…",wr:"ଲାଇଭ୍ ପୂର୍ବାନୁମାନ ଉପଲବ୍ଧ",we:"ପାଣିପାଗ ଉତ୍ସ ଉପଲବ୍ଧ ନାହିଁ",sn:"ESP32 ରିଡିଂ ଆବଶ୍ୟକ",sy:"ESP32 ସଂଯୁକ୍ତ",mk:"ଦୈନିକ ଦର ପାଇଁ data.gov.in API key ଆବଶ୍ୟକ",ml:"ଅଧିକୃତ ଦୈନିକ ଦର ଲୋଡ୍ ହେଉଛି…",my:"ଅଧିକୃତ ଦୈନିକ ଦର ଲୋଡ୍ ହେଲା",me:"ମେଳ ଖାଉଥିବା ଅଧିକୃତ ଦର ନାହିଁ",mx:"ବଜାର ଉତ୍ସ ଉପଲବ୍ଧ ନାହିଁ",rain:"ବର୍ଷା",et0:"ET₀",fc:"ମଡେଲ୍ · ସର୍ବାଧିକ/ସର୍ବନିମ୍ନ · ବର୍ଷା · ET₀"}
+  };
+  var farmwiseSourceState={weather:"pending",place:"",sensor:!!window.farmwiseSensorOnline,market:"key",marketCount:0};
+  var renderSourceLabels=function(){
+    var text=FARMWISE_SOURCE_I18N[currentLang]||FARMWISE_SOURCE_I18N.en;
+    var weather=$("weatherSourceStatus"),sensor=$("sensorSourceStatus"),market=$("marketSourceStatus"),caption=$("wxForecastCaption");
+    if(weather)weather.textContent=farmwiseSourceState.weather==="loading"?text.wl:farmwiseSourceState.weather==="ready"?text.wr+(farmwiseSourceState.place?" · "+farmwiseSourceState.place:""):farmwiseSourceState.weather==="error"?text.we:text.wp;
+    if(sensor)sensor.textContent=window.farmwiseSensorOnline?text.sy:text.sn;
+    if(market)market.textContent=farmwiseSourceState.market==="loading"?text.ml:farmwiseSourceState.market==="ready"?text.my+(farmwiseSourceState.marketCount?" · "+farmwiseSourceState.marketCount:""):farmwiseSourceState.market==="empty"?text.me:farmwiseSourceState.market==="error"?text.mx:text.mk;
+    if(caption)caption.textContent=text.fc;
+  };
+  var setFarmwiseSourceState=function(type,state,value){
+    farmwiseSourceState[type]=state;
+    if(type==="weather")farmwiseSourceState.place=value||"";
+    if(type==="market")farmwiseSourceState.marketCount=Number(value)||0;
+    renderSourceLabels();
+  };
+  window.farmwiseRefreshSourceLabels=renderSourceLabels;
 
   var translateNode = function(node){
     if(!node || !node.getAttribute)return;
@@ -2437,6 +2468,8 @@ renderPests(PESTS);
     });
     var name = $("langBtnLabel");
     if(name)name.textContent = dictionary.name;
+    renderSourceLabels();
+    if(typeof renderWeatherForecast==="function" && window.wxData)renderWeatherForecast(window.wxData.forecast||[]);
     var themeWord = $("themeBtn") && $("themeBtn").querySelector('[data-i18n="dark"]');
     if(themeWord && dictionary.dark)themeWord.textContent = dictionary.dark;
   };
@@ -2453,9 +2486,10 @@ renderPests(PESTS);
     if(!wrap || !grid)return;
     if(!Array.isArray(rows) || !rows.length){grid.innerHTML="";wrap.style.display="none";return;}
     var display=function(value,digits,suffix){return value==null?"—":Number(value).toFixed(digits)+suffix;};
+    var words=FARMWISE_SOURCE_I18N[currentLang]||FARMWISE_SOURCE_I18N.en;
     grid.innerHTML=rows.map(function(item){
       var weekday=new Date(String(item.date||"")+"T12:00:00").toLocaleDateString(undefined,{weekday:"short"});
-      return '<div class="wx-day"><b>'+escapeHtml(weekday)+'</b><strong>'+display(item.maxC,0,'°')+' / '+display(item.minC,0,'°')+'</strong><small>Rain '+display(item.precipitationMm,1,' mm')+'<br>ET₀ '+display(item.et0Mm,1,' mm')+'</small></div>';
+      return '<div class="wx-day"><b>'+escapeHtml(weekday)+'</b><strong>'+display(item.maxC,0,'°')+' / '+display(item.minC,0,'°')+'</strong><small>'+escapeHtml(words.rain)+' '+display(item.precipitationMm,1,' mm')+'<br>'+escapeHtml(words.et0)+' '+display(item.et0Mm,1,' mm')+'</small></div>';
     }).join("");
     wrap.style.display="block";
   };
@@ -2473,7 +2507,7 @@ renderPests(PESTS);
       params.set("location", town);
     } else {
       window.wxData = null;
-      var weatherSourceStatus=$("weatherSourceStatus");if(weatherSourceStatus)weatherSourceStatus.textContent="Choose a farm town to load live weather";
+      setFarmwiseSourceState("weather","pending");
       $("wxTemp").textContent = "-- °C";
       $("wxHum").textContent = "--%"; $("wxWind").textContent = "--";
       $("wxFeels").textContent = "--°C"; $("wxUV").textContent = "--";
@@ -2490,7 +2524,7 @@ renderPests(PESTS);
       if(typeof renderAdvisory==="function")renderAdvisory(generateAdvisory(window.soilData));
       return;
     }
-    var weatherSourceStatus=$("weatherSourceStatus");if(weatherSourceStatus)weatherSourceStatus.textContent="Loading live forecast…";
+    setFarmwiseSourceState("weather","loading");
     $("wxCity").textContent = "Loading weather model data…";
     $("wxMeta").textContent = "Requesting current conditions and a five-day forecast.";
     $("modelSoilMoisture").textContent = "—";
@@ -2500,7 +2534,7 @@ renderPests(PESTS);
       var response = await fetch("/api/weather/current?" + params.toString(), {headers:{"Accept":"application/json"}});
       var data = await response.json();
       if(!response.ok || !data.available)throw new Error(data.message || "Weather data is unavailable.");
-      if(weatherSourceStatus)weatherSourceStatus.textContent="Live forecast loaded for "+data.location.label;
+      setFarmwiseSourceState("weather","ready",data.location.label);
       var c = data.current, day = (data.forecast || [])[0] || {};
       var temp = c.temperatureC, humidity = c.humidityPct, wind = c.windKmh;
       var modelMoisture = c.soilMoisturePct, modelSoilTemp = c.soilTemperatureC;
@@ -2532,7 +2566,7 @@ renderPests(PESTS);
       if(typeof renderAdvisory === "function")renderAdvisory(generateAdvisory(window.soilData));
     }catch(error){
       window.wxData = null;
-      if(weatherSourceStatus)weatherSourceStatus.textContent="Weather source unavailable";
+      setFarmwiseSourceState("weather","error");
       $("wxTemp").textContent = "-- °C";
       $("modelSoilMoisture").textContent = "—";
       $("modelSoilTemp").textContent = "—";
@@ -2700,7 +2734,7 @@ renderPests(PESTS);
     var button=$("mktRefreshBtn");
     if(button)button.disabled=true;
     statusText("marketStatus","Requesting official AGMARKNET daily records…");
-    var marketSourceStatus=$("marketSourceStatus");if(marketSourceStatus)marketSourceStatus.textContent="Connecting to official daily market data…";
+    setFarmwiseSourceState("market","loading");
     $("mktTime").textContent="Connecting to official daily data";
     var query=new URLSearchParams();
     if($("mktState").value)query.set("state",$("mktState").value);
@@ -2714,13 +2748,13 @@ renderPests(PESTS);
       window.marketRecords=marketRows;
       window.mktSimulated=marketRows;
       window.renderMarket();
-      if(marketSourceStatus)marketSourceStatus.textContent=marketRows.length?"Official daily prices loaded · "+marketRows.length+" records":"No matching official price records";
+      setFarmwiseSourceState("market",marketRows.length?"ready":"empty",marketRows.length);
       statusText("marketStatus",data.sourceNote+" "+marketRows.length+" record(s) returned. Retrieved "+localTime(data.fetchedAt)+".");
       $("mktTime").textContent=data.source+" · "+localTime(data.fetchedAt);
     }catch(error){
       marketRows=[];window.marketRecords=marketRows;window.mktSimulated=[];
       window.renderMarket();
-      if(marketSourceStatus)marketSourceStatus.textContent=/api key|setup|required/i.test(error.message)?"Needs your official data.gov.in API key":"Official market source unavailable";
+      setFarmwiseSourceState("market",/api key|setup|required/i.test(error.message)?"key":"error");
       statusText("marketStatus",error.message,true);
       $("mktTime").textContent="No official records loaded";
     }finally{if(button)button.disabled=false;}
