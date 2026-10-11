@@ -69,7 +69,11 @@ Include a variable number of plausible differential candidates (1 to 10 dependin
     }
     return res.json({available:true,result});
   } catch (e) {
-    console.error("FarmWise photo analysis failed", String(e).slice(0,180));
+    const errText = String(e);
+    console.error("FarmWise photo analysis failed", errText.slice(0,180));
+    if (/412|no google key configured|setup_required/i.test(errText)) {
+      return res.status(412).json({available:false,error:"ai_setup_required",message:"Photo analysis needs a Google AI provider key. Add it in Hatchable Setup; no diagnosis was produced."});
+    }
     return res.status(502).json({available:false,error:"photo_analysis_failed",message:"The photo could not be analyzed. Try a clearer close-up or retry later. No diagnosis was produced."});
   }
 }
