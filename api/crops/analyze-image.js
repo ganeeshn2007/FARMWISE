@@ -58,15 +58,17 @@ Include a variable number of plausible differential candidates (1 to 10 dependin
     result.fetchedAt = new Date().toISOString();
     result.source = "Google Gemini vision screening; not a validated crop-specific classifier";
     result.confidenceNote = "Relative scores are model estimates, not calibrated probabilities or validated accuracy.";
-    // Attach treatment/reference information only where an explicitly verified database record matches.
+    // Attach matching PostgreSQL treatment records, preserving the real review status.
+    // Needs-review entries may be displayed as provisional references, never as verified advice.
     for (const c of result.candidates) {
-      c.verifiedReferences = [];
+      c.databaseReferences = [];
       try {
         const q = await db.query(
-          "SELECT crop_name,disease_name,treatment_guidance,source_name,source_url,source_published_at,verified_status FROM disease_references WHERE verified_status IN ('verified','needs_review') AND lower(disease_name) LIKE '%' || lower($1) || '%' AND ($2 = 'Unknown' OR lower(crop_name) LIKE '%' || lower($2) || '%') LIMIT 3",
+          "SELECT crop_name,disease_name,treatment_guidance,source_name,source_url,source_published_at,verified_status FROM disease_references WHERE verified_status IN ('verified','reviewed','needs_review') AND lower(disease_name) LIKE '%' || lower($1) || '%' AND ($2 = 'Unknown' OR lower(crop_name) LIKE '%' || lower($2) || '%') ORDER BY CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, disease_name LIMIT 3",
           [c.name.slice(0,80), result.crop]
         );
-        c.verifiedReferences = q.rows;
+        c.databaseReferences = q.rows;
+        c.verifiedReferences = q.rows; // backwards compatibility for older front-end drafts
       } catch (_) {}
     }
     return res.json({available:true,result});
