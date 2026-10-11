@@ -99,8 +99,8 @@ body{
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 14px 44px var(--shadow);padding:20px;transition:box-shadow .25s,transform .25s;backdrop-filter:blur(10px);}
 .card:hover{box-shadow:0 22px 60px var(--shadow-lg);transform:translateY(-2px);}
 .s3{grid-column:span 6;}.s4{grid-column:span 4;}.s6{grid-column:span 6;}.s12{grid-column:span 12;}
-.workspace-card{display:flex;flex-direction:column;gap:12px;}
-.workspace-source-list{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:grid;gap:10px;}
+.workspace-card{display:flex;flex-direction:column;gap:12px;align-self:start;height:fit-content;}
+.workspace-source-list{padding-top:14px;border-top:1px solid var(--border);display:grid;gap:10px;}
 .workspace-source-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;font-size:.77rem;color:var(--text);}
 .workspace-source-row strong{max-width:65%;color:var(--muted);font-size:.69rem;font-weight:600;text-align:right;}
 
@@ -387,9 +387,9 @@ body{
   <p id="profileSyncNote" class="note">Your farm profile stays in this browser until you sign in and save it to your account.</p>
   <div class="workspace-source-list">
     <div class="ct">Live data connections</div>
-    <div class="workspace-source-row"><span>🌦 Weather</span><strong>Forecast loads after you set a farm town</strong></div>
-    <div class="workspace-source-row"><span>📡 Soil nutrients</span><strong>Needs your ESP32 sensor</strong></div>
-    <div class="workspace-source-row"><span>💹 Mandi prices</span><strong>Needs an official data.gov.in key</strong></div>
+    <div class="workspace-source-row"><span>🌦 Weather</span><strong id="weatherSourceStatus">Choose a farm town to load the forecast</strong></div>
+    <div class="workspace-source-row"><span>📡 Soil nutrients</span><strong id="sensorSourceStatus">Connect an ESP32 or enter measured N-P-K values</strong></div>
+    <div class="workspace-source-row"><span>💹 Mandi prices</span><strong id="marketSourceStatus">Needs an official data.gov.in key</strong></div>
   </div>
 </div>
 
@@ -740,7 +740,7 @@ body{
 ═══════════════════════════════════════════════════════════════ */
 var theme='light', mediaStream=null, soilData=null, readingHistory=[], wxData=null, trendChart=null;
 function q(id){return document.getElementById(id);}
-function rand(a,b){return Math.round(Math.random()*(b-a)+a);}
+// No random sensor values are generated.
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function setNote(el,msg,isErr){if(!el)return;el.textContent=msg;el.style.color=isErr?'var(--danger)':'var(--muted)';}
 
@@ -1168,20 +1168,18 @@ async function loadWeather(){
       toast('⚠️','Weather fetch failed: '+e.message);
     }
   },function(err){
-    var msg=err.code===1?'Location permission denied. Click Allow to get accurate weather.':'Location unavailable. Check GPS/browser settings.';
+    var msg=err.code===1?'Location permission denied. Enter a farm town instead.':'Location unavailable. Enter a farm town instead.';
+    wxData=null;
     q('wxCity').textContent='📍 Location Access Needed';
     q('wxLoc').textContent=msg;
-    q('wxMeta').textContent='Using average Central India defaults.';
+    q('wxMeta').textContent='Weather is not loaded. No default values are shown.';
     q('wxIcon').textContent='🌡️';
-    // Fallback to central India average
-    wxData={temp:28,hum:65,wind:10,code:2,feels:30,pressure:1010,rain:0,uvIndex:6,city:'Central India (Default)'};
-    q('wxHum').textContent='65%';q('wxWind').textContent='10 km/h';q('wxFeels').textContent='30°C';q('wxUV').textContent='6.0';
-    q('wxTemp').textContent='28 °C';q('wxIcon').textContent='⛅';
-    q('wxCropNote').textContent='👋 Allow location access for real-time weather at your farm location.';
-    toast('📍','Allow location access for live weather data.');
+    q('wxTemp').textContent='-- °C';q('wxHum').textContent='--%';q('wxWind').textContent='--';q('wxFeels').textContent='--°C';q('wxUV').textContent='--';
+    q('wxCropNote').textContent='Enter a farm town to request weather for that location.';
+    toast('📍','Enter a farm town to load live weather data.');
   },{enableHighAccuracy:true,timeout:16000,maximumAge:300000});
 }
-q('wxRefresh').addEventListener('click',function(){toast('🔄','Refreshing weather...');loadWeather();});
+q('wxRefresh').addEventListener('click',function(){toast('🔄','Refreshing weather...');if(typeof window.loadWeather==='function')window.loadWeather();});
 
 /* ═══════════════════════════════════════════════════════════════
    SOIL SENSOR
@@ -1218,14 +1216,7 @@ function updateSensorUI(d){
   renderAdvisory(generateAdvisory(d));
 }
 
-function simulateSensorData(){
-  var p=rand(0,3),N,P,K;
-  if(p===0){N=rand(100,160);P=rand(30,55);K=rand(150,270);}
-  else if(p===1){N=rand(28,75);P=rand(18,50);K=rand(90,220);}
-  else if(p===2){N=rand(80,140);P=rand(25,45);K=rand(255,375);}
-  else{N=rand(85,145);P=rand(28,48);K=rand(130,240);}
-  return{N:N,P:P,K:K,timestamp:new Date().toLocaleString(),location:q('farmPlot').value||'Field A-7',pH:(rand(58,78)/10),moisture:rand(35,75)};
-}
+// Mock sensor generation removed; use a connected sensor or measured manual values.
 
 function doScanModal(cb){
   var modal=q('scanModal'),prog=q('scanProgress'),msg=q('scanModalMsg');
@@ -1246,11 +1237,13 @@ var serialPort=null, serialReader=null, serialBuffer='', serialValues={}, serial
 var lastLiveTimestamp=0;
 
 function setSensorConnectionState(online,text){
-  var dot=q('sensorDot'); if(!dot)return;
-  dot.innerHTML=(online
+  var dot=q('sensorDot');
+  var detail=text||'USB sensor not connected';
+  if(dot)dot.innerHTML=(online
     ? '<span class="pulse" style="width:8px;height:8px;margin-right:0;"></span>&nbsp;'
-    : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:5px;"></span>')
-    +(text||'USB sensor not connected');
+    : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:5px;"></span>')+detail;
+  var sourceStatus=q('sensorSourceStatus');
+  if(sourceStatus)sourceStatus.textContent=online?'ESP32 connected · '+detail:detail;
 }
 
 function showSerialUnsupported(){
@@ -1350,8 +1343,8 @@ if('serial' in navigator){
 q('analyzeManualBtn').addEventListener('click',function(){
   var N=parseFloat(q('inN').value),P=parseFloat(q('inP').value),K=parseFloat(q('inK').value);
   if([N,P,K].some(isNaN)){toast('⚠️','Enter all three nutrient values.');return;}
-  var d={N:N,P:P,K:K,timestamp:new Date().toLocaleString(),location:q('farmPlot').value||'Manual Entry',pH:6.8,moisture:55};
-  updateSensorUI(d);addHistory(d);updateTrendChart();toast('🔬','Manual values analysed!');
+  var d={N:N,P:P,K:K,timestamp:new Date().toLocaleString(),location:q('farmPlot').value||'Manual Entry',pH:null,moisture:null,source:'User-entered N-P-K values'};
+  updateSensorUI(d);addHistory(d);updateTrendChart();toast('🔬','Manual N-P-K values analysed. pH and moisture were not measured.');
 });
 q('clearManualBtn').addEventListener('click',function(){['inN','inP','inK'].forEach(function(k){q(k).value='';});});
 
@@ -2480,6 +2473,7 @@ renderPests(PESTS);
       params.set("location", town);
     } else {
       window.wxData = null;
+      var weatherSourceStatus=$("weatherSourceStatus");if(weatherSourceStatus)weatherSourceStatus.textContent="Choose a farm town to load live weather";
       $("wxTemp").textContent = "-- °C";
       $("wxHum").textContent = "--%"; $("wxWind").textContent = "--";
       $("wxFeels").textContent = "--°C"; $("wxUV").textContent = "--";
@@ -2496,6 +2490,7 @@ renderPests(PESTS);
       if(typeof renderAdvisory==="function")renderAdvisory(generateAdvisory(window.soilData));
       return;
     }
+    var weatherSourceStatus=$("weatherSourceStatus");if(weatherSourceStatus)weatherSourceStatus.textContent="Loading live forecast…";
     $("wxCity").textContent = "Loading weather model data…";
     $("wxMeta").textContent = "Requesting current conditions and a five-day forecast.";
     $("modelSoilMoisture").textContent = "—";
@@ -2505,6 +2500,7 @@ renderPests(PESTS);
       var response = await fetch("/api/weather/current?" + params.toString(), {headers:{"Accept":"application/json"}});
       var data = await response.json();
       if(!response.ok || !data.available)throw new Error(data.message || "Weather data is unavailable.");
+      if(weatherSourceStatus)weatherSourceStatus.textContent="Live forecast loaded for "+data.location.label;
       var c = data.current, day = (data.forecast || [])[0] || {};
       var temp = c.temperatureC, humidity = c.humidityPct, wind = c.windKmh;
       var modelMoisture = c.soilMoisturePct, modelSoilTemp = c.soilTemperatureC;
@@ -2536,6 +2532,7 @@ renderPests(PESTS);
       if(typeof renderAdvisory === "function")renderAdvisory(generateAdvisory(window.soilData));
     }catch(error){
       window.wxData = null;
+      if(weatherSourceStatus)weatherSourceStatus.textContent="Weather source unavailable";
       $("wxTemp").textContent = "-- °C";
       $("modelSoilMoisture").textContent = "—";
       $("modelSoilTemp").textContent = "—";
@@ -2703,6 +2700,7 @@ renderPests(PESTS);
     var button=$("mktRefreshBtn");
     if(button)button.disabled=true;
     statusText("marketStatus","Requesting official AGMARKNET daily records…");
+    var marketSourceStatus=$("marketSourceStatus");if(marketSourceStatus)marketSourceStatus.textContent="Connecting to official daily market data…";
     $("mktTime").textContent="Connecting to official daily data";
     var query=new URLSearchParams();
     if($("mktState").value)query.set("state",$("mktState").value);
@@ -2716,11 +2714,13 @@ renderPests(PESTS);
       window.marketRecords=marketRows;
       window.mktSimulated=marketRows;
       window.renderMarket();
+      if(marketSourceStatus)marketSourceStatus.textContent=marketRows.length?"Official daily prices loaded · "+marketRows.length+" records":"No matching official price records";
       statusText("marketStatus",data.sourceNote+" "+marketRows.length+" record(s) returned. Retrieved "+localTime(data.fetchedAt)+".");
       $("mktTime").textContent=data.source+" · "+localTime(data.fetchedAt);
     }catch(error){
       marketRows=[];window.marketRecords=marketRows;window.mktSimulated=[];
       window.renderMarket();
+      if(marketSourceStatus)marketSourceStatus.textContent=/api key|setup|required/i.test(error.message)?"Needs your official data.gov.in API key":"Official market source unavailable";
       statusText("marketStatus",error.message,true);
       $("mktTime").textContent="No official records loaded";
     }finally{if(button)button.disabled=false;}
@@ -2809,9 +2809,9 @@ renderPests(PESTS);
       if(syncNote)syncNote.textContent="Anonymous farm details stay in this browser and are not copied into accounts automatically.";
       return null;
     }
-    if(status)status.textContent="Signed in as "+(user.email||"FarmWise user");
+    if(status)status.textContent="FarmWise account connected.";
     if(link)link.style.display="none";if(out)out.style.display="block";
-    if(syncNote)syncNote.textContent="Press Save Profile to sync these account-specific farm details. This browser keeps a local copy too.";
+    if(syncNote)syncNote.textContent="Press Save Profile to sync these farm details to your account. This browser keeps a local copy too.";
     if(typeof updateTrendChart==="function")updateTrendChart();
     try{
       var response=await fetch("/api/farm/profile");
@@ -2821,7 +2821,7 @@ renderPests(PESTS);
           var profile=data.profile;
           ["farmName","farmerName","farmVillage","farmPlot","farmArea","farmSoilType","farmSeason","farmIrrigation"].forEach(function(key){if($(key)&&profile[key]!==undefined)$(key).value=profile[key];});
           localStorage.setItem(farmProfileStorageKey(),JSON.stringify(profile));
-          if(status)status.textContent="Signed in as "+(user.email||"FarmWise user")+" · account profile loaded";
+          if(status)status.textContent="Saved farm profile loaded.";
         }
       }
     }catch(_){if(status)status.textContent="Signed in, but the saved account profile could not be loaded.";}
