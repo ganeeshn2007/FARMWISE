@@ -1,22 +1,2698 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102c20"><title>FarmWise — Smart Agriculture</title><link rel="stylesheet" href="/styles.css"></head>
-<body><div class="app-shell">
-<aside class="sidebar" id="sidebar"><a class="brand" href="#"><span class="brand-mark">F<span>W</span></span><span><b>FarmWise</b><small>SMART AGRICULTURE</small></span></a>
-<div class="farm-switch"><span class="farm-icon">⌂</span><span><b>FarmWise Farm</b><small>Field workspace</small></span><span class="chevron">⌄</span></div>
-<div class="nav-label">WORKSPACE</div><nav class="nav"><button class="nav-item active" data-view="overview"><span>◫</span> Overview</button><button class="nav-item" data-view="soil"><span>♧</span> Soil intelligence</button><button class="nav-item" data-view="disease"><span>✳</span> Crop health</button><button class="nav-item" data-view="recommendations"><span>⌁</span> Crop recommendations</button><button class="nav-item" data-view="weather"><span>☼</span> Weather</button><button class="nav-item" data-view="market"><span>↗</span> Market insights</button><button class="nav-item" data-view="assistant"><span>◉</span> AI farm assistant</button></nav>
-<div class="nav-label">SYSTEM</div><nav class="nav"><button class="nav-item" data-view="devices"><span>⌘</span> Device connection</button><button class="nav-item" data-view="settings"><span>⚙</span> Settings</button></nav>
-<div class="sidebar-bottom"><div class="help-icon">?</div><div><b>Need a hand?</b><small>Setup & integration guide</small></div><button id="helpBtn" class="icon-btn" aria-label="Open help">↗</button></div><div class="sidebar-foot">FarmWise <span>v1.0 · Prototype</span></div></aside>
-<main class="main"><header class="topbar"><button class="mobile-menu icon-btn" id="menuBtn">☰</button><div class="crumb">Workspace <span>/</span> <b id="crumbName">Overview</b></div><div class="top-actions"><label class="language-control" title="Choose language"><span>文</span><select id="languageSelect" aria-label="Choose language"><option value="en">English</option><option value="te">తెలుగు</option><option value="kn">ಕನ್ನಡ</option><option value="hi">हिन्दी</option><option value="ta">தமிழ்</option></select></label><span class="demo-pill"><i></i> DEMO MODE</span><button class="icon-btn" id="refreshBtn" title="Refresh dashboard">↻</button><div class="avatar">FW</div></div></header>
-<div class="content"><section class="welcome-row"><div><div class="eyebrow"><span class="live-dot"></span> YOUR FARM, CONNECTED</div><h1 id="pageTitle">Good afternoon, farmer<span class="leaf">.</span></h1><p id="pageSub">Here’s what’s happening across your farm today.</p></div><div class="date-chip"><span>▦</span><span id="todayDate">Today</span></div></section>
-<div id="connectionBanner" class="connection-banner"><span class="banner-icon">⌁</span><div><b>Your sensor is not connected yet</b><p>You're viewing sample data. Connect your ESP32 bridge to start seeing real soil readings.</p></div><button class="btn btn-dark" data-goto="devices">Connect device <span>→</span></button></div>
-<section class="stats-grid" id="overviewStats">
-<article class="stat-card"><div class="stat-top"><span class="stat-label">Nitrogen <span class="nutrient-tag">N</span></span><span class="stat-icon green">♧</span></div><div class="stat-value" id="valN">-- <small>mg/kg</small></div><div class="stat-foot"><span class="status-neutral" id="statusN">Awaiting sensor</span><span class="stat-note">Soil nutrient</span></div></article>
-<article class="stat-card"><div class="stat-top"><span class="stat-label">Phosphorus <span class="nutrient-tag">P</span></span><span class="stat-icon amber">✳</span></div><div class="stat-value" id="valP">-- <small>mg/kg</small></div><div class="stat-foot"><span class="status-neutral" id="statusP">Awaiting sensor</span><span class="stat-note">Root development</span></div></article>
-<article class="stat-card"><div class="stat-top"><span class="stat-label">Potassium <span class="nutrient-tag">K</span></span><span class="stat-icon blue">❋</span></div><div class="stat-value" id="valK">-- <small>mg/kg</small></div><div class="stat-foot"><span class="status-neutral" id="statusK">Awaiting sensor</span><span class="stat-note">Plant resilience</span></div></article>
-<article class="stat-card weather-stat"><div class="stat-top"><span class="stat-label">Local weather</span><span class="stat-icon sky">☼</span></div><div class="stat-value" id="valTemp">-- <small>°C</small></div><div class="stat-foot"><span class="status-neutral" id="weatherStatus">Connect weather API</span><span class="stat-note">Live API not configured</span></div></article></section>
-<section class="dashboard-grid"><article class="panel chart-panel"><div class="panel-head"><div><h2>Soil nutrient trends</h2><p>Track readings as your sensor reports them</p></div><span class="select-chip">Last 7 readings⌄</span></div><div class="chart-legend"><span><i class="legend-n"></i> Nitrogen</span><span><i class="legend-p"></i> Phosphorus</span><span><i class="legend-k"></i> Potassium</span></div><div class="chart-wrap"><div class="y-labels"><span>High</span><span>Mid</span><span>Low</span></div><div class="chart" id="trendChart"><div class="chart-empty"><span>⌁</span><b>No sensor history yet</b><small>Trend lines appear after real readings arrive.</small></div></div></div><div class="chart-footer"><span><i class="dot-grey"></i> Waiting for first device reading</span><button class="text-btn" data-goto="soil">View soil data →</button></div></article>
-<article class="panel device-panel"><div class="panel-head"><div><h2>Device status</h2><p>Hardware connection overview</p></div><span class="status-badge offline" id="deviceBadge">● Offline</span></div><div class="device-illustration"><div class="device-ring"><span>⌁</span></div><div><b id="deviceName">ESP32 soil gateway</b><small id="deviceDescription">Not connected</small></div></div><div class="device-list"><div><span>Connection type</span><b>USB Serial / Wi-Fi</b></div><div><span>Sensor protocol</span><b>RS485 · Modbus RTU</b></div><div><span>Data endpoint</span><code>/api/sensor/latest</code></div><div><span>Last reading</span><b id="lastReading">No data received</b></div></div><button class="btn btn-outline full" data-goto="devices">Set up connection <span>→</span></button></article></section>
-<section class="bottom-grid"><article class="panel quick-panel"><div class="panel-head"><div><h2>Farm intelligence</h2><p>Tools to support your next decision</p></div><span class="mini-badge">4 MODULES</span></div><div class="quick-grid"><button class="quick-card" data-goto="disease"><span class="quick-icon qi-green">✳</span><b>Crop health scan</b><small>Upload a leaf image</small><span class="quick-arrow">↗</span></button><button class="quick-card" data-goto="recommendations"><span class="quick-icon qi-amber">♧</span><b>Crop recommendations</b><small>Explore suitable crops</small><span class="quick-arrow">↗</span></button><button class="quick-card" data-goto="market"><span class="quick-icon qi-blue">↗</span><b>Market insights</b><small>Price data integration</small><span class="quick-arrow">↗</span></button><button class="quick-card" data-goto="assistant"><span class="quick-icon qi-purple">◉</span><b>Farm assistant</b><small>Ask an agriculture question</small><span class="quick-arrow">↗</span></button></div></article>
-<article class="panel activity-panel"><div class="panel-head"><div><h2>Recent activity</h2><p>Updates from your workspace</p></div><span class="mini-badge">SYSTEM</span></div><div class="activity-list"><div class="activity-item"><span class="activity-icon">✓</span><div><b>Dashboard initialized</b><small>Workspace is ready to configure</small></div><time>Now</time></div><div class="activity-item"><span class="activity-icon gold">⌘</span><div><b>Sensor integration pending</b><small>Connect your ESP32 gateway</small></div><time>Setup</time></div><div class="activity-item"><span class="activity-icon blue-bg">☼</span><div><b>External data sources</b><small>Weather and market APIs not configured</small></div><time>Setup</time></div></div><button class="text-btn" data-goto="devices">Open integration guide →</button></article></section>
-<div id="dynamicView" class="dynamic-view hidden"></div><footer class="footer"><span>© 2026 FarmWise · AI + IoT SMART AGRICULTURE</span><span><i class="live-dot"></i> Prototype environment <span class="footer-sep">·</span> Data marked demo until connected</span></footer>
-</div></main></div><button id="voiceFab" class="voice-fab" aria-label="Open voice assistant" title="Voice assistant">🎙</button><div id="toast" class="toast" role="status"></div><script src="/app.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#1f7a3f"/>
+  <meta name="description" content="FarmWise is a farm planning workspace for weather model data, soil readings, crop planning, irrigation estimates, and official mandi reports."/>
+  <title>FARMWISE – Smart Farm Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- A validated crop-disease model is not connected; no image classifier is loaded. -->
+  <style>
+/* ═══ TOKENS ═══ */
+:root{
+  --bg:#f0f7f1;--panel:rgba(255,255,255,.93);--panel-strong:#fff;
+  --text:#0a1f10;--muted:#4a6855;--border:rgba(16,56,28,.12);
+  --primary:#1a7a38;--primary-dk:#0f5228;--primary-soft:rgba(26,122,56,.09);
+  --accent:#52b862;
+  --n-color:#16a34a;--p-color:#d97706;--k-color:#7c3aed;--s-color:#ca8a04;
+  --danger:#dc2626;--warn:#f59e0b;--info:#2563eb;
+  --shadow:rgba(10,40,18,.10);--shadow-lg:rgba(10,40,18,.17);
+  --grad:linear-gradient(135deg,#1a7a38,#52b862);
+  --grad-gold:linear-gradient(135deg,#d97706,#fbbf24);
+  --grad-blue:linear-gradient(135deg,#1d4ed8,#3b82f6);
+  --r:20px;--rs:12px;--rp:999px;
+}
+:root[data-theme="dark"]{
+  --bg:#040a05;--panel:rgba(8,16,10,.93);--panel-strong:#09110a;
+  --text:#e4f2e6;--muted:#7bb886;--border:rgba(82,184,98,.20);
+  --primary:#52b862;--primary-dk:#84da8e;--primary-soft:rgba(82,184,98,.12);
+  --accent:#1a7a38;
+  --n-color:#4ade80;--p-color:#fb923c;--k-color:#a78bfa;--s-color:#facc15;
+  --danger:#f87171;--warn:#fbbf24;--info:#60a5fa;
+  --shadow:rgba(0,0,0,.42);--shadow-lg:rgba(0,0,0,.6);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  min-height:100vh;font-family:'Inter',system-ui,sans-serif;
+  background:
+    radial-gradient(ellipse at 8% 0%,rgba(26,122,56,.17),transparent 44%),
+    radial-gradient(ellipse at 92% 4%,rgba(82,184,98,.11),transparent 38%),
+    radial-gradient(ellipse at 50% 100%,rgba(26,122,56,.07),transparent 48%),
+    linear-gradient(165deg,var(--bg),color-mix(in srgb,var(--bg) 80%,#c2e8c9 20%));
+  color:var(--text);transition:background .4s,color .4s;
+}
+.shell{max-width:1400px;margin:0 auto;padding:18px 22px 60px;}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:sticky;top:12px;z-index:200;
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:13px 20px;border:1px solid var(--border);border-radius:22px;
+  background:var(--panel);backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:0 18px 52px var(--shadow-lg),0 0 0 1px rgba(255,255,255,.06) inset;
+}
+.brand{display:flex;align-items:center;gap:13px;}
+.logo{width:46px;height:46px;border-radius:15px;flex-shrink:0;display:grid;place-items:center;font-size:21px;background:var(--grad);box-shadow:0 8px 24px rgba(26,122,56,.42);}
+.brand-title{font-size:clamp(1.2rem,2.4vw,1.9rem);font-weight:900;letter-spacing:-.025em;line-height:1.05;}
+.brand-title em{font-style:normal;color:var(--primary);}
+.brand-sub{margin-top:3px;font-size:.76rem;color:var(--muted);font-weight:500;}
+.nav-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;}
+.live-badge{display:flex;align-items:center;gap:5px;font:600 .75rem Inter,sans-serif;color:var(--muted);}
+.pulse{width:9px;height:9px;border-radius:50%;background:#22c55e;animation:pulseA 2s infinite;}
+@keyframes pulseA{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5);}50%{box-shadow:0 0 0 7px rgba(34,197,94,0);}}
+
+/* ── AI STATUS BADGE ── */
+.ai-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 16px;border-radius:var(--rp);
+  background:var(--grad);color:#fff;
+  font:700 .78rem Inter,sans-serif;
+  box-shadow:0 6px 18px rgba(26,122,56,.3);
+}
+.ai-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulseA 1.5s infinite;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:var(--rp);padding:10px 17px;font:700 .83rem Inter,sans-serif;cursor:pointer;transition:transform .17s,filter .17s,box-shadow .17s;white-space:nowrap;}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.07);}
+.btn:active{transform:translateY(0);}
+.btn-primary{color:#fff;background:var(--grad);box-shadow:0 9px 26px rgba(26,122,56,.33);}
+.btn-ghost{color:var(--text);background:var(--panel-strong);border:1px solid var(--border);box-shadow:0 5px 16px var(--shadow);}
+.btn-danger{color:#fff;background:linear-gradient(135deg,#b91c1c,#ef4444);box-shadow:0 7px 20px rgba(185,28,28,.33);}
+.btn-blue{color:#fff;background:var(--grad-blue);box-shadow:0 7px 20px rgba(29,78,216,.32);}
+.btn-gold{color:#fff;background:var(--grad-gold);box-shadow:0 7px 20px rgba(217,119,6,.32);}
+.btn-sm{padding:8px 13px;font-size:.76rem;}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none;}
+
+/* ── NAV ── */
+.section-nav{margin-top:11px;padding:7px 9px;display:flex;flex-wrap:wrap;gap:7px;border:1px solid var(--border);border-radius:17px;background:var(--panel);backdrop-filter:blur(16px);box-shadow:0 8px 28px var(--shadow);}
+.snl{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--rp);border:1px solid transparent;background:transparent;color:var(--muted);font:600 .79rem Inter,sans-serif;text-decoration:none;cursor:pointer;transition:all .2s;}
+.snl:hover{color:var(--primary);border-color:var(--border);background:var(--primary-soft);}
+.snl.active{color:var(--primary-dk);border-color:color-mix(in srgb,var(--primary) 45%,transparent);background:var(--primary-soft);font-weight:800;}
+
+/* ── GRID ── */
+.dashboard{margin-top:18px;display:grid;gap:16px;grid-template-columns:repeat(12,1fr);}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 14px 44px var(--shadow);padding:20px;transition:box-shadow .25s,transform .25s;backdrop-filter:blur(10px);}
+.card:hover{box-shadow:0 22px 60px var(--shadow-lg);transform:translateY(-2px);}
+.s3{grid-column:span 3;}.s4{grid-column:span 4;}.s6{grid-column:span 6;}.s12{grid-column:span 12;}
+
+/* ── CARD HEADER ── */
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:8px;}
+.ct{font-size:.65rem;font-weight:800;letter-spacing:.17em;text-transform:uppercase;color:var(--primary-dk);display:flex;align-items:center;gap:8px;}
+.ct .ico{width:29px;height:29px;border-radius:9px;display:grid;place-items:center;background:var(--primary-soft);font-size:13px;}
+
+/* ── FORM ── */
+.inp,.txa{width:100%;padding:11px 15px;border-radius:var(--rs);border:1px solid var(--border);background:var(--panel-strong);color:var(--text);font:500 .88rem Inter,sans-serif;transition:border-color .2s,box-shadow .2s;outline:none;}
+.inp:focus,.txa:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);}
+.txa{min-height:88px;resize:vertical;}
+.g2{display:grid;gap:11px;grid-template-columns:repeat(2,1fr);}
+.g3{display:grid;gap:11px;grid-template-columns:repeat(3,1fr);}
+.g4{display:grid;gap:11px;grid-template-columns:repeat(4,1fr);}
+.gap{display:grid;gap:11px;}
+.sp{height:11px;}.sp-lg{height:17px;}
+
+/* ── INFO BOX ── */
+.ib{background:var(--primary-soft);border:1px solid color-mix(in srgb,var(--primary) 22%,transparent);border-radius:15px;padding:15px;}
+.note{font-size:.81rem;color:var(--muted);line-height:1.55;}
+
+/* ── ROWS ── */
+.pl{display:grid;gap:9px;}
+.pr{display:flex;justify-content:space-between;align-items:center;gap:9px;padding:13px 15px;border-radius:13px;border:1px solid var(--border);background:var(--panel-strong);transition:background .2s;}
+.pr:hover{background:var(--primary-soft);}
+.pr b{display:block;font-size:.87rem;}.pr p{margin:2px 0 0;color:var(--muted);font-size:.8rem;}
+.tag{padding:4px 11px;border-radius:var(--rp);font:700 .72rem Inter,sans-serif;background:var(--primary-soft);color:var(--primary-dk);white-space:nowrap;}
+
+/* ── CHIPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{padding:7px 13px;border-radius:var(--rp);border:1px solid var(--border);background:var(--primary-soft);color:var(--text);font:600 .79rem Inter,sans-serif;}
+
+/* ── WEATHER ── */
+.weather-val{font:900 3rem Inter,sans-serif;line-height:1;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+/* ── SENSOR ── */
+.sensor-4{display:grid;gap:13px;grid-template-columns:repeat(4,1fr);}
+.sensor-card{background:var(--panel-strong);border:1px solid var(--border);border-radius:17px;padding:18px 14px;text-align:center;transition:transform .22s,box-shadow .22s;position:relative;overflow:hidden;}
+.sensor-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+.sensor-card.N::before{background:linear-gradient(90deg,#16a34a,#4ade80);}
+.sensor-card.P::before{background:linear-gradient(90deg,#d97706,#fbbf24);}
+.sensor-card.K::before{background:linear-gradient(90deg,#7c3aed,#a78bfa);}
+.sensor-card.S::before{background:linear-gradient(90deg,#ca8a04,#fde047);}
+.sensor-card:hover{transform:translateY(-3px);box-shadow:0 14px 36px var(--shadow-lg);}
+.s-lbl{font:700 .69rem Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.s-val{font:900 2.3rem Inter,sans-serif;line-height:1.1;margin:5px 0 1px;}
+.s-unit{font:500 .75rem Inter,sans-serif;color:var(--muted);}
+.s-bar{margin-top:9px;height:5px;border-radius:99px;background:var(--border);overflow:hidden;}
+.s-fill{height:100%;border-radius:99px;transition:width 1.3s cubic-bezier(.4,0,.2,1);}
+.sensor-card.N .s-fill{background:linear-gradient(90deg,#16a34a,#4ade80);}
+.sensor-card.P .s-fill{background:linear-gradient(90deg,#d97706,#fbbf24);}
+.sensor-card.K .s-fill{background:linear-gradient(90deg,#7c3aed,#a78bfa);}
+.sensor-card.S .s-fill{background:linear-gradient(90deg,#ca8a04,#fde047);}
+.s-status{margin-top:7px;font:600 .72rem Inter,sans-serif;padding:3px 9px;border-radius:99px;display:inline-block;}
+.st-ok{background:rgba(22,163,74,.13);color:#15803d;}
+.st-lo{background:rgba(220,38,38,.13);color:#b91c1c;}
+.st-hi{background:rgba(245,158,11,.13);color:#b45309;}
+
+/* ── GAUGE ── */
+.gauge-wrap{display:flex;justify-content:center;padding:4px 0 8px;}
+.gauge-svg{overflow:visible;}
+.gauge-track{fill:none;stroke:var(--border);stroke-width:8;stroke-linecap:round;}
+.gauge-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1);}
+.gauge-txt{font:900 1.1rem Inter,sans-serif;text-anchor:middle;dominant-baseline:middle;fill:var(--text);}
+.gauge-sub{font:600 .55rem Inter,sans-serif;text-anchor:middle;fill:var(--muted);}
+
+/* ── HEALTH SCORE ── */
+.score-card{text-align:center;padding:22px 18px;background:var(--primary-soft);border:1px solid var(--border);border-radius:18px;}
+.score-num{font:900 4.2rem Inter,sans-serif;line-height:1;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.score-lbl{font:600 .82rem Inter,sans-serif;color:var(--muted);margin-top:3px;}
+.prog{height:8px;border-radius:99px;background:var(--border);overflow:hidden;margin-top:8px;}
+.prog-fill{height:100%;border-radius:99px;background:var(--grad);transition:width 1.1s ease;}
+
+/* ── HISTORY TABLE ── */
+.hist-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+.hist-table th{background:var(--primary-soft);color:var(--primary-dk);font-weight:700;padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);}
+.hist-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.hist-table tr:last-child td{border-bottom:none;}
+.hist-table tbody tr:hover{background:var(--primary-soft);}
+
+/* ── CROP CARDS ── */
+.crop-grid{display:grid;gap:11px;grid-template-columns:repeat(3,1fr);}
+.crop-card{border:2px solid var(--border);border-radius:15px;padding:15px;text-align:center;cursor:pointer;transition:all .23s;background:var(--panel-strong);position:relative;overflow:hidden;}
+.crop-card.best{border-color:var(--primary);background:var(--primary-soft);box-shadow:0 8px 28px var(--primary-soft);}
+.crop-card.best::after{content:'BEST MATCH';position:absolute;top:7px;right:7px;font:800 .58rem Inter,sans-serif;letter-spacing:.1em;background:var(--grad);color:#fff;padding:3px 8px;border-radius:99px;}
+.crop-card:hover{transform:translateY(-3px);box-shadow:0 12px 30px var(--shadow-lg);border-color:var(--primary);}
+.crop-em{font-size:2.6rem;margin-bottom:6px;}
+.crop-nm{font:800 .95rem Inter,sans-serif;}
+.crop-mt{font:600 .74rem Inter,sans-serif;color:var(--primary);margin-top:3px;}
+.crop-dt{font:400 .73rem Inter,sans-serif;color:var(--muted);margin-top:5px;line-height:1.4;}
+
+/* ── DROP ZONE ── */
+.drop-zone{min-height:150px;display:grid;place-items:center;border:2px dashed var(--border);border-radius:15px;background:var(--primary-soft);text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
+.drop-zone:hover{border-color:var(--primary);background:rgba(26,122,56,.07);}
+
+/* ── RESPONSE BOX ── */
+.resp-box{background:var(--primary-soft);border:1px solid var(--border);border-radius:15px;padding:15px;min-height:80px;font:400 .86rem Inter,sans-serif;line-height:1.65;color:var(--text);white-space:pre-wrap;}
+
+/* ── PEST GRID ── */
+.pest-grid{display:grid;gap:12px;grid-template-columns:repeat(4,1fr);}
+.pest-card{background:var(--panel-strong);border:1px solid var(--border);border-radius:15px;padding:15px;transition:transform .2s,box-shadow .2s;}
+.pest-card:hover{transform:translateY(-3px);box-shadow:0 12px 30px var(--shadow-lg);}
+.pest-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.pest-em{font-size:2rem;flex-shrink:0;}
+.pest-nm{font:700 .9rem Inter,sans-serif;}
+.pest-crop{font:500 .73rem Inter,sans-serif;color:var(--primary);}
+.pest-sev{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font:700 .7rem Inter,sans-serif;margin-bottom:7px;}
+.sev-hi{background:rgba(220,38,38,.12);color:#b91c1c;}
+.sev-md{background:rgba(245,158,11,.12);color:#b45309;}
+.sev-lo{background:rgba(22,163,74,.12);color:#15803d;}
+.pest-sym{font-size:.78rem;line-height:1.4;color:var(--muted);margin-bottom:6px;}
+.pest-fix{font-size:.78rem;line-height:1.4;color:var(--text);}
+
+/* ── IRRIGATION ── */
+.irr-card{background:var(--panel-strong);border:1px solid var(--border);border-radius:15px;padding:18px;text-align:center;}
+.irr-val{font:900 2.2rem Inter,sans-serif;line-height:1;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.irr-unit{font:600 .75rem Inter,sans-serif;color:var(--muted);margin-top:3px;}
+.irr-lbl{font:700 .78rem Inter,sans-serif;margin-top:6px;}
+
+/* ── MARKET ── */
+.chg-up{color:#15803d;font-weight:700;}.chg-dn{color:#b91c1c;font-weight:700;}.chg-eq{color:var(--muted);}
+.trend-bar{display:inline-flex;gap:2px;align-items:flex-end;height:18px;}
+.trend-bar span{width:5px;border-radius:2px;display:inline-block;}
+
+/* ── THINKING ANIMATION ── */
+.thinking{display:inline-flex;gap:5px;align-items:center;}
+.thinking span{width:7px;height:7px;border-radius:50%;background:var(--primary);animation:think .8s infinite;}
+.thinking span:nth-child(2){animation-delay:.15s;}
+.thinking span:nth-child(3){animation-delay:.3s;}
+@keyframes think{0%,80%,100%{transform:scale(.6);opacity:.4;}40%{transform:scale(1);opacity:1;}}
+
+/* ── TOAST ── */
+#toastContainer{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;}
+.toast{background:var(--panel-strong);border:1px solid var(--border);border-radius:14px;padding:13px 18px;box-shadow:0 12px 36px var(--shadow-lg);font:600 .83rem Inter,sans-serif;color:var(--text);display:flex;align-items:center;gap:9px;max-width:320px;animation:toastIn .3s ease,toastOut .3s ease 3.2s forwards;pointer-events:auto;}
+.toast-icon{font-size:18px;flex-shrink:0;}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes toastOut{from{opacity:1;}to{opacity:0;transform:translateY(16px);}}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:none;place-items:center;}
+.modal-overlay.open{display:grid;}
+.modal-box{background:var(--panel-strong);border:1px solid var(--border);border-radius:24px;padding:32px;max-width:380px;width:90%;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.3);}
+.scan-ring{width:100px;height:100px;border-radius:50%;border:5px solid var(--border);border-top-color:var(--primary);animation:sp 1s linear infinite;margin:0 auto 18px;}
+
+/* ── SPINNER ── */
+.spin{width:19px;height:19px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:sp .8s linear infinite;display:inline-block;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+/* ── FOOTER ── */
+.footer{margin-top:18px;padding:17px 21px;border-radius:19px;border:1px solid var(--border);background:var(--panel);backdrop-filter:blur(12px);box-shadow:0 10px 32px var(--shadow);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.field-lbl{font:700 .75rem Inter,sans-serif;color:var(--muted);margin-bottom:5px;display:block;letter-spacing:.04em;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+@media(max-width:1200px){.sensor-4{grid-template-columns:repeat(2,1fr);}.crop-grid{grid-template-columns:repeat(2,1fr);}.s3,.s4{grid-column:span 6;}.pest-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:900px){.s3,.s4,.s6{grid-column:span 12;}.g2,.g3,.g4{grid-template-columns:1fr;}.sensor-4{grid-template-columns:1fr 1fr;}}
+@media(max-width:600px){.shell{padding:10px 12px 40px;}.topbar{flex-direction:column;align-items:flex-start;}.crop-grid{grid-template-columns:1fr;}.sensor-4{grid-template-columns:1fr 1fr;}.pest-grid{grid-column:1fr;}}
+@media print{.topbar,.section-nav,.btn,.nav-actions{display:none!important;}.card{box-shadow:none!important;break-inside:avoid;}}
+
+/* ── LANGUAGE SWITCHER ── */
+.lang-dropdown{position:relative;display:inline-block;}
+.lang-menu{
+  display:none;position:absolute;top:calc(100% + 8px);right:0;z-index:300;
+  background:var(--panel-strong);border:1px solid var(--border);border-radius:16px;
+  box-shadow:0 22px 60px var(--shadow-lg);padding:8px;min-width:200px;
+  animation:langIn .2s ease;
+}
+@keyframes langIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+.lang-menu.open{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.lang-opt{
+  padding:9px 12px;border-radius:10px;border:1px solid transparent;
+  cursor:pointer;font:600 .82rem Inter,sans-serif;transition:all .18s;
+  display:flex;align-items:center;gap:7px;color:var(--text);
+  background:transparent;
+}
+.lang-opt:hover{background:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 30%,transparent);color:var(--primary-dk);}
+.lang-opt.active{background:var(--grad);color:#fff;border-color:transparent;}
+.lang-flag{font-size:15px;flex-shrink:0;}
+.lang-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:var(--rp);border:1px solid var(--border);
+  background:var(--panel-strong);color:var(--text);cursor:pointer;
+  font:700 .81rem Inter,sans-serif;transition:all .18s;
+  box-shadow:0 4px 14px var(--shadow);
+}
+.lang-btn:hover{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-dk);}
+.lang-globe{font-size:14px;}
+
+/* ── WEATHER EXTRA ── */
+.wx-detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px;}
+.wx-detail-chip{background:var(--panel-strong);border:1px solid var(--border);border-radius:12px;padding:10px 12px;text-align:center;}
+.wx-detail-val{font:800 1.1rem Inter,sans-serif;color:var(--primary-dk);}
+.wx-detail-lbl{font:500 .7rem Inter,sans-serif;color:var(--muted);margin-top:2px;}
+  </style>
+</head>
+<body>
+
+<div id="toastContainer"></div>
+<div class="modal-overlay" id="scanModal">
+  <div class="modal-box">
+    <div class="scan-ring"></div>
+    <h2 style="font:800 1.15rem Inter,sans-serif;margin-bottom:8px;">Reading Sensor...</h2>
+    <p class="note" id="scanModalMsg">Probing soil — measuring N, P, K &amp; S levels.</p>
+    <div class="sp"></div>
+    <div style="height:5px;border-radius:99px;background:var(--border);overflow:hidden;">
+      <div id="scanProgress" style="height:100%;border-radius:99px;background:var(--grad);width:0%;transition:width .1s linear;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+<!-- ══ TOPBAR ══ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">🌿</div>
+    <div>
+      <div class="brand-title">FARM<em>WISE</em></div>
+      <div class="brand-sub">Farm planning · Weather · Soil and market connections</div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <div class="ai-badge"><span class="ai-dot"></span><span>AI provider not connected</span></div>
+    <span class="live-badge"><span class="pulse"></span><span>Source status</span></span>
+    <button class="btn btn-ghost btn-sm" id="themeBtn">🌙 <span data-i18n="dark">Dark</span></button>
+    <!-- Language Switcher -->
+    <div class="lang-dropdown" id="langDropdown">
+      <button class="lang-btn" id="langBtn" onclick="toggleLangMenu()">🌐 <span id="langBtnLabel">भाषा / Language</span></button>
+      <div class="lang-menu" id="langMenu">
+        <div class="lang-opt active" data-lang="en" onclick="setLanguage('en',this)"><span class="lang-flag">🇬🇧</span> English</div>
+        <div class="lang-opt" data-lang="hi" onclick="setLanguage('hi',this)"><span class="lang-flag">🇮🇳</span> हिंदी</div>
+        <div class="lang-opt" data-lang="ta" onclick="setLanguage('ta',this)"><span class="lang-flag">🏴</span> தமிழ்</div>
+        <div class="lang-opt" data-lang="te" onclick="setLanguage('te',this)"><span class="lang-flag">🏴</span> తెలుగు</div>
+        <div class="lang-opt" data-lang="kn" onclick="setLanguage('kn',this)"><span class="lang-flag">🏴</span> ಕನ್ನಡ</div>
+        <div class="lang-opt" data-lang="ml" onclick="setLanguage('ml',this)"><span class="lang-flag">🏴</span> മലയാളം</div>
+        <div class="lang-opt" data-lang="bn" onclick="setLanguage('bn',this)"><span class="lang-flag">🏴</span> বাংলা</div>
+        <div class="lang-opt" data-lang="mr" onclick="setLanguage('mr',this)"><span class="lang-flag">🏴</span> मराठी</div>
+        <div class="lang-opt" data-lang="gu" onclick="setLanguage('gu',this)"><span class="lang-flag">🏴</span> ગુજરાતી</div>
+        <div class="lang-opt" data-lang="pa" onclick="setLanguage('pa',this)"><span class="lang-flag">🏴</span> ਪੰਜਾਬੀ</div>
+        <div class="lang-opt" data-lang="or" onclick="setLanguage('or',this)"><span class="lang-flag">🏴</span> ଓଡ଼ିଆ</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══ NAV ══ -->
+<nav class="section-nav" aria-label="Sections">
+  <a href="#auth"    class="snl active">🌿 Workspace</a>
+  <a href="#weather" class="snl">🌡 Weather</a>
+  <a href="#farm"    class="snl">🏡 Farm</a>
+  <a href="#soil"    class="snl">📡 Soil Sensor</a>
+  <a href="#history" class="snl">📋 History</a>
+  <a href="#chart"   class="snl">📈 Trends</a>
+  <a href="#rec"     class="snl">🌾 Crop Rec</a>
+  <a href="#scan"    class="snl">📷 Disease Scan</a>
+  <a href="#ai"      class="snl">🤖 Assistant</a>
+  <a href="#results" class="snl">📊 Results</a>
+  <a href="#advisory"class="snl">💡 Advisory</a>
+  <a href="#market"  class="snl">💹 Market</a>
+  <a href="#pests"   class="snl">🐛 Pests</a>
+  <a href="#irr"     class="snl">💧 Irrigation</a>
+</nav>
+
+<!-- ══ DASHBOARD ══ -->
+<section class="dashboard">
+
+<!-- WORKSPACE STATUS -->
+<div id="auth" class="card s3" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">🌿</div>FarmWise Workspace</div></div>
+  <p class="note" style="line-height:1.65;">Your farm profile is saved in this browser. Secure farmer accounts are not connected yet, so this page does not collect passwords or personal login details.</p>
+  <div class="sp"></div>
+  <button id="loginBtn" class="btn btn-primary" style="width:100%;">Save farm profile →</button>
+  <div id="loginStatus" class="note" style="margin-top:9px;" aria-live="polite"></div>
+</div>
+
+<!-- WEATHER -->
+<div id="weather" class="card s3" style="scroll-margin-top:130px;">
+  <div class="ch">
+    <div class="ct"><div class="ico">🌡</div><span data-i18n="live_weather">Live Weather</span></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;"><button id="wxLocationBtn" class="btn btn-ghost btn-sm" type="button">Use my location</button><button id="wxRefresh" class="btn btn-ghost btn-sm" title="Refresh weather" type="button">↺</button></div>
+  </div>
+  <div class="ib">
+    <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;">
+      <div class="weather-val" id="wxTemp">-- °C</div>
+      <div id="wxIcon" style="font-size:2.2rem;line-height:1;margin-bottom:4px;">⏳</div>
+    </div>
+    <p id="wxCity" style="margin-top:6px;font:800 1rem Inter,sans-serif;color:var(--primary-dk);">📍 Locating...</p>
+    <p id="wxLoc" class="note" style="margin-top:2px;font-size:.75rem;"></p>
+    <p id="wxMeta" class="note" style="margin-top:4px;"><span data-i18n="wx_awaiting">Awaiting weather data.</span></p>
+  </div>
+  <div class="sp"></div>
+  <div class="wx-detail-grid">
+    <div class="wx-detail-chip">
+      <div class="wx-detail-val" id="wxHum">--%</div>
+      <div class="wx-detail-lbl" data-i18n="humidity">💧 Humidity</div>
+    </div>
+    <div class="wx-detail-chip">
+      <div class="wx-detail-val" id="wxWind">--</div>
+      <div class="wx-detail-lbl" data-i18n="wind">💨 Wind km/h</div>
+    </div>
+    <div class="wx-detail-chip">
+      <div class="wx-detail-val" id="wxFeels">--°C</div>
+      <div class="wx-detail-lbl" data-i18n="feels_like">🌡 Feels Like</div>
+    </div>
+    <div class="wx-detail-chip">
+      <div class="wx-detail-val" id="wxUV">--</div>
+      <div class="wx-detail-lbl" data-i18n="uv_index">☀️ UV Index</div>
+    </div>
+  </div>
+  <div class="sp"></div>
+  <div class="ib" style="padding:10px 14px;">
+    <span class="note" id="wxCropNote" data-i18n="wx_crop_note">💡 Weather-aware scoring activates after sensor read.</span>
+  </div>
+</div>
+
+
+
+<!-- FARM PROFILE -->
+<div id="farm" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">🏡</div>Farm Profile &amp; Location</div>
+    <button id="saveFarmBtn" class="btn btn-primary btn-sm">💾 Save Profile</button>
+  </div>
+  <div class="g4">
+    <div><label class="field-lbl">Farm Name</label><input id="farmName" class="inp" placeholder="e.g. Green Valley Farm"/></div>
+    <div><label class="field-lbl">Farmer Name</label><input id="farmerName" class="inp" placeholder="e.g. Rajan Kumar"/></div>
+    <div><label class="field-lbl">Village / Town</label><input id="farmVillage" class="inp" placeholder="e.g. Palakkad, Kerala"/></div>
+    <div><label class="field-lbl">Field / Plot ID</label><input id="farmPlot" class="inp" placeholder="e.g. Plot A-7"/></div>
+    <div><label class="field-lbl">Soil Type</label>
+      <select id="farmSoilType" class="inp" style="appearance:none;cursor:pointer;">
+        <option>Loamy</option><option>Clay</option><option>Sandy</option><option>Silt</option><option>Black Cotton</option><option>Red Laterite</option><option>Alluvial</option>
+      </select>
+    </div>
+    <div><label class="field-lbl">Crop Season</label>
+      <select id="farmSeason" class="inp" style="appearance:none;cursor:pointer;">
+        <option>Kharif (Jun–Nov)</option><option>Rabi (Oct–Mar)</option><option>Zaid (Mar–Jun)</option><option>Year-round</option>
+      </select>
+    </div>
+    <div><label class="field-lbl">Total Area (acres)</label><input id="farmArea" class="inp" type="number" min="0" placeholder="e.g. 5"/></div>
+    <div><label class="field-lbl">Irrigation Source</label>
+      <select id="farmIrrigation" class="inp" style="appearance:none;cursor:pointer;">
+        <option>Borewell</option><option>Canal</option><option>Rainwater</option><option>River</option><option>Drip</option><option>None</option>
+      </select>
+    </div>
+  </div>
+  <div id="farmStatus" class="note" style="margin-top:9px;"></div>
+</div>
+
+<!-- SOIL SENSOR -->
+<div id="soil" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch">
+    <div class="ct"><div class="ico">📡</div>Soil Nutrient Sensor — N · P · K</div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;">
+      <span id="sensorDot" class="note" style="display:flex;align-items:center;gap:5px;"><span class="pulse" style="width:8px;height:8px;margin-right:0;"></span>&nbsp;USB sensor not connected</span>
+      <button id="simBtn" class="btn btn-blue">🔌 Connect ESP32</button>
+      <button id="dlPdfBtn" class="btn btn-primary">📄 Download PDF Report</button>
+    </div>
+  </div>
+  <div class="ib" style="margin-bottom:15px;">
+    <b style="font-size:.83rem;">🔧 Manual Entry — backup / testing only</b>
+    <div class="sp"></div>
+    <div class="g3">
+      <div><label class="field-lbl">Nitrogen (N) mg/kg</label><input id="inN" class="inp" type="number" min="0" max="300" placeholder="e.g. 120"/></div>
+      <div><label class="field-lbl">Phosphorus (P) mg/kg</label><input id="inP" class="inp" type="number" min="0" max="150" placeholder="e.g. 40"/></div>
+      <div><label class="field-lbl">Potassium (K) mg/kg</label><input id="inK" class="inp" type="number" min="0" max="400" placeholder="e.g. 200"/></div>
+    </div>
+    <div class="sp"></div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;">
+      <button id="analyzeManualBtn" class="btn btn-primary btn-sm">🔬 Analyze Values</button>
+      <button id="clearManualBtn" class="btn btn-ghost btn-sm">✕ Clear</button>
+    </div>
+  </div>
+  <div class="sensor-4" style="grid-template-columns:repeat(3,1fr);">
+    <div class="sensor-card N">
+      <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gN" d="M10 60 A50 50 0 0 1 100 60" stroke="#16a34a" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gNTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
+      <div class="s-lbl">🌱 Nitrogen (N)</div>
+      <div class="s-bar"><div class="s-fill" id="bN" style="width:0%"></div></div>
+      <div class="s-status" id="stN">—</div>
+      <div class="note" style="margin-top:4px;font-size:.69rem;">Optimal: 80–150 mg/kg</div>
+    </div>
+    <div class="sensor-card P">
+      <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gP" d="M10 60 A50 50 0 0 1 100 60" stroke="#d97706" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gPTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
+      <div class="s-lbl">⚡ Phosphorus (P)</div>
+      <div class="s-bar"><div class="s-fill" id="bP" style="width:0%"></div></div>
+      <div class="s-status" id="stP">—</div>
+      <div class="note" style="margin-top:4px;font-size:.69rem;">Optimal: 25–50 mg/kg</div>
+    </div>
+    <div class="sensor-card K">
+      <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gK" d="M10 60 A50 50 0 0 1 100 60" stroke="#7c3aed" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gKTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
+      <div class="s-lbl">💎 Potassium (K)</div>
+      <div class="s-bar"><div class="s-fill" id="bK" style="width:0%"></div></div>
+      <div class="s-status" id="stK">—</div>
+      <div class="note" style="margin-top:4px;font-size:.69rem;">Optimal: 120–250 mg/kg</div>
+    </div>
+    <div style="display:none;">
+      <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gS" d="M10 60 A50 50 0 0 1 100 60" stroke="#ca8a04" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gSTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
+      <div class="s-lbl">🔶 Sulfur (S)</div>
+      <div class="s-bar"><div class="s-fill" id="bS" style="width:0%"></div></div>
+      <div class="s-status" id="stS">—</div>
+      <div class="note" style="margin-top:4px;font-size:.69rem;">Optimal: 10–30 mg/kg</div>
+    </div>
+  </div>
+  <div class="sp-lg"></div>
+  <div class="g2" style="gap:15px;">
+    <div class="score-card">
+      <div class="score-num" id="soilScore">--</div>
+      <div class="score-lbl">Soil Health Score / 100</div>
+      <div class="prog"><div class="prog-fill" id="soilBar" style="width:0%"></div></div>
+      <p class="note" id="soilNote" style="margin-top:7px;">Connect the live NPK sensor to analyse soil.</p>
+    </div>
+    <div class="ib" style="display:flex;flex-direction:column;gap:8px;">
+      <b style="font-size:.85rem;">📋 Soil Test Summary</b>
+      <div id="soilSummary" class="pl"><p class="note" style="font-style:italic;">Connect the live NPK sensor to view the summary...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div id="history" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch">
+    <div class="ct"><div class="ico">📋</div>Sensor Reading History</div>
+    <div style="display:flex;gap:8px;">
+      <button id="exportCsvBtn" class="btn btn-ghost btn-sm">📥 Export CSV</button>
+      <button id="clearHistBtn" class="btn btn-ghost btn-sm">🗑 Clear</button>
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="hist-table">
+      <thead><tr><th>#</th><th>Timestamp</th><th>Plot</th><th style="color:var(--n-color);">N</th><th style="color:var(--p-color);">P</th><th style="color:var(--k-color);">K</th><th>pH</th><th>Moisture</th><th>Score</th></tr></thead>
+      <tbody id="histBody"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted);font-style:italic;">No readings yet.</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TREND CHART -->
+<div id="chart" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">📈</div>Nutrient Trend Chart</div><span class="note" id="chartNote">Collect readings to visualise trends.</span></div>
+  <div style="position:relative;height:260px;"><canvas id="trendChart"></canvas></div>
+</div>
+
+<!-- CROP REC -->
+<div id="rec" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch">
+    <div class="ct"><div class="ico">🌾</div>Crop Recommendation Engine</div>
+    <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
+      <span id="recStatus" class="note">Run soil sensor first</span>
+      <button id="recBtn" class="btn btn-primary btn-sm">🌾 Get Recommendations</button>
+    </div>
+  </div>
+  <div id="recLoading" style="display:none;text-align:center;padding:28px 0;"><div class="spin"></div><p class="note" style="margin-top:10px;">Analysing soil &amp; weather data...</p></div>
+  <div id="cropGrid" class="crop-grid">
+    <div style="grid-column:1/-1;text-align:center;padding:36px;border:2px dashed var(--border);border-radius:14px;">
+      <div style="font-size:2.8rem;margin-bottom:10px;">🌾</div>
+      <p style="font:600 .95rem Inter,sans-serif;">Read the live soil sensor first, then click <b>Get Recommendations</b></p>
+    </div>
+  </div>
+  <div class="sp-lg"></div>
+  <div id="fertDiv" class="ib" style="display:none;"><b style="font-size:.85rem;">💊 Fertilizer &amp; Amendment Advice</b><div id="fertList" style="margin-top:9px;" class="pl"></div></div>
+</div>
+
+<!-- DISEASE SCAN -->
+<div id="scan" class="card s4" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">📷</div>Crop Disease Scan</div></div>
+  <div class="drop-zone" id="dropZone">
+    <div><div style="font-size:38px;margin-bottom:9px;">📸</div><b style="font-size:.87rem;">Preview a plant or crop photo</b><p class="note" style="margin-top:5px;">No validated crop-disease model is connected. FarmWise will not guess a diagnosis from your photo.</p></div>
+  </div>
+  <input id="fileInput" type="file" accept="image/*" style="display:none;"/>
+  <div class="sp"></div>
+  <video id="vidPrev" autoplay playsinline style="width:100%;border-radius:11px;display:none;background:#000;"></video>
+  <canvas id="cvsCap" style="display:none;"></canvas>
+  <div class="sp"></div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;">
+    <button id="camBtn" class="btn btn-ghost btn-sm">📷 Camera</button>
+    <button id="capBtn" class="btn btn-primary btn-sm" style="display:none;">⚡ Capture</button>
+    <button id="stopBtn" class="btn btn-danger btn-sm" style="display:none;">✕ Stop</button>
+    <button id="quickBtn" class="btn btn-primary btn-sm">Check analysis setup</button>
+  </div>
+  <div id="scanStatus" class="note" style="margin-top:9px;"></div>
+</div>
+
+<!-- AI ASSISTANT -->
+<div id="ai" class="card s4" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">🤖</div>Farm Assistant</div><div class="ai-badge" style="font-size:.7rem;padding:5px 11px;"><span class="ai-dot"></span>Local data helper · AI provider not connected</div></div>
+  <textarea id="aistQ" class="txa" placeholder="Ask about the readings currently shown, weather, or how to use FarmWise."></textarea>
+  <div class="sp"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="aistBtn" class="btn btn-primary" type="button">Ask about my farm</button><button id="assistantMicBtn" class="btn btn-ghost" type="button">🎙 Speak question</button><button id="assistantSpeakBtn" class="btn btn-ghost" type="button">🔊 Read answer</button></div>
+  <p id="assistantVoiceStatus" class="note" style="margin:8px 0;line-height:1.5;">Voice input and speech use your browser. The assistant only summarizes connected values; generative AI is not connected.</p>
+  <div class="sp"></div>
+  <b style="font-size:.8rem;">Response</b>
+  <div style="height:5px;"></div>
+  <div class="resp-box" id="aistResp" aria-live="polite">Ask about live farm values after a source is connected.</div>
+</div>
+
+<!-- AI RESULTS -->
+<div id="results" class="card s4" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">📊</div>Analysis status</div></div>
+  <div class="pl" id="aiResultsList">
+    <div class="pr"><div><b>Photo diagnosis</b><p>No crop-specific disease model is connected.</p></div><span class="tag">Not analyzed</span></div>
+    <div class="pr"><div><b>AI provider</b><p>Connect a validated agricultural model before enabling diagnosis.</p></div><span class="tag">Not connected</span></div>
+    <div class="pr"><div><b>Next step</b><p>Ask a local agricultural extension service to review symptoms.</p></div><span class="tag">Human review</span></div>
+  </div>
+</div>
+
+<!-- ADVISORY -->
+<div id="advisory" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">💡</div>Farm Advisory</div><button id="refAdvBtn" class="btn btn-ghost btn-sm">↺ Refresh</button></div>
+  <div class="chips" style="margin-bottom:13px;"><div class="chip">🌱 Rule-based crop notes</div><div class="chip">📦 General storage reference</div><div class="chip">📈 Official price lookup</div><div class="chip">No AI provider connected</div></div>
+  <div class="pl" id="advList"></div>
+</div>
+
+<!-- MARKET -->
+<div id="market" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch">
+    <div class="ct"><div class="ico">💹</div>Commodity Market Prices</div>
+    <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
+      <span id="mktTime" class="note">Official daily mandi report — not a real-time exchange</span>
+      <button id="mktRefreshBtn" class="btn btn-primary btn-sm">↺ Refresh</button>
+      <button id="mktAiBtn" class="btn btn-gold btn-sm">Market data summary</button>
+      <button id="mktExportCsvBtn" class="btn btn-ghost btn-sm">📥 Export official data CSV</button>
+    </div>
+  </div>
+  <div class="g4" style="margin-bottom:14px;gap:10px;">
+    <div><label class="field-lbl">Filter category</label>
+      <select id="mktFilter" class="inp" style="appearance:none;cursor:pointer;">
+        <option value="all">All crops</option><option value="cereal">Cereals</option>
+        <option value="pulse">Pulses</option><option value="oil">Oilseeds</option><option value="vegetable">Vegetables</option>
+      </select>
+    </div>
+    <div><label class="field-lbl">State (optional)</label>
+      <select id="mktState" class="inp" style="appearance:none;cursor:pointer;">
+        <option value="">All available states</option><option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option><option>Telangana</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option>
+      </select>
+    </div>
+    <div><label class="field-lbl">District (optional)</label><input id="mktDistrict" class="inp" maxlength="80" placeholder="e.g. Guntur"/></div>
+    <div><label class="field-lbl">Commodity (optional)</label><input id="mktCommodity" class="inp" maxlength="80" placeholder="e.g. Tomato"/></div>
+  </div>
+  <p id="marketStatus" class="note" style="margin:0 0 12px;line-height:1.55;" aria-live="polite">Official daily mandi prices need a data.gov.in API key in Hatchable project setup.</p>
+  <div style="overflow-x:auto;">
+    <table class="hist-table">
+      <thead><tr><th>Commodity</th><th>State · District · Market</th><th>Min ₹/qtl</th><th>Modal ₹/qtl</th><th>Max ₹/qtl · Arrival date</th></tr></thead>
+      <tbody id="mktBody"></tbody>
+    </table>
+  </div>
+  <div class="sp-lg"></div>
+  <div class="ib" id="mktAiBox" style="display:none;"><b style="font-size:.85rem;">Market data summary</b><div id="mktAiText" class="note" style="margin-top:7px;white-space:pre-wrap;"></div></div>
+</div>
+
+<!-- PEST LIBRARY -->
+<div id="pests" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch">
+    <div class="ct"><div class="ico">🐛</div>Pest &amp; Disease Library</div>
+    <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
+      <input id="pestSearch" class="inp" style="width:220px;padding:8px 14px;font-size:.82rem;" placeholder="Search pest, crop, symptom..."/>
+      <select id="pestCrop" class="inp" style="width:160px;appearance:none;cursor:pointer;padding:8px 14px;font-size:.82rem;">
+        <option value="all">All Crops</option><option>Wheat</option><option>Rice</option><option>Maize</option>
+        <option>Cotton</option><option>Tomato</option><option>Potato</option><option>Soybean</option>
+      </select>
+    </div>
+  </div>
+  <p class="note" style="margin:0 0 12px;line-height:1.55;">Static reference only — this is not a live pest alert. Verify the crop and symptoms with a local agriculture extension service before choosing any treatment.</p>
+  <div id="pestGrid" class="pest-grid"></div>
+</div>
+
+<!-- IRRIGATION -->
+<div id="irr" class="card s12" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">💧</div>Irrigation Water Requirement Calculator</div><button id="irrCalcBtn" class="btn btn-blue">💧 Calculate</button></div>
+  <div class="g4" style="margin-bottom:14px;">
+    <div><label class="field-lbl">Crop</label>
+      <select id="irrCrop" class="inp" style="appearance:none;cursor:pointer;">
+        <option>Wheat</option><option>Rice</option><option>Maize</option><option>Sugarcane</option>
+        <option>Cotton</option><option>Soybean</option><option>Groundnut</option><option>Potato</option>
+        <option>Tomato</option><option>Mustard</option><option>Sunflower</option><option>Millet</option><option>Sorghum</option>
+      </select>
+    </div>
+    <div><label class="field-lbl">Growth Stage</label>
+      <select id="irrStage" class="inp" style="appearance:none;cursor:pointer;">
+        <option>Germination</option><option>Vegetative</option><option>Flowering</option><option>Grain Filling</option><option>Maturity</option>
+      </select>
+    </div>
+    <div><label class="field-lbl">Field Area (acres)</label><input id="irrArea" class="inp" type="number" min="0.1" step="0.1" value="1"/></div>
+    <div><label class="field-lbl">Soil Type</label>
+      <select id="irrSoil" class="inp" style="appearance:none;cursor:pointer;">
+        <option>Loamy</option><option>Sandy</option><option>Clay</option><option>Silt</option><option>Black Cotton</option>
+      </select>
+    </div>
+  </div>
+  <div id="irrResult" style="display:none;">
+    <div class="g3" style="gap:13px;" id="irrCards"></div>
+    <div class="sp"></div>
+    <div class="ib" id="irrAdvice"></div>
+  </div>
+  <div class="ib" style="margin-top:12px;"><b style="font-size:.83rem;">ℹ️ About</b><p class="note" style="margin-top:4px;">Based on FAO-56 Penman-Monteith guidelines for Indian conditions. Weather data adjusts calculations automatically when location is enabled.</p></div>
+</div>
+
+</section>
+
+<footer class="footer">
+  <div><strong>FARMWISE</strong><p class="note">Farm planning workspace · weather model data · connected sensor and market sources</p></div>
+  <div class="note" id="footerTime"></div>
+</footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+var theme='light', mediaStream=null, soilData=null, readingHistory=[], wxData=null, trendChart=null;
+function q(id){return document.getElementById(id);}
+function rand(a,b){return Math.round(Math.random()*(b-a)+a);}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function setNote(el,msg,isErr){if(!el)return;el.textContent=msg;el.style.color=isErr?'var(--danger)':'var(--muted)';}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════ */
+function toast(icon,msg,dur){
+  var c=q('toastContainer'),t=document.createElement('div');
+  t.className='toast';t.innerHTML='<span class="toast-icon">'+icon+'</span><span>'+msg+'</span>';
+  c.appendChild(t);setTimeout(function(){t.remove();},dur||3500);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME
+═══════════════════════════════════════════════════════════════ */
+q('themeBtn').addEventListener('click',function(){
+  theme=theme==='light'?'dark':'light';
+  document.documentElement.dataset.theme=theme;
+  this.textContent=theme==='light'?'🌙 Dark':'☀️ Light';
+  if(trendChart)updateTrendChart();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   ██████████  BUILT-IN AI ENGINE  ██████████
+═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   BUILT-IN ADVISORY GENERATOR
+═══════════════════════════════════════════════════════════════ */
+function generateAdvisory(d){
+  var items=[];
+  var wx=wxData;
+  // Soil-based advice
+  if(d){
+    var nSt=nStatus(d.N,REF.N),pSt=nStatus(d.P,REF.P),kSt=nStatus(d.K,REF.K);
+    if(nSt==='low')  items.push({title:'🌱 Nitrogen Boost Needed',detail:'Soil N is low ('+d.N+' mg/kg). Apply Urea @ 120–150 kg/ha or Ammonium Sulphate @ 200 kg/ha before next sowing cycle. Split into 2 doses for better absorption.',src:'Built-in'});
+    if(nSt==='high') items.push({title:'⚠️ Excess Nitrogen Alert',detail:'High N ('+d.N+' mg/kg) can cause lodging and increase pest pressure. Reduce urea dosage. Increase plant spacing to improve air circulation.',src:'Built-in'});
+    if(pSt==='low')  items.push({title:'⚡ Phosphorus Deficiency',detail:'P level ('+d.P+' mg/kg) is below optimal. Apply DAP @ 100 kg/ha or SSP @ 250 kg/ha at sowing. P deficiency delays root development and flowering.',src:'Built-in'});
+    if(kSt==='low')  items.push({title:'💎 Potassium Deficiency',detail:'K level ('+d.K+' mg/kg) is low. Apply MOP @ 80–100 kg/ha. Potassium strengthens stems and improves drought resistance in crops.',src:'Built-in'});
+    if(kSt==='high') items.push({title:'💎 High Potassium',detail:'Excess K ('+d.K+' mg/kg) may lock out Calcium and Magnesium uptake. Skip MOP this season. Monitor micro-nutrient levels.',src:'Built-in'});
+    if(d._score>=80) items.push({title:'🌟 Excellent Soil Health',detail:'Soil score '+d._score+'/100 — nutrients are well-balanced. Focus on organic matter maintenance. Apply FYM @ 5 t/ha to sustain microbial activity.',src:'Built-in'});
+    else if(d._score>=60) items.push({title:'✅ Good Soil Health',detail:'Soil score '+d._score+'/100 — minor adjustments recommended. Maintain compost addition and rotate legume crops to naturally boost nitrogen.',src:'Built-in'});
+    else if(d._score>0) items.push({title:'⚠️ Soil Needs Attention',detail:'Soil score '+d._score+'/100 — significant nutrient imbalance. Get a certified lab test. Apply balanced NPK fertilizer and organic compost immediately.',src:'Built-in'});
+  }
+  // Weather-based advice
+  if(wx){
+    if(wx.temp>36) items.push({title:'🌡 Heat Stress Warning',detail:'Temperature '+Math.round(wx.temp)+'°C — critical heat stress zone. Irrigate crops early morning before 7am. Mulch soil surface. Choose Sorghum or Millet for resilience.',src:'Weather'});
+    else if(wx.temp>30) items.push({title:'☀️ High Temperature Advisory',detail:'Temp '+Math.round(wx.temp)+'°C — warm conditions. Water crops in the evening. Watch for spider mite and aphid outbreaks in hot dry conditions.',src:'Weather'});
+    if(wx.hum>80&&wx.temp>24) items.push({title:'🍄 Fungal Disease Risk High',detail:'Humidity '+wx.hum+'% with temp '+Math.round(wx.temp)+'°C creates ideal fungal conditions. Apply preventive Mancozeb 75WP @ 2.5g/L spray. Ensure good canopy airflow.',src:'Weather'});
+    if(wx.wind>30) items.push({title:'💨 High Wind Alert',detail:'Wind speed '+Math.round(wx.wind)+' km/h — avoid pesticide spraying today to prevent drift. Stake tall crops. Check for lodging in cereal crops.',src:'Weather'});
+    if(wx.rainSum>20) items.push({title:'🌧 Heavy Rain Advisory',detail:'Expected rainfall '+wx.rainSum+' mm. Check field drainage, ensure water does not stagnate near roots. Delay fertilizer application by 3–4 days after heavy rain.',src:'Weather'});
+  }
+  // General fallback tips
+  var generalTips=[
+    {title:'📅 Seasonal Crop Planning',detail:'Match crop choice to current season. Kharif crops (Rice, Maize, Cotton, Soybean) should be sown by mid-June. Rabi crops (Wheat, Mustard, Chickpea) by mid-October.',src:'Advisory'},
+    {title:'🌿 Organic Matter Boost',detail:'Add Farm Yard Manure (FYM) @ 5–8 tonnes/ha before sowing to improve water retention and microbial activity. Compost also slowly releases balanced micro-nutrients.',src:'Advisory'},
+    {title:'🔄 Crop Rotation Tip',detail:'Rotate cereal crops (Wheat/Rice) with legumes (Chickpea/Soybean) to naturally replenish nitrogen. Legumes fix 50–100 kg N/ha per season, reducing fertilizer cost.',src:'Advisory'},
+    {title:'💧 Efficient Irrigation',detail:'Use drip or sprinkler irrigation to save 30–50% water vs flood irrigation. Schedule irrigation at early morning or evening to minimise evaporation losses.',src:'Advisory'},
+    {title:'🛡 Integrated Pest Management',detail:'Use yellow sticky traps, pheromone traps, and Trichogramma releases before chemical spraying. IPM reduces pesticide cost by 40% while maintaining crop health.',src:'Advisory'},
+  ];
+  while(items.length<3){
+    var tip=generalTips[items.length%generalTips.length];
+    if(!items.find(function(i){return i.title===tip.title;}))items.push(tip);
+    else break;
+  }
+  return items.slice(0,5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUILT-IN FARM ASSISTANT ENGINE
+═══════════════════════════════════════════════════════════════ */
+function askAssistant(q_text){
+  var q_lower=(q_text||'').toLowerCase();
+  var soilCtx=soilData?'\nYour current soil: N='+soilData.N+', P='+soilData.P+', K='+soilData.K+' mg/kg, pH='+soilData.pH+'. Health Score: '+soilData._score+'/100.':'';
+  var wxCtx=wxData?'\nCurrent weather: '+Math.round(wxData.temp)+'°C, humidity '+wxData.hum+'%.':'';
+  // Crop-specific
+  var isWheat=q_lower.includes('wheat');
+  var isRice=q_lower.includes('rice')||q_lower.includes('paddy');
+  var isMaize=q_lower.includes('maize')||q_lower.includes('corn');
+  var isCotton=q_lower.includes('cotton');
+  var isSoybean=q_lower.includes('soybean')||q_lower.includes('soya');
+  var isTomato=q_lower.includes('tomato');
+  var isGroundnut=q_lower.includes('groundnut')||q_lower.includes('peanut');
+  var isMustard=q_lower.includes('mustard');
+  var isSugarcane=q_lower.includes('sugarcane');
+  var isMillet=q_lower.includes('millet')||q_lower.includes('bajra');
+  var isSorghum=q_lower.includes('sorghum')||q_lower.includes('jowar');
+  var isChickpea=q_lower.includes('chickpea')||q_lower.includes('chana')||q_lower.includes('gram');
+  var isPotato=q_lower.includes('potato')||q_lower.includes('aloo');
+  var isOnion=q_lower.includes('onion')||q_lower.includes('pyaz');
+  // Topics
+  var isPest=q_lower.includes('pest')||q_lower.includes('insect')||q_lower.includes('disease')||q_lower.includes('blight')||q_lower.includes('rust')||q_lower.includes('worm')||q_lower.includes('fungus')||q_lower.includes('mildew')||q_lower.includes('aphid')||q_lower.includes('bollworm')||q_lower.includes('caterpillar');
+  var isFertilizer=q_lower.includes('fertilizer')||q_lower.includes('fertiliser')||q_lower.includes('urea')||q_lower.includes('dap')||q_lower.includes('npk')||q_lower.includes('manure')||q_lower.includes('compost')||q_lower.includes('nutrient');
+  var isNitrogen=q_lower.includes('nitrogen');
+  var isPhosphorus=q_lower.includes('phosphorus');
+  var isPotassium=q_lower.includes('potassium');
+  // 'water' excluded from isIrrigation when 'watermelon' is present to avoid false match
+  var isIrrigation=(q_lower.includes('water')&&!q_lower.includes('watermelon'))||q_lower.includes('irrigat')||q_lower.includes('drip')||q_lower.includes('sprinkler')||q_lower.includes('moisture');
+  var isWeather=q_lower.includes('weather')||q_lower.includes('rain')||q_lower.includes('temperature')||q_lower.includes('humidity')||q_lower.includes('monsoon')||q_lower.includes('drought')||q_lower.includes('flood');
+  var isMarket=q_lower.includes('price')||q_lower.includes('sell')||q_lower.includes('msp')||q_lower.includes('market')||q_lower.includes('mandi')||q_lower.includes('profit')||q_lower.includes('income')||q_lower.includes('revenue');
+  var isSoil=q_lower.includes('soil')||q_lower.includes('loam')||q_lower.includes('clay')||q_lower.includes('sandy')||q_lower.includes('ph')||q_lower.includes('acid')||q_lower.includes('alkaline')||q_lower.includes('organic');
+  // isCrop: only unambiguous crop-management terms; 'grow','plant','seed','yield' removed to avoid
+  // stealing fertilizer/irrigation queries that also use those words
+  var isCrop=q_lower.includes('crop')||q_lower.includes('sow')||q_lower.includes('harvest')||q_lower.includes('cultivat')||q_lower.includes('kharif')||q_lower.includes('rabi')||q_lower.includes('zaid')||q_lower.includes('season crop')||q_lower.includes('crop calendar')||q_lower.includes('crop selection');
+  var isScheme=q_lower.includes('scheme')||q_lower.includes('government')||q_lower.includes('subsidy')||q_lower.includes('loan')||q_lower.includes('insurance')||q_lower.includes('kisan')||q_lower.includes('pmfby');
+  // Disease/pest questions get priority over generic crop guides. If symptoms are not
+  // supplied, show the verified candidate set instead of pretending one disease is certain.
+  if(isPest){
+    var cropName=isWheat?'Wheat':isRice?'Rice':isMaize?'Maize':isCotton?'Cotton':isTomato?'Tomato':isPotato?'Potato':isSoybean?'Soybean':null;
+    if(cropName){
+      var candidates=DISEASE_DB.filter(function(d){return d.crop.toLowerCase()===cropName.toLowerCase();});
+      var matched=candidates.filter(function(d){return Object.keys({yellow:1,rust:1,blight:1,blast:1,borer:1,worm:1,mildew:1,wilt:1,spot:1,hopper:1,aphid:1,bollworm:1,armyworm:1}).some(function(k){return q_lower.includes(k)&&d.name.toLowerCase().includes(k);});});
+      var list=(matched.length?matched:candidates).slice(0,4);
+      return '🐛 '+cropName+' disease/pest guidance:\n\n'+list.map(function(d){return '• '+d.name+' — '+d.sym+'\n  Suggested response: '+d.treat;}).join('\n\n')+'\n\n⚠️ This is a candidate list, not a confirmed diagnosis. Upload a clear close-up of the affected plant part and include the symptom for a more specific result.'+(soilCtx?soilCtx:'')+(wxCtx?wxCtx:'');
+    }
+  }
+
+  // Crop guides
+  if(isWheat)return '🌾 Wheat Cultivation Guide:\n\n1. SEASON: Rabi — sow October–November.\n2. SOIL: Loamy or clay-loam, pH 6.0–7.5.\n3. FERTILIZER: Urea @ 120 kg/ha (3 splits); DAP @ 100 kg/ha at sowing; MOP @ 50 kg/ha.\n4. IRRIGATION: 6 irrigations — CRI (21 days), tillering, jointing, flowering, grain filling, dough stage.\n5. PESTS:\n   • Yellow Rust: Propiconazole 25EC @ 1ml/L\n   • Aphids: Imidacloprid 17.8SL @ 0.3ml/L\n   • Powdery Mildew: Hexaconazole 5EC @ 1ml/L\n6. VARIETIES: HD-2967, GW-322, PBW-550 (high yield).\n7. YIELD: 40–55 quintals/ha with proper management.'+soilCtx+wxCtx;
+  if(isRice)return '🌾 Rice / Paddy Cultivation Guide:\n\n1. SEASON: Kharif — transplant June–July.\n2. SOIL: Clay or clay-loam with good water retention.\n3. NURSERY: 25–30 day old seedlings for transplanting. Seed rate 20–25 kg/ha.\n4. FERTILIZER: N @ 120 kg/ha (3 splits: basal, tillering, panicle initiation); P @ 60 kg/ha; K @ 60 kg/ha.\n5. WATER: Maintain 5 cm standing water. AWD (Alternate Wetting & Drying) saves 30% water.\n6. PESTS:\n   • Blast: Tricyclazole 75WP @ 0.6g/L\n   • Brown Planthopper: Buprofezin 25SC @ 1ml/L\n   • Stem Borer: Trichogramma 1,25,000/ha + Chlorpyrifos 20EC\n7. YIELD: HYV varieties yield 50–60 quintals/ha.'+soilCtx+wxCtx;
+  if(isMaize)return '🌽 Maize / Corn Cultivation Guide:\n\n1. SEASON: Kharif (June–Oct) or Spring (Feb–Apr).\n2. SPACING: 60×25 cm, one plant per hill. 60,000–65,000 plants/ha.\n3. FERTILIZER: N @ 150–180 kg/ha (3 splits: 1/3 basal, 1/3 knee-high, 1/3 tasseling); P @ 75 kg/ha; K @ 60 kg/ha.\n4. IRRIGATION: Most critical at tasseling and silking stages.\n5. PESTS:\n   • Fall Armyworm: Emamectin Benzoate 5SG @ 0.4g/L into whorl\n   • Northern Leaf Blight: Mancozeb 75WP @ 2.5g/L\n6. VARIETIES: NK-6240, DKC-7074, Pioneer P3396 (hybrid).\n7. YIELD: 60–80 quintals/ha (hybrid).'+soilCtx+wxCtx;
+  if(isCotton)return '🌸 Cotton Cultivation Guide:\n\n1. SEASON: Sow May–June; harvest Oct–Feb.\n2. SOIL: Black cotton (Vertisols) or deep loamy, pH 6.5–8.0.\n3. SPACING: 90×60 cm for Bt cotton; 120×60 cm for desi.\n4. FERTILIZER: N @ 120 kg/ha; P @ 60 kg/ha; K @ 60 kg/ha. Apply in 4 splits across growth stages.\n5. PESTS:\n   • Bollworm: Chlorantraniliprole 18.5SC @ 0.4ml/L + pheromone traps\n   • Whitefly: Spiromesifen 22.9SC @ 1ml/L (avoid Pyrethroids)\n   • Aphids: Imidacloprid 17.8SL @ 0.3ml/L\n6. USE BT COTTON varieties to reduce pesticide use by 60%.\n7. YIELD: 15–25 quintals/ha lint.'+soilCtx+wxCtx;
+  if(isTomato)return '🍅 Tomato Cultivation Guide:\n\n1. SEASON: Year-round (avoid extreme heat >38°C or frost).\n2. TRANSPLANT: 25–30 day old seedlings at 60×45 cm spacing.\n3. FERTILIZER: N:P:K = 120:60:80 kg/ha. Apply Calcium Nitrate @ 2g/L foliar spray to prevent blossom end rot.\n4. STAKING: Essential for indeterminate varieties.\n5. DISEASE:\n   • Early Blight: Mancozeb 75WP @ 2.5g/L every 7 days\n   • Late Blight: Metalaxyl-M + Mancozeb @ 2.5g/L immediately on detection\n   • Leaf Curl Virus: Control whitefly vector with Imidacloprid\n6. YIELD: 40–80 tonnes/ha (hybrid protected cultivation).'+soilCtx+wxCtx;
+  if(isGroundnut)return '🥜 Groundnut Cultivation Guide:\n\n1. SEASON: Kharif (June–Oct). Requires 25–35°C.\n2. SOIL: Well-drained light sandy-loam, pH 6.0–7.0.\n3. SEED RATE: 100–120 kg/ha (shelled). Treat with Rhizobium + Trichoderma.\n4. FERTILIZER: N @ 25 kg/ha; P @ 50 kg/ha; K @ 60 kg/ha; Gypsum @ 500 kg/ha at flowering.\n5. PEST: Tikka leaf spot (Chlorothalonil 75WP @ 2g/L), Leaf miner (Imidacloprid).\n6. CRITICAL STAGES: Peg penetration and pod development — never miss irrigation here.\n7. YIELD: 25–30 quintals/ha.'+soilCtx+wxCtx;
+  if(isMustard)return '🌼 Mustard Cultivation Guide:\n\n1. SEASON: Rabi — sow Oct–Nov. Duration: 90–110 days.\n2. SEED RATE: 4–5 kg/ha. Spacing 30×15 cm.\n3. FERTILIZER: N @ 80 kg/ha; P @ 40 kg/ha; K @ 40 kg/ha. Gypsum @ 400 kg/ha for oilseed quality.\n4. IRRIGATION: 2–3 irrigations — rosette stage, flowering, pod filling.\n5. PEST: Aphids at flowering — Dimethoate 30EC @ 1ml/L. Spray before 8am to protect pollinators.\n6. VARIETIES: Pusa Bold, RH-749, Varuna.\n7. YIELD: 15–20 quintals/ha seed.'+soilCtx+wxCtx;
+  if(isSoybean)return '🫘 Soybean Cultivation Guide:\n\n1. SEASON: Kharif — sow June–July.\n2. SEED TREATMENT: Rhizobium + Trichoderma viride @ 4g/kg seed.\n3. FERTILIZER: Starter N @ 20 kg/ha only (legume); P @ 60 kg/ha; K @ 40 kg/ha.\n4. PEST:\n   • Pod Borer: Indoxacarb 14.5SC @ 1ml/L at 50% flowering\n   • Rust: Tebuconazole 25.9EC @ 1ml/L at first sign\n5. HARVEST: When 95% pods turn brown (delay causes shattering loss).\n6. YIELD: 20–30 quintals/ha.'+soilCtx+wxCtx;
+  if(isSugarcane)return '🍌 Sugarcane Cultivation Guide:\n\n1. SEASON: Year-round; plant in Oct–Nov (autumn) or Feb–Mar (spring).\n2. PLANTING: Single budded sets @ 40,000 setts/ha; furrow method.\n3. FERTILIZER: N @ 250–300 kg/ha; P @ 80 kg/ha; K @ 100 kg/ha in 3 splits.\n4. IRRIGATION: 25–30 irrigations per season. Critical at grand growth period.\n5. PESTS: Early shoot borer (Chlorpyrifos 20EC), Top borer (Monocrotophos), Red rot (resistant varieties).\n6. RATOON CROP: After harvest, ratoon gives 70–80% of plant crop yield.\n7. YIELD: 70–100 tonnes/ha.'+soilCtx+wxCtx;
+  if(isMillet)return '🌾 Pearl Millet (Bajra) Cultivation Guide:\n\n1. SEASON: Kharif — sow June–July. Very drought tolerant.\n2. FERTILIZER: N @ 60–80 kg/ha; P @ 40 kg/ha; K @ 40 kg/ha.\n3. IRRIGATION: 2–3 critical irrigations (vegetative, flowering, grain filling). Can survive drought.\n4. PEST: Downy Mildew — use Metalaxyl-treated seed. Ergot — spray Mancozeb at ear-head emergence.\n5. VARIETIES: HHB-67, Pusa-322, GHB-558.\n6. YIELD: 15–25 quintals/ha.'+soilCtx+wxCtx;
+  if(isSorghum)return '🌾 Sorghum (Jowar) Cultivation Guide:\n\n1. SEASON: Kharif (June–Sept) or Rabi (Oct–Jan).\n2. FERTILIZER: N @ 80–100 kg/ha; P @ 40 kg/ha; K @ 40 kg/ha.\n3. DROUGHT TOLERANCE: One of the most drought-tolerant crops. Suitable for rainfed areas.\n4. PEST: Stem Fly, Shoot Fly (seed treatment with Imidacloprid 70WS @ 7g/kg), Grain Mold (Mancozeb spray).\n5. VARIETIES: CSH-16, SPH-1616.\n6. YIELD: 25–35 quintals/ha grain; also used for fodder.'+soilCtx+wxCtx;
+  if(isChickpea)return '🫘 Chickpea (Chana) Cultivation Guide:\n\n1. SEASON: Rabi — sow Oct–Nov.\n2. SOIL: Well-drained light-medium soil, pH 6.0–8.5.\n3. FERTILIZER: Starter N @ 20 kg/ha; P @ 60 kg/ha; K @ 20 kg/ha. Rhizobium inoculation essential.\n4. IRRIGATION: Only 1–2 irrigations needed (pre-sowing, flowering).\n5. PEST: Pod borer Helicoverpa (Chlorantraniliprole 18.5SC @ 0.4ml/L), Wilt (Trichoderma seed treatment).\n6. VARIETIES: JG-11, JAKI-9218, Digvijay.\n7. YIELD: 15–25 quintals/ha.'+soilCtx+wxCtx;
+  if(isPotato)return '🥔 Potato Cultivation Guide:\n\n1. SEASON: Rabi — plant Oct–Nov. Harvest Feb–Mar.\n2. SEED TUBERS: 20–25 g size @ 2.0–2.5 tonnes/ha. 60×20 cm spacing.\n3. FERTILIZER: N @ 120 kg/ha; P @ 80 kg/ha; K @ 120 kg/ha. Apply P and K at planting; N in 2 splits.\n4. IRRIGATION: 10–12 irrigations. Critical at stolon initiation and tuber bulking.\n5. DISEASE:\n   • Late Blight: Cymoxanil+Mancozeb @ 2.5g/L every 5 days in humid weather\n   • Early Blight: Mancozeb 75WP @ 2.5g/L\n6. YIELD: 200–350 quintals/ha.'+soilCtx+wxCtx;
+  if(isOnion)return '🦪 Onion Cultivation Guide:\n\n1. SEASON: Rabi (Nov–Apr) or Kharif (Jun–Oct).\n2. TRANSPLANTING: 6–8 week old seedlings at 15×10 cm spacing.\n3. FERTILIZER: N @ 100 kg/ha; P @ 50 kg/ha; K @ 100 kg/ha. High K improves bulb size and shelf life.\n4. IRRIGATION: 10–15 irrigations. Stop irrigation 15 days before harvest for curing.\n5. PEST: Thrips (Spinosad 45SC @ 0.3ml/L), Purple Blotch (Mancozeb 75WP @ 2.5g/L), Stemphylium blight (Iprodione).\n6. YIELD: 200–400 quintals/ha.'+soilCtx+wxCtx;
+  // Topic guides
+  if(isPest)return '🐛 Integrated Pest Management (IPM) Guide:\n\n1. SCOUTING: Check fields twice/week. Act at Economic Threshold Level (ETL) only.\n2. BIOLOGICAL CONTROL:\n   • Trichogramma @ 1,25,000/ha for stem borer, bollworm\n   • Trichoderma viride @ 4g/kg seed for soil diseases\n   • NPV virus for Helicoverpa @ 250 LE/ha\n3. CHEMICAL CONTROL:\n   • Sucking pests (aphid, whitefly, thrips): Imidacloprid 17.8SL @ 0.3ml/L\n   • Chewing (armyworm, bollworm): Chlorantraniliprole 18.5SC @ 0.4ml/L\n   • Fungal (blight, rust, mildew): Mancozeb 75WP @ 2.5g/L (preventive), Propiconazole 25EC @ 1ml/L (curative)\n   • Bacterial: Copper Oxychloride 50WP @ 3g/L\n4. PHEROMONE TRAPS: @ 5/ha for Armyworm, Helicoverpa, Spodoptera.\n5. RESISTANCE MANAGEMENT: Rotate insecticide chemical classes every spray.\n6. SPRAY TIMING: Early morning 6–8am or evening 6–8pm for best efficacy.'+soilCtx;
+  if(isFertilizer||isNitrogen||isPhosphorus||isPotassium){
+    var resp='💊 Fertilizer Recommendations:\n\n';
+    if(soilData){
+      resp+='Based on YOUR current soil readings:\n';
+      if(nStatus(soilData.N,REF.N)==='low')resp+='• 🌱 Nitrogen LOW ('+soilData.N+' mg/kg): Apply Urea @ 120–150 kg/ha\n';
+      else if(nStatus(soilData.N,REF.N)==='high')resp+='• 🌱 Nitrogen HIGH ('+soilData.N+' mg/kg): Skip urea. Use less N-rich fertilizers this season\n';
+      else resp+='• 🌱 Nitrogen OPTIMAL ('+soilData.N+' mg/kg) ✅\n';
+      if(nStatus(soilData.P,REF.P)==='low')resp+='• ⚡ Phosphorus LOW ('+soilData.P+' mg/kg): Apply DAP @ 100 kg/ha or SSP @ 250 kg/ha\n';
+      else if(nStatus(soilData.P,REF.P)==='high')resp+='• ⚡ Phosphorus HIGH ('+soilData.P+' mg/kg): Skip P this season to prevent zinc lock-out\n';
+      else resp+='• ⚡ Phosphorus OPTIMAL ('+soilData.P+' mg/kg) ✅\n';
+      if(nStatus(soilData.K,REF.K)==='low')resp+='• 💎 Potassium LOW ('+soilData.K+' mg/kg): Apply MOP @ 80–100 kg/ha\n';
+      else if(nStatus(soilData.K,REF.K)==='high')resp+='• 💎 Potassium HIGH ('+soilData.K+' mg/kg): Skip MOP this season\n';
+      else resp+='• 💎 Potassium OPTIMAL ('+soilData.K+' mg/kg) ✅\n';
+      resp+='\n💡 Soil Health Score: '+soilData._score+'/100';
+    } else {
+      resp+='1. NITROGEN (N): Urea @ 120–200 kg/ha in 3 splits. Critical for vegetative growth and green leaf area.\n';
+      resp+='2. PHOSPHORUS (P): DAP @ 100 kg/ha or SSP @ 250 kg/ha at sowing. Improves root development.\n';
+      resp+='3. POTASSIUM (K): MOP @ 80–100 kg/ha. Strengthens stems, improves disease resistance and quality.\n';
+      resp+='4. MICRONUTRIENTS: Zinc Sulphate @ 25 kg/ha every 3rd year for paddy soils.\n';
+      resp+='5. ORGANIC: FYM @ 5–10 t/ha before sowing to improve soil structure and microbial life.\n';
+    }
+    resp+='\n💡 Run the Soil Sensor first for personalized recommendations.';
+    return resp;
+  }
+  if(isIrrigation)return '💧 Irrigation Guide for Indian Crops:\n\n1. DRIP IRRIGATION: Saves 40–50% water. Best for vegetables, cotton, sugarcane, orchards.\n2. SPRINKLER: Best for wheat, groundnut, vegetables on undulating terrain.\n3. FLOOD IRRIGATION: Common but least efficient (40–60% water wasted).\n4. CRITICAL GROWTH STAGES (never miss irrigation):\n   • Rice: Transplanting, tillering, panicle initiation, grain filling\n   • Wheat: CRI (21 days), tillering, jointing, flowering, grain filling, dough\n   • Maize: Tasseling & silking (most critical)\n   • Cotton: Squaring and boll development\n   • Mustard: Flowering and pod filling\n5. TIMING: Irrigate early morning 6–8am or evening 6–8pm to reduce evaporation by 25–30%.\n6. SOIL CHECK: Irrigate when soil feels dry at 10–15 cm depth.\n7. FAO GUIDELINE: Allow 40–50% soil moisture depletion before next irrigation.'+wxCtx;
+  if(isScheme)return '🌐 Government Schemes for Indian Farmers:\n\n1. PM-KISAN: ₹6,000/year direct benefit transfer in 3 instalments. All land-holding farmers eligible.\n2. PMFBY (Crop Insurance): Premium just 1.5% for Rabi, 2% for Kharif crops. Covers yield loss, weather, pest.\n3. KCC (Kisan Credit Card): Short-term crop loan @ 7% interest (4% with timely repayment).\n4. PM-KUSUM: Solar pump subsidy up to 90%. Reduces diesel cost for irrigation.\n5. eNAM: Online mandi portal for better price discovery. 1,000+ mandis connected.\n6. Soil Health Card: Free soil testing every 2 years from government labs.\n7. FPO (Farmer Producer Org): Group selling for 15–30% better price than individual selling.\n📞 Helpline: Kisan Call Centre 1800-180-1551 (free, 24×7)';
+  if(isMarket)return '💹 Crop Market & MSP Guide:\n\n1. MSP 2024–25:\n   • Wheat: ₹2,275/qtl | Rice (Common): ₹2,183/qtl | Maize: ₹2,090/qtl\n   • Soybean: ₹4,892/qtl | Mustard: ₹5,650/qtl | Chickpea: ₹5,650/qtl\n   • Tur (Arhar): ₹7,000/qtl | Urad: ₹7,400/qtl | Cotton: ₹7,121/qtl\n   • Sunflower: ₹6,760/qtl | Groundnut: ₹6,783/qtl\n2. SELLING STRATEGY:\n   • Sell when mandi price > MSP by 5–10% (good profit window)\n   • Store pulses and oilseeds 2–3 months post-harvest for 20–30% price rise\n   • Use eNAM portal for transparent price across mandis\n3. STORAGE: Warehouse Receipt System (WRS) allows loan against stored grain.\n4. VALUE ADDITION: Processing (dal milling, oil extraction) adds 30–50% value.\nCheck the Market section above for current simulated prices.';
+  if(isWeather){
+    var resp2='🌦️ Weather & Crop Advisory:\n\n';
+    if(wxData){
+      resp2+='CURRENT CONDITIONS: '+Math.round(wxData.temp)+'°C, Humidity '+wxData.hum+'%\n\n';
+      if(wxData.temp>35)resp2+='⚠️ HEAT STRESS (>35°C): Irrigate early morning. Mulch soil. Risk of pollen sterility in flowering crops.\n';
+      if(wxData.hum>80&&wxData.temp>24)resp2+='⚠️ HIGH HUMIDITY: Fungal disease risk. Apply Mancozeb 75WP @ 2.5g/L preventively.\n';
+      if(wxData.wind>25)resp2+='⚠️ HIGH WIND: Do not spray pesticides today (drift risk).\n';
+      if(wxData.rainSum>15)resp2+='⚠️ RAIN EXPECTED ('+wxData.rainSum+' mm): Delay fertilizer by 3–4 days. Check drainage.\n';
+      resp2+='\n';
+    }
+    resp2+='GUIDELINES:\n1. HEAT (>35°C): Irrigate at dawn. Mulch. Choose Sorghum/Millet for drought zones.\n2. COLD (<12°C): Protect seedlings. Wheat, Mustard, Chickpea are cold-tolerant.\n3. HIGH HUMIDITY (>80%): Spray preventive Mancozeb. Improve canopy air circulation.\n4. HEAVY RAIN: Drain fields. Delay fertilizer 3–4 days. Stake tall crops.\n5. DROUGHT: Use drip irrigation. Sow drought-tolerant: Sorghum, Millet, Groundnut.';
+    return resp2;
+  }
+  if(isSoil)return '🌍 Soil Health Guide:\n\n1. SOIL TYPES IN INDIA:\n   • Black Cotton (Vertisols): Self-mulching clay. Cotton, Soybean, Wheat, Sorghum thrive.\n   • Alluvial (Indo-Gangetic): Highly fertile. Almost all crops grow well.\n   • Red Laterite: Low fertility, well-drained. Groundnut, Millets, Pulses suitable.\n   • Sandy: Low retention. Potato, Groundnut, Watermelon do well.\n   • Loamy: Best all-round. Suitable for all crops.\n2. SOIL pH:\n   • 6.0–7.5: Ideal for most crops\n   • Acidic (<6.0): Apply Agricultural Lime @ 200–500 kg/ha\n   • Alkaline (>8.0): Apply Gypsum @ 500 kg/ha\n3. ORGANIC MATTER: Add FYM @ 5–10 t/ha every season. Improves water retention and microbial activity.\n4. SOIL TEST: Government labs do free testing. Soil Health Cards issued every 2 years.\n5. MICRONUTRIENTS: Zinc deficiency is most common in India — apply ZnSO4 @ 25 kg/ha.'+(soilData?'\n\nYour readings: N='+soilData.N+' P='+soilData.P+' K='+soilData.K+' mg/kg, pH='+soilData.pH:'');
+  if(isCrop)return '🌾 Crop Calendar for Indian Conditions:\n\n1. KHARIF (Sow Jun–Jul | Harvest Oct–Nov):\n   High rainfall, warm temperatures needed.\n   • Grains: Rice, Maize, Sorghum, Millet\n   • Cash: Cotton, Sugarcane, Groundnut, Soybean\n2. RABI (Sow Oct–Nov | Harvest Mar–Apr):\n   Cool dry weather. Relies on irrigation.\n   • Grains: Wheat, Barley\n   • Oilseeds: Mustard, Linseed\n   • Pulses: Chickpea, Pea, Lentil\n3. ZAID / SUMMER (Sow Mar–Apr):\n   Short season crops.\n   • Watermelon, Cucumber, Sunflower, Moong Bean\n4. SELECTION TIPS:\n   • Match soil type (Soil Sensor section)\n   • Check water availability\n   • Watch mandi prices before sowing decision'+(soilData?'\n→ Your soil best matches: run Crop Recommendations section for personalized results.':'\n→ Connect the live soil sensor for personalized crop recommendations.');
+  // No matching knowledge rule: do not fabricate an answer.
+  return '🤖 FARMWISE could not find enough information in its verified local knowledge for that question.\n\nFor a reliable answer, include the crop/plant name and the specific issue (for example: leaf spots, yellowing, pest, soil nutrient, irrigation stage, or weather condition).\n\n'+(soilData?'Live NPK context available: N='+soilData.N+' mg/kg, P='+soilData.P+' mg/kg, K='+soilData.K+' mg/kg, pH='+soilData.pH+'.\n':'')+(wxData?'Live weather context available: '+Math.round(wxData.temp)+'°C, humidity '+wxData.hum+'%.':'');
+}
+
+
+/* ═══ DISEASE ANALYSIS — BUILT-IN ENGINE ═══ */
+/* ─── DISEASE DATABASE ─── */
+var DISEASE_DB=[
+  {name:'Blast Disease',crop:'Rice',sev:'Severe',conf:87,sym:'Diamond lesions grey centre',treat:'Apply Tricyclazole 75WP @ 0.6g/L. Drain field, reduce N. Repeat after 10 days.'},
+  {name:'Brown Planthopper',crop:'Rice',sev:'Moderate',conf:81,sym:'Yellowing, sticky honeydew',treat:'Apply Buprofezin 25SC @ 1ml/L. Maintain 5cm water depth.'},
+  {name:'Yellow Rust',crop:'Wheat',sev:'Severe',conf:90,sym:'Yellow-orange powdery stripes',treat:'Spray Propiconazole 25EC @ 1ml/L at first sign. Use resistant variety next season.'},
+  {name:'Aphid Infestation',crop:'Wheat',sev:'Mild',conf:76,sym:'Curling leaves, stunted growth',treat:'Spray Imidacloprid 17.8SL @ 0.3ml/L. Natural predators like ladybirds help.'},
+  {name:'Fall Armyworm',crop:'Maize',sev:'Severe',conf:93,sym:'Ragged leaf feeding, frass in whorl',treat:'Emamectin Benzoate 5SG @ 0.4g/L. Spray early morning directly into whorl.'},
+  {name:'Northern Leaf Blight',crop:'Maize',sev:'Moderate',conf:78,sym:'Cigar-shaped grey-green lesions',treat:'Mancozeb 75WP @ 2.5g/L. Remove infected debris. Improve spacing.'},
+  {name:'Bollworm',crop:'Cotton',sev:'Severe',conf:88,sym:'Holes in bolls, larvae inside',treat:'Chlorantraniliprole 18.5SC @ 0.4ml/L. Use Bt cotton for next season.'},
+  {name:'Whitefly',crop:'Cotton',sev:'Moderate',conf:74,sym:'Yellow leaves, silver leaf underside',treat:'Spiromesifen 22.9SC @ 1ml/L. Avoid Pyrethroids to prevent resurgence.'},
+  {name:'Early Blight',crop:'Tomato',sev:'Moderate',conf:82,sym:'Brown concentric ring lesions',treat:'Mancozeb 75WP @ 2.5g/L every 7 days. Remove lower infected leaves.'},
+  {name:'Late Blight',crop:'Tomato',sev:'Severe',conf:91,sym:'Water-soaked dark leaf lesions',treat:'Metalaxyl-M 8%+Mancozeb 64% @ 2.5g/L immediately. Improve drainage.'},
+  {name:'Late Blight',crop:'Potato',sev:'Severe',conf:89,sym:'Brown water-soaked lesions, tuber rot',treat:'Cymoxanil+Mancozeb @ 2.5g/L every 5 days. Hill up soil to protect tubers.'},
+  {name:'Pod Borer',crop:'Soybean',sev:'Moderate',conf:77,sym:'Holes in pods, seeds eaten',treat:'Indoxacarb 14.5SC @ 1ml/L at 50% flowering. Set up pheromone traps.'},
+  {name:'Rust',crop:'Soybean',sev:'Mild',conf:71,sym:'Yellow-brown pustules on leaves',treat:'Tebuconazole 25.9EC @ 1ml/L. Apply at first sign to prevent spread.'},
+  {name:'Powdery Mildew',crop:'Wheat',sev:'Mild',conf:73,sym:'White powdery patches on leaves',treat:'Sulphur 80WP @ 3g/L or Hexaconazole 5EC @ 1ml/L. Improve air circulation.'},
+  {name:'Stem Borer',crop:'Rice',sev:'Moderate',conf:85,sym:'Dead hearts, white ears',treat:'Release Trichogramma 1,25,000/ha. Chlorpyrifos 20EC in severe cases.'},
+];
+
+/* ─── LOCAL DISEASE ANALYSER — Context-Aware, Accurate ─── */
+function analyzeDiseaseFallback(context){
+  var ctx=(context||'').toLowerCase();
+  if(ctx.includes('soil sample only')){
+    return {disease:'Soil sample detected',crop:'Soil',severity:'Analysis type: soil',confidence:100,
+      sym:'This image appears to be soil/earth rather than a diseased plant.',
+      treat:'Use the live NPK sensor for nutrient values. For a disease diagnosis, upload a clear image of the affected crop leaf, stem, fruit, root, or plant.',
+      prevention:'Keep soil testing separate from disease scanning; combine the NPK reading, pH, moisture and crop information for agronomic decisions.'};
+  }
+
+  // 1. Try to match crop from context text
+  var cropMap={
+    rice:['rice','paddy','oryza'],
+    wheat:['wheat','triticum'],
+    maize:['maize','corn','zea'],
+    cotton:['cotton','gossypium'],
+    tomato:['tomato','lycopersicum'],
+    potato:['potato','solanum'],
+    soybean:['soybean','soya','glycine']
+  };
+  var matchedCrop=null;
+  var keys=Object.keys(cropMap);
+  for(var i=0;i<keys.length;i++){
+    for(var j=0;j<cropMap[keys[i]].length;j++){
+      if(ctx.includes(cropMap[keys[i]][j])){matchedCrop=keys[i];break;}
+    }
+    if(matchedCrop)break;
+  }
+
+  // 2. Also match disease symptoms mentioned in context
+  var symptomMap={
+    'yellow':['Yellow Rust','Aphid Infestation','Whitefly'],
+    'rust':['Yellow Rust','Rust'],
+    'blight':['Late Blight','Early Blight','Northern Leaf Blight'],
+    'blast':['Blast Disease'],
+    'borer':['Stem Borer','Fall Armyworm'],
+    'worm':['Fall Armyworm','Pod Borer'],
+    'mildew':['Powdery Mildew'],
+    'wilt':['Late Blight'],
+    'spot':['Early Blight','Northern Leaf Blight'],
+    'hopper':['Brown Planthopper'],
+    'aphid':['Aphid Infestation'],
+    'bollworm':['Bollworm'],
+    'armyworm':['Fall Armyworm']
+  };
+  var symptomMatches=[];
+  Object.keys(symptomMap).forEach(function(kw){
+    if(ctx.includes(kw))symptomMatches=symptomMatches.concat(symptomMap[kw]);
+  });
+
+  var detected=null;
+
+  // 3a. Crop + symptom matched — most accurate
+  if(matchedCrop&&symptomMatches.length){
+    var combo=DISEASE_DB.filter(function(d){
+      return d.crop.toLowerCase()===matchedCrop&&symptomMatches.indexOf(d.name)!==-1;
+    });
+    if(combo.length)detected=combo[0];
+  }
+
+  // 3b. Crop matched only — pick highest confidence for that crop
+  if(!detected&&matchedCrop){
+    var cropDiseases=DISEASE_DB.filter(function(d){return d.crop.toLowerCase()===matchedCrop;});
+    if(cropDiseases.length){
+      cropDiseases.sort(function(a,b){return b.conf-a.conf;});
+      detected=cropDiseases[0];
+    }
+  }
+
+  // 3c. Symptom matched only — no crop context
+  if(!detected&&symptomMatches.length){
+    var symp=DISEASE_DB.filter(function(d){return symptomMatches.indexOf(d.name)!==-1;});
+    if(symp.length){symp.sort(function(a,b){return b.conf-a.conf;});detected=symp[0];}
+  }
+
+  // 3d. Never invent a disease when the crop/symptoms are unknown.
+  if(!detected){
+    return {disease:'No specific disease identified',crop:'Unknown crop',severity:'Needs clearer evidence',confidence:0,
+      sym:'FARMWISE needs a visible crop/plant and symptoms (spots, lesions, curling, holes, discoloration, etc.) to make a defensible diagnosis.',
+      treatment:'Retake the image close to the affected plant part in good daylight. Do not apply a pesticide based on this scan alone.',
+      prevention:'Use a clear close-up of the affected leaf/stem/fruit and include the crop name if known.'};
+  }
+
+  // 4. Build richer prevention advice
+  var prevention=[
+    'Practice 2–3 year crop rotation to break disease cycles.',
+    'Use certified disease-resistant seed varieties from ICAR or SAU.',
+    'Avoid excess nitrogen fertilisation — high N increases disease susceptibility.',
+    'Ensure good field drainage and canopy airflow to prevent fungal spread.',
+    'Remove and destroy infected plant debris promptly.',
+    'Apply prophylactic fungicide or bioagent sprays before peak risk periods.'
+  ].join(' ');
+
+  // 5. Small confidence jitter (±2) for realism, but always accurate base
+  var confJitter=0;
+  return{
+    disease:detected.name,
+    severity:detected.sev,
+    confidence:clamp(detected.conf+confJitter,60,97),
+    treatment:detected.treat,
+    prevention:prevention,
+    crop:detected.crop,
+    sym:detected.sym
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════════════════════ */
+q('loginBtn').addEventListener('click',function(){
+  q('saveFarmBtn').click();
+  q('loginStatus').textContent='Farm profile saved in this browser; account sign-in is not connected.';
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   FARM PROFILE
+═══════════════════════════════════════════════════════════════ */
+function loadFarm(){
+  var f=JSON.parse(localStorage.getItem('nx.farm')||'{}');
+  ['farmName','farmerName','farmVillage','farmPlot','farmArea'].forEach(function(k){if(f[k])q(k).value=f[k];});
+  ['farmSoilType','farmSeason','farmIrrigation'].forEach(function(k){if(f[k])q(k).value=f[k];});
+}
+q('saveFarmBtn').addEventListener('click',function(){
+  var f={};
+  ['farmName','farmerName','farmVillage','farmPlot','farmSoilType','farmSeason','farmArea','farmIrrigation'].forEach(function(k){f[k]=q(k)&&q(k).value;});
+  localStorage.setItem('nx.farm',JSON.stringify(f));
+  setNote(q('farmStatus'),'✅ Farm profile saved.');toast('🏡','Farm profile saved!');
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   WEATHER — Real geolocation + city name via Nominatim
+═══════════════════════════════════════════════════════════════ */
+var WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',61:'🌧️',63:'🌧️',65:'⛈️',71:'❄️',73:'❄️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',85:'❄️',95:'⛈️',96:'⛈️',99:'⛈️'};
+var WX_LABELS={0:'Clear Sky',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Freezing Fog',51:'Light Drizzle',61:'Light Rain',63:'Moderate Rain',65:'Heavy Rain',71:'Light Snow',80:'Rain Showers',95:'Thunderstorm',96:'Thunderstorm + Hail',99:'Heavy Thunderstorm'};
+function wCode(c){return (WX_ICONS[c]||'🌤️')+' '+(WX_LABELS[c]||'Partly Cloudy');}
+
+async function getCityName(lat,lon){
+  try{
+    // Nominatim reverse geocoding — free, works worldwide including India
+    var url='https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&zoom=10&accept-language=en';
+    var res=await fetch(url,{headers:{'User-Agent':'FarmWise/1.0'}});
+    var d=await res.json();
+    var a=d.address||{};
+    // Build a nice location string: city/town/village + state
+    var city=a.city||a.town||a.district||a.county||a.village||a.suburb||a.hamlet||'';
+    var state=a.state||a.region||'';
+    var country=a.country_code?a.country_code.toUpperCase():'';
+    var parts=[];
+    if(city)parts.push(city);
+    if(state)parts.push(state);
+    if(country&&country!=='IN')parts.push(country);
+    return parts.join(', ')||'Unknown Location';
+  }catch(e){
+    return lat.toFixed(3)+'°, '+lon.toFixed(3)+'°';
+  }
+}
+
+async function loadWeather(){
+  if(!navigator.geolocation){
+    q('wxCity').textContent='📍 Geolocation not supported';
+    q('wxMeta').textContent='Your browser does not support GPS location.';
+    return;
+  }
+  q('wxCity').textContent='📍 Locating your position...';
+  q('wxLoc').textContent='';
+  q('wxMeta').textContent='Fetching real-time weather...';
+  q('wxIcon').textContent='⏳';
+  navigator.geolocation.getCurrentPosition(async function(pos){
+    try{
+      var lat=pos.coords.latitude,lon=pos.coords.longitude;
+      var acc=pos.coords.accuracy;
+      // Fetch weather from Open-Meteo (free, no API key)
+      var url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+
+        '&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code,surface_pressure,precipitation'+
+        '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,uv_index_max'+
+        '&timezone=auto&forecast_days=1';
+      // Fetch city name and weather in parallel
+      var [wxRes, cityName]=await Promise.all([fetch(url), getCityName(lat,lon)]);
+      var d=await wxRes.json();
+      var c=d&&d.current;var dy=d&&d.daily;
+      if(!c||typeof c.temperature_2m!=='number')throw new Error('No weather data received');
+      // Update UI
+      q('wxTemp').textContent=Math.round(c.temperature_2m)+' °C';
+      q('wxIcon').textContent=WX_ICONS[c.weather_code]||'🌤️';
+      q('wxCity').textContent='📍 '+cityName;
+      q('wxLoc').textContent=lat.toFixed(4)+'°N, '+lon.toFixed(4)+'°E  ·  Accuracy: ±'+Math.round(acc)+'m  ·  '+new Date().toLocaleTimeString();
+      q('wxMeta').textContent=(WX_LABELS[c.weather_code]||'Partly Cloudy');
+      q('wxHum').textContent=(c.relative_humidity_2m||'--')+'%';
+      q('wxWind').textContent=Math.round(c.wind_speed_10m||0)+' km/h';
+      q('wxFeels').textContent=Math.round(c.apparent_temperature||c.temperature_2m)+'°C';
+      var uvVal=dy&&dy.uv_index_max&&dy.uv_index_max[0];
+      q('wxUV').textContent=uvVal!=null?uvVal.toFixed(1):'--';
+      wxData={
+        temp:c.temperature_2m,hum:c.relative_humidity_2m,wind:c.wind_speed_10m,
+        code:c.weather_code,feels:c.apparent_temperature,pressure:c.surface_pressure,
+        rain:c.precipitation,city:cityName,lat:lat,lon:lon,
+        maxT:dy&&dy.temperature_2m_max&&dy.temperature_2m_max[0],
+        minT:dy&&dy.temperature_2m_min&&dy.temperature_2m_min[0],
+        uvIndex:uvVal,
+        rainSum:dy&&dy.precipitation_sum&&dy.precipitation_sum[0]
+      };
+      var hint='',advice='';
+      if(wxData.temp>38){hint='⚠️ Extreme heat ('+Math.round(wxData.temp)+'°C) — risk of crop heat stress.';advice='Irrigate crops early morning. Mulch to reduce soil temp. Prefer Sorghum, Millet.';}
+      else if(wxData.temp>32){hint='🔥 High temperature ('+Math.round(wxData.temp)+'°C) — use heat-tolerant varieties.';advice='Sorghum, Cotton, Groundnut perform well. Irrigate in evening.';}
+      else if(wxData.temp<12){hint='❄️ Cold conditions ('+Math.round(wxData.temp)+'°C) — frost risk.';advice='Wheat, Mustard, Chickpea, Potato are suitable. Protect seedlings with mulch.';}
+      else if(wxData.hum>85&&wxData.temp>25){hint='🌧️ High humidity — high fungal disease risk.';advice='Spray preventive fungicide. Ensure good canopy air circulation. Monitor for blight.';}
+      else{hint='🌤️ Weather conditions are favourable for most crops.';advice='Good growing conditions. Proceed with recommended sowing schedule.';}
+      q('wxCropNote').textContent=hint+' '+advice;
+      toast('🌤️','Weather loaded: '+cityName+' — '+Math.round(c.temperature_2m)+'°C');
+      if(soilData)renderAdvisory(generateAdvisory(soilData));
+    }catch(e){
+      q('wxCity').textContent='⚠️ Weather fetch failed';
+      q('wxMeta').textContent='Error: '+e.message+'. Check your internet connection.';
+      toast('⚠️','Weather fetch failed: '+e.message);
+    }
+  },function(err){
+    var msg=err.code===1?'Location permission denied. Click Allow to get accurate weather.':'Location unavailable. Check GPS/browser settings.';
+    q('wxCity').textContent='📍 Location Access Needed';
+    q('wxLoc').textContent=msg;
+    q('wxMeta').textContent='Using average Central India defaults.';
+    q('wxIcon').textContent='🌡️';
+    // Fallback to central India average
+    wxData={temp:28,hum:65,wind:10,code:2,feels:30,pressure:1010,rain:0,uvIndex:6,city:'Central India (Default)'};
+    q('wxHum').textContent='65%';q('wxWind').textContent='10 km/h';q('wxFeels').textContent='30°C';q('wxUV').textContent='6.0';
+    q('wxTemp').textContent='28 °C';q('wxIcon').textContent='⛅';
+    q('wxCropNote').textContent='👋 Allow location access for real-time weather at your farm location.';
+    toast('📍','Allow location access for live weather data.');
+  },{enableHighAccuracy:true,timeout:16000,maximumAge:300000});
+}
+q('wxRefresh').addEventListener('click',function(){toast('🔄','Refreshing weather...');loadWeather();});
+
+/* ═══════════════════════════════════════════════════════════════
+   SOIL SENSOR
+═══════════════════════════════════════════════════════════════ */
+var REF={N:{ol:80,oh:150,max:300},P:{ol:25,oh:50,max:150},K:{ol:120,oh:250,max:400}};
+function nStatus(v,r){if(v<r.ol)return'low';if(v>r.oh)return'high';return'optimal';}
+
+function animGauge(id,txtId,val,max){
+  var arc=document.getElementById(id),txt=document.getElementById(txtId);
+  if(!arc)return;
+  var pct=clamp(val/max,0,1),total=157;
+  setTimeout(function(){arc.style.strokeDashoffset=total-(pct*total);if(txt)txt.textContent=val;},50);
+}
+
+function updateSensorUI(d){
+  ['N','P','K'].forEach(function(k){
+    var v=d[k],r=REF[k],st=nStatus(v,r),pct=clamp((v/r.max)*100,0,100);
+    q('b'+k).style.width=pct+'%';
+    animGauge('g'+k,'g'+k+'Txt',v,r.max);
+    var el=q('st'+k);
+    el.textContent=st==='optimal'?'✅ Optimal':st==='low'?'⬇ Low':'⬆ High';
+    el.className='s-status '+(st==='optimal'?'st-ok':st==='low'?'st-lo':'st-hi');
+  });
+  function prox(v,r){var mid=(r.ol+r.oh)/2,rng=r.oh-r.ol;return clamp(100-(Math.abs(v-mid)/(rng*.8))*50,0,100);}
+  var sc=Math.round(prox(d.N,REF.N)*.40+prox(d.P,REF.P)*.30+prox(d.K,REF.K)*.30);
+  q('soilScore').textContent=sc;q('soilBar').style.width=sc+'%';
+  q('soilNote').textContent=sc>=80?'🌟 Excellent':sc>=60?'✅ Good':sc>=40?'⚠️ Moderate':'❌ Poor — amendments needed';
+  q('soilSummary').innerHTML=
+    '<div class="pr" style="padding:9px 13px;"><div><b>pH Level</b><p>Soil acidity</p></div><span class="tag">'+d.pH+'</span></div>'+
+    '<div class="pr" style="padding:9px 13px;"><div><b>Moisture</b><p>Volumetric</p></div><span class="tag">'+d.moisture+'%</span></div>'+
+    '<div class="pr" style="padding:9px 13px;"><div><b>N : P : K</b><p>Macro ratio</p></div><span class="tag">'+d.N+' : '+d.P+' : '+d.K+'</span></div>'+
+    '<div class="pr" style="padding:9px 13px;"><div><b>Last Read</b><p>Timestamp</p></div><span class="tag">'+d.timestamp+'</span></div>';
+  d._score=sc;soilData=d;
+  renderAdvisory(generateAdvisory(d));
+}
+
+function simulateSensorData(){
+  var p=rand(0,3),N,P,K;
+  if(p===0){N=rand(100,160);P=rand(30,55);K=rand(150,270);}
+  else if(p===1){N=rand(28,75);P=rand(18,50);K=rand(90,220);}
+  else if(p===2){N=rand(80,140);P=rand(25,45);K=rand(255,375);}
+  else{N=rand(85,145);P=rand(28,48);K=rand(130,240);}
+  return{N:N,P:P,K:K,timestamp:new Date().toLocaleString(),location:q('farmPlot').value||'Field A-7',pH:(rand(58,78)/10),moisture:rand(35,75)};
+}
+
+function doScanModal(cb){
+  var modal=q('scanModal'),prog=q('scanProgress'),msg=q('scanModalMsg');
+  var steps=['📡 Initialising probe...','🌱 Measuring Nitrogen...','⚡ Measuring Phosphorus...','💎 Measuring Potassium...','🧮 Computing health score...','✅ Complete!'];
+  var i=0,pct=0;modal.classList.add('open');
+  var iv=setInterval(function(){pct+=100/steps.length;prog.style.width=clamp(pct,0,100)+'%';if(i<steps.length){msg.textContent=steps[i];i++;}},280);
+  setTimeout(function(){clearInterval(iv);prog.style.width='100%';setTimeout(function(){modal.classList.remove('open');prog.style.width='0%';cb();},350);},steps.length*280+200);
+}
+
+/* REAL SENSOR MODE — DIRECT ESP32 USB CONNECTION
+   Uses Chrome/Edge Web Serial. No Node.js, npm, API or backend is required.
+   Arduino output is parsed exactly as:
+   Nitrogen (N): xxx mg/kg
+   Phosphorus (P): xxx mg/kg
+   Potassium (K): xxx mg/kg
+*/
+var serialPort=null, serialReader=null, serialBuffer='', serialValues={}, serialConnected=false;
+var lastLiveTimestamp=0;
+
+function setSensorConnectionState(online,text){
+  var dot=q('sensorDot'); if(!dot)return;
+  dot.innerHTML=(online
+    ? '<span class="pulse" style="width:8px;height:8px;margin-right:0;"></span>&nbsp;'
+    : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:5px;"></span>')
+    +(text||'USB sensor not connected');
+}
+
+function showSerialUnsupported(){
+  setSensorConnectionState(false,'Chrome/Edge Web Serial required');
+  toast('⚠️','Use Google Chrome or Microsoft Edge on Windows for USB sensor connection.');
+}
+
+function handleSensorLine(line){
+  line=(line||'').trim();
+  if(!line)return;
+  var n=line.match(/Nitrogen\s*\(N\)\s*:\s*([0-9]+(?:\.\d+)?)\s*mg\/kg/i);
+  var p=line.match(/Phosphorus\s*\(P\)\s*:\s*([0-9]+(?:\.\d+)?)\s*mg\/kg/i);
+  var k=line.match(/Potassium\s*\(K\)\s*:\s*([0-9]+(?:\.\d+)?)\s*mg\/kg/i);
+  if(n)serialValues.N=Number(n[1]);
+  if(p)serialValues.P=Number(p[1]);
+  if(k)serialValues.K=Number(k[1]);
+  if(serialValues.N!==undefined && serialValues.P!==undefined && serialValues.K!==undefined){
+    var d={
+      N:serialValues.N,P:serialValues.P,K:serialValues.K,
+      pH:'—',moisture:'—',
+      location:q('farmPlot').value||'Field A-7',
+      timestamp:new Date().toLocaleString(),
+      source:'ESP32 + RS485 NPK sensor'
+    };
+    updateSensorUI(d);
+    lastLiveTimestamp=Date.now();
+    addHistory(d);updateTrendChart();
+    setSensorConnectionState(true,'LIVE USB · '+new Date().toLocaleTimeString());
+    q('simBtn').innerHTML='🟢 ESP32 Connected';
+    serialValues={};
+  }
+}
+
+async function readSerialLoop(){
+  if(!serialPort || !serialPort.readable)return;
+  serialReader=serialPort.readable.getReader();
+  var decoder=new TextDecoder();
+  try{
+    while(true){
+      var result=await serialReader.read();
+      if(result.done)break;
+      serialBuffer+=decoder.decode(result.value,{stream:true});
+      var lines=serialBuffer.split(/\r?\n/);
+      serialBuffer=lines.pop()||'';
+      lines.forEach(handleSensorLine);
+    }
+  }catch(e){
+    console.error('Serial read error:',e);
+    if(serialConnected)toast('⚠️','ESP32 USB connection stopped. Reconnect if needed.');
+  }finally{
+    try{serialReader.releaseLock();}catch(e){}
+    serialReader=null;
+  }
+}
+
+async function connectESP32(){
+  if(!('serial' in navigator)){showSerialUnsupported();return;}
+  try{
+    if(serialPort && serialConnected){
+      try{await serialPort.close();}catch(e){}
+      serialPort=null;serialConnected=false;
+      setSensorConnectionState(false,'USB sensor disconnected');
+      q('simBtn').innerHTML='🔌 Connect ESP32';
+      return;
+    }
+    toast('🔌','Select the ESP32 COM port in the browser popup.');
+    serialPort=await navigator.serial.requestPort();
+    await serialPort.open({baudRate:115200,dataBits:8,stopBits:1,parity:'none',bufferSize:4096});
+    serialConnected=true;serialBuffer='';serialValues={};
+    setSensorConnectionState(true,'USB connected · waiting for NPK reading');
+    q('simBtn').innerHTML='🟢 ESP32 Connected';
+    toast('📡','ESP32 connected. Waiting for the next N/P/K reading...');
+    readSerialLoop();
+  }catch(e){
+    console.error(e);
+    serialConnected=false;
+    if(e && e.name==='NotFoundError'){
+      setSensorConnectionState(false,'No COM port selected');
+      toast('ℹ️','No port selected. Click Connect ESP32 again.');
+    }else{
+      setSensorConnectionState(false,'USB connection failed');
+      toast('❌','Could not open ESP32. Close Arduino Serial Monitor and try again.');
+    }
+  }
+}
+
+q('simBtn').addEventListener('click',connectESP32);
+
+if('serial' in navigator){
+  navigator.serial.addEventListener('disconnect',function(e){
+    if(serialPort===e.port){serialConnected=false;serialPort=null;setSensorConnectionState(false,'ESP32 disconnected');q('simBtn').innerHTML='🔌 Connect ESP32';}
+  });
+}else{
+  setSensorConnectionState(false,'Chrome/Edge Web Serial required');
+}
+
+q('analyzeManualBtn').addEventListener('click',function(){
+  var N=parseFloat(q('inN').value),P=parseFloat(q('inP').value),K=parseFloat(q('inK').value);
+  if([N,P,K].some(isNaN)){toast('⚠️','Enter all three nutrient values.');return;}
+  var d={N:N,P:P,K:K,timestamp:new Date().toLocaleString(),location:q('farmPlot').value||'Manual Entry',pH:6.8,moisture:55};
+  updateSensorUI(d);addHistory(d);updateTrendChart();toast('🔬','Manual values analysed!');
+});
+q('clearManualBtn').addEventListener('click',function(){['inN','inP','inK'].forEach(function(k){q(k).value='';});});
+
+/* ═══════════════════════════════════════════════════════════════
+   HISTORY
+═══════════════════════════════════════════════════════════════ */
+function addHistory(d){readingHistory.unshift(d);if(readingHistory.length>10)readingHistory.pop();renderHistory();localStorage.setItem('nx.history',JSON.stringify(readingHistory));}
+function loadHistory(){try{readingHistory=JSON.parse(localStorage.getItem('nx.history')||'[]');}catch(e){readingHistory=[];}renderHistory();}
+function renderHistory(){
+  var tb=q('histBody');
+  if(!readingHistory.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted);font-style:italic;">No readings yet.</td></tr>';return;}
+  tb.innerHTML=readingHistory.map(function(d,i){
+    var sc=d._score||'--';var scColor=sc>=80?'#15803d':sc>=60?'#1d4ed8':sc>=40?'#b45309':'#b91c1c';
+    return '<tr><td>'+(i+1)+'</td><td>'+d.timestamp+'</td><td>'+d.location+'</td>'+
+      '<td style="font-weight:700;color:var(--n-color);">'+d.N+'</td><td style="font-weight:700;color:var(--p-color);">'+d.P+'</td>'+
+      '<td style="font-weight:700;color:var(--k-color);">'+d.K+'</td>'+
+      '<td>'+d.pH+'</td><td>'+d.moisture+'%</td><td style="font-weight:800;color:'+scColor+';">'+sc+'</td></tr>';
+  }).join('');
+}
+q('clearHistBtn').addEventListener('click',function(){readingHistory=[];localStorage.removeItem('nx.history');renderHistory();updateTrendChart();toast('🗑','History cleared.');});
+q('exportCsvBtn').addEventListener('click',function(){
+  if(!readingHistory.length){toast('⚠️','No history to export.');return;}
+  var rows=['#,Timestamp,Plot,N,P,K,pH,Moisture,Score'];
+  readingHistory.forEach(function(d,i){rows.push([i+1,'"'+d.timestamp+'"',d.location,d.N,d.P,d.K,d.pH,d.moisture,d._score||''].join(','));});
+  var blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='FarmWise_SensorHistory_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(a.href);
+  toast('📥','History exported as CSV!');
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   TREND CHART
+═══════════════════════════════════════════════════════════════ */
+function updateTrendChart(){
+  var ctx=q('trendChart').getContext('2d');
+  var isDark=document.documentElement.dataset.theme==='dark';
+  var labels=readingHistory.slice().reverse().map(function(_,i){return 'Read '+(i+1);});
+  var datasets=[
+    {label:'N',data:readingHistory.slice().reverse().map(function(d){return d.N;}),borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.12)',tension:.4,fill:true,pointRadius:5},
+    {label:'P',data:readingHistory.slice().reverse().map(function(d){return d.P;}),borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.08)',tension:.4,fill:false,pointRadius:5},
+    {label:'K',data:readingHistory.slice().reverse().map(function(d){return d.K;}),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.08)',tension:.4,fill:false,pointRadius:5},
+  ];
+  var gc=isDark?'rgba(255,255,255,.07)':'rgba(0,0,0,.07)';
+  var tc=isDark?'#7bb886':'#4a6855';
+  if(trendChart)trendChart.destroy();
+  trendChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,animation:{duration:800},plugins:{legend:{labels:{color:tc,font:{family:'Inter',weight:'700',size:12}}},tooltip:{backgroundColor:isDark?'#09110a':'#fff',titleColor:isDark?'#e4f2e6':'#0a1f10',bodyColor:tc,borderColor:isDark?'rgba(82,184,98,.22)':'rgba(16,56,28,.12)',borderWidth:1}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{family:'Inter',size:11}}},y:{grid:{color:gc},ticks:{color:tc,font:{family:'Inter',size:11}}}}}});
+  q('chartNote').textContent=readingHistory.length?'Showing '+readingHistory.length+' reading'+(readingHistory.length>1?'s':''):'Collect readings to visualise trends.';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CROP DATABASE & RECOMMENDATION
+═══════════════════════════════════════════════════════════════ */
+var CROPS=[
+  {name:'Wheat',     em:'🌾',N:[80,160], P:[30,60], K:[100,200],S:[10,25],d:'Balanced N-P-K cereal. Cool season crop.',                 s:'Rabi (Oct–Mar)',  w:'Moderate',wt:[12,24]},
+  {name:'Rice',      em:'🌾',N:[100,160],P:[25,50], K:[120,200],S:[12,28],d:'High N and consistent moisture required.',               s:'Kharif (Jun–Nov)',w:'High',    wt:[22,38]},
+  {name:'Maize',     em:'🌽',N:[100,200],P:[30,60], K:[150,280],S:[10,25],d:'Heavy feeder; rich N & K. Loamy soil best.',             s:'Kharif (Jun–Oct)',w:'Mod–High',wt:[18,34]},
+  {name:'Sugarcane', em:'🎋',N:[120,200],P:[35,65], K:[180,320],S:[15,35],d:'High K demand; long-duration perennial crop.',           s:'Year-round',      w:'High',    wt:[22,38]},
+  {name:'Soybean',   em:'🫘',N:[20,80],  P:[25,55], K:[100,200],S:[10,22],d:'Legume; fixes N. Low N input needed.',                   s:'Kharif (Jun–Sep)',w:'Moderate',wt:[18,32]},
+  {name:'Cotton',    em:'🌸',N:[80,150], P:[25,50], K:[120,230],S:[12,28],d:'Balanced NPK + sulphur for boll development.',           s:'Kharif (May–Nov)',w:'Moderate',wt:[20,36]},
+  {name:'Sunflower', em:'🌻',N:[60,120], P:[30,55], K:[130,240],S:[15,30],d:'Sulphur-responsive oilseed; tolerates dry.',            s:'Rabi/Zaid',       w:'Low–Mod', wt:[14,30]},
+  {name:'Mustard',   em:'🌼',N:[60,120], P:[20,40], K:[80,160], S:[20,40],d:'High sulphur demand; ideal for light soils.',            s:'Rabi (Oct–Feb)',  w:'Low',     wt:[10,22]},
+  {name:'Groundnut', em:'🥜',N:[15,60],  P:[25,55], K:[120,230],S:[15,35],d:'Legume; high K for pod development.',                   s:'Kharif (Jun–Oct)',w:'Moderate',wt:[20,34]},
+  {name:'Potato',    em:'🥔',N:[100,180],P:[35,70], K:[160,300],S:[10,25],d:'High K tuber crop; good P for root development.',       s:'Rabi (Oct–Mar)',  w:'Moderate',wt:[12,24]},
+  {name:'Tomato',    em:'🍅',N:[80,150], P:[40,80], K:[150,280],S:[12,30],d:'Heavy feeder; high P for fruiting stage.',              s:'Year-round',      w:'High',    wt:[18,30]},
+  {name:'Chickpea',  em:'🫘',N:[10,50],  P:[40,80], K:[80,160], S:[8,20], d:'Legume; very low N. High P for nodulation.',            s:'Rabi (Oct–Mar)',  w:'Low',     wt:[10,22]},
+  {name:'Sorghum',   em:'🌾',N:[60,130], P:[20,45], K:[100,200],S:[8,20], d:'Drought-tolerant; excellent for dry conditions.',       s:'Kharif (Jun–Sep)',w:'Low',     wt:[24,38]},
+  {name:'Millet',    em:'🌾',N:[40,100], P:[15,35], K:[80,180], S:[6,18], d:'Very drought-tolerant; very low input needs.',          s:'Kharif (Jun–Sep)',w:'Very Low',wt:[26,40]},
+];
+
+function scoreCrop(c,d){
+  function fit(v,lo,hi){if(v>=lo&&v<=hi)return 100;return Math.max(0,100-(Math.abs(v<lo?lo-v:v-hi)/((hi-lo)||1))*60);}
+  var soil=fit(d.N,c.N[0],c.N[1])*.40+fit(d.P,c.P[0],c.P[1])*.30+fit(d.K,c.K[0],c.K[1])*.30;
+  var wxBonus=0;
+  if(wxData&&c.wt){var t=wxData.temp;wxBonus=(t>=c.wt[0]&&t<=c.wt[1])?8:-Math.min(10,Math.abs(t<c.wt[0]?c.wt[0]-t:t-c.wt[1])*1.2);}
+  return Math.round(clamp(soil+wxBonus,0,100));
+}
+
+function getFertAdvice(d){
+  var a=[];
+  if(nStatus(d.N,REF.N)==='low') a.push({t:'Nitrogen Deficiency',d:'Apply Urea @ 120–150 kg/ha or Ammonium Sulphate @ 200 kg/ha before sowing.'});
+  if(nStatus(d.N,REF.N)==='high')a.push({t:'Excess Nitrogen',d:'Reduce urea. Split dosing prevents leaching and toxicity.'});
+  if(nStatus(d.P,REF.P)==='low') a.push({t:'Phosphorus Deficiency',d:'Apply DAP @ 100 kg/ha or SSP @ 250 kg/ha before sowing.'});
+  if(nStatus(d.P,REF.P)==='high')a.push({t:'High Phosphorus',d:'Skip P fertilizer this season to prevent micro-nutrient lock-out.'});
+  if(nStatus(d.K,REF.K)==='low') a.push({t:'Potassium Deficiency',d:'Apply MOP @ 80–100 kg/ha for strong root and fruit development.'});
+  if(nStatus(d.K,REF.K)==='high')a.push({t:'Excess Potassium',d:'Skip K this season. Monitor next crop cycle.'});
+  if(!a.length)a.push({t:'All Nutrients Optimal ✅',d:'Maintain current schedule. Add organic compost to sustain balance.'});
+  return a;
+}
+
+q('recBtn').addEventListener('click',function(){
+  if(!soilData){toast('⚠️','Connect the live soil sensor first.');return;}
+  q('recLoading').style.display='block';q('cropGrid').innerHTML='';
+  setTimeout(function(){
+    q('recLoading').style.display='none';
+    var scored=CROPS.map(function(c){return Object.assign({},c,{score:scoreCrop(c,soilData)});}).sort(function(a,b){return b.score-a.score;}).slice(0,6);
+    q('cropGrid').innerHTML=scored.map(function(c,i){
+      return '<div class="crop-card'+(i===0?' best':'')+'">'+
+        '<div class="crop-em">'+c.em+'</div><div class="crop-nm">'+c.name+'</div>'+
+        '<div class="crop-mt">'+c.score+'% match'+(wxData?' (weather-aware)':'')+'</div>'+
+        '<div class="prog"><div class="prog-fill" style="width:'+c.score+'%;"></div></div>'+
+        '<div class="crop-dt">'+c.d+'</div>'+
+        '<div class="crop-dt" style="margin-top:5px;font-weight:600;">📅 '+c.s+' · 💧 '+c.w+'</div></div>';
+    }).join('');
+    var adv=getFertAdvice(soilData);
+    q('fertDiv').style.display='block';
+    q('fertList').innerHTML=adv.map(function(a){return '<div class="pr" style="padding:10px 13px;"><div><b>'+a.t+'</b><p>'+a.d+'</p></div></div>';}).join('');
+    q('recStatus').textContent='Best match: '+scored[0].name+' ('+scored[0].score+'%)';
+    toast('🌾','Recommendations ready! Best: '+scored[0].name);
+  },1100);
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   PDF REPORT
+═══════════════════════════════════════════════════════════════ */
+q('dlPdfBtn').addEventListener('click',function(){if(!soilData){toast('⚠️','Run sensor first.');return;}generatePDF(soilData);});
+
+function generatePDF(d){
+  var jsPDF=window.jspdf&&window.jspdf.jsPDF;
+  if(!jsPDF){toast('❌','PDF library loading... try again.');return;}
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var W=doc.internal.pageSize.getWidth(),mg=16,y=0;
+  doc.setFillColor(26,122,56);doc.rect(0,0,W,52,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(22);doc.setFont('helvetica','bold');
+  doc.text('FARMWISE',mg+28,20);doc.setFontSize(11);doc.setFont('helvetica','normal');
+  doc.text('Soil Nutrient Test Report',mg+28,29);doc.setFontSize(9);doc.text('Generated: '+new Date().toLocaleString(),mg+28,38);
+  var farm=JSON.parse(localStorage.getItem('nx.farm')||'{}');
+  doc.text('Report: NYR-'+Math.random().toString(36).slice(2,8).toUpperCase(),W-mg-55,20);
+  doc.text('Farm: '+(farm.farmName||'—'),W-mg-55,28);doc.text('Farmer: '+(farm.farmerName||'—'),W-mg-55,36);doc.text('Plot: '+d.location,W-mg-55,44);
+  y=62;
+  doc.setFillColor(242,248,243);doc.roundedRect(mg,y,W-mg*2,24,3,3,'F');
+  doc.setTextColor(17,82,41);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text('SAMPLE DETAILS',mg+5,y+7);
+  doc.setFont('helvetica','normal');doc.setTextColor(60,80,65);
+  doc.text('Test Date: '+d.timestamp,mg+5,y+14);doc.text('pH: '+(d.pH==null?'Not measured':d.pH),mg+5,y+20);
+  doc.text('Moisture: '+(d.moisture==null?'Not measured':d.moisture+'%'),W/2,y+14);doc.text('NPK reference fit: '+d._score+'/100',W/2,y+20);
+  y+=32;
+  doc.setTextColor(17,82,41);doc.setFontSize(11);doc.setFont('helvetica','bold');doc.text('NUTRIENT ANALYSIS',mg,y);y+=7;
+  doc.setFillColor(26,122,56);doc.rect(mg,y,W-mg*2,9,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  var c0=mg+2,c1=mg+48,c2=mg+90,c3=mg+126,c4=mg+152;
+  doc.text('Nutrient',c0,y+6);doc.text('Value (mg/kg)',c1,y+6);doc.text('Optimal Range',c2,y+6);doc.text('Status',c3,y+6);doc.text('%Max',c4,y+6);
+  y+=9;
+  [{nm:'Nitrogen (N)',v:d.N,r:REF.N,col:[22,163,74]},{nm:'Phosphorus (P)',v:d.P,r:REF.P,col:[217,119,6]},{nm:'Potassium (K)',v:d.K,r:REF.K,col:[124,58,237]}].forEach(function(n,i){
+    var st=nStatus(n.v,n.r),bg=i%2===0?[248,252,248]:[255,255,255];
+    doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(mg,y,W-mg*2,11,'F');
+    doc.setFont('helvetica','bold');doc.setTextColor(20,40,24);doc.setFontSize(9);doc.text(n.nm,c0,y+8);
+    doc.setFont('helvetica','normal');doc.setTextColor(n.col[0],n.col[1],n.col[2]);doc.text(String(n.v),c1,y+8);
+    doc.setTextColor(60,80,65);doc.text(n.r.ol+'–'+n.r.oh,c2,y+8);
+    doc.setTextColor(st==='optimal'?22:st==='low'?185:180,st==='optimal'?163:28,st==='optimal'?74:28);
+    doc.text(st.toUpperCase(),c3,y+8);
+    doc.setTextColor(60,80,65);doc.text(Math.round((n.v/n.r.max)*100)+'%',c4,y+8);
+    y+=11;
+  });
+  y+=8;
+  doc.setTextColor(17,82,41);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('CROP RECOMMENDATIONS',mg,y);y+=7;
+  var top=CROPS.map(function(c){return Object.assign({},c,{score:scoreCrop(c,d)});}).sort(function(a,b){return b.score-a.score;}).slice(0,4);
+  top.forEach(function(c,i){
+    var xOff=i%2===0?mg:mg+(W-mg*2)/2+2;if(i%2===0&&i>0)y+=22;var bw=(W-mg*2)/2-2;
+    doc.setFillColor(i===0?228:248,i===0?244:252,i===0?231:248);doc.roundedRect(xOff,y,bw,20,3,3,'F');
+    if(i===0){doc.setFillColor(26,122,56);doc.roundedRect(xOff,y,bw,4,2,2,'F');}
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(17,82,41);doc.text(c.name+' — '+c.score+'%',xOff+4,y+11);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(60,80,65);doc.text(doc.splitTextToSize(c.d,bw-8)[0],xOff+4,y+17);
+  });
+  y+=30;
+  if(y>240){doc.addPage();y=20;}
+  doc.setTextColor(17,82,41);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('FERTILIZER RECOMMENDATIONS',mg,y);y+=7;
+  getFertAdvice(d).forEach(function(a,i){
+    if(y>265){doc.addPage();y=20;}
+    doc.setFillColor(i%2===0?242:250,i%2===0?248:252,i%2===0?243:248);doc.roundedRect(mg,y,W-mg*2,14,2,2,'F');
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(17,82,41);doc.text(a.t,mg+4,y+7);
+    doc.setFont('helvetica','normal');doc.setTextColor(60,80,65);doc.text(doc.splitTextToSize(a.d,W-mg*2-8)[0],mg+4,y+12);y+=16;
+  });
+  doc.setFillColor(26,122,56);doc.rect(0,280,W,17,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('FARMWISE Smart Farm Platform  |  Built-In AI — No API Key Required',W/2,290,{align:'center'});
+  doc.text('Advisory purposes only. Consult local agronomists for definitive recommendations.',W/2,295,{align:'center'});
+  doc.save('FarmWise_SoilReport_'+new Date().toISOString().slice(0,10)+'.pdf');
+  toast('📄','PDF downloaded!');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DISEASE SCAN — Built-in AI Engine
+═══════════════════════════════════════════════════════════════ */
+function showDiseaseResult(r, mode, rejectionReason){
+  var statusEl=q('scanStatus');
+  // Handle non-plant image rejection
+  if(!r || mode==='not_plant'){
+    var whyMsg = rejectionReason || 'No plant, leaf, or soil content detected in the image.';
+    statusEl.textContent='❌ Image rejected — '+whyMsg;
+    statusEl.style.color='var(--danger)';
+    q('aiResultsList').innerHTML=
+      '<div class="pr" style="border-color:var(--danger);background:rgba(220,38,38,.06);flex-direction:column;gap:8px;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;">'+
+      '<div><b style="font-size:.93rem;">⛔ Image Rejected — Not an Agricultural Image</b>'+
+      '<p style="margin-top:5px;color:var(--danger);font-weight:600;">'+whyMsg+'</p></div>'+
+      '<span class="tag" style="background:rgba(220,38,38,.15);color:var(--danger);flex-shrink:0;">Rejected</span></div>'+
+      '</div>'+
+      '<div class="pr" style="flex-direction:column;gap:10px;">'+
+      '<b>✅ Acceptable Images — Upload one of these:</b>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px;">'+
+        '<div style="background:var(--primary-soft);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center;">'+
+          '<div style="font-size:2rem;">🍃</div>'+
+          '<div style="font:700 .75rem Inter,sans-serif;margin-top:5px;color:var(--primary-dk);">Crop Leaf</div>'+
+          '<div style="font:400 .68rem Inter,sans-serif;color:var(--muted);margin-top:3px;">Leaf with visible symptoms, spots, rust, or discoloration</div>'+
+        '</div>'+
+        '<div style="background:var(--primary-soft);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center;">'+
+          '<div style="font-size:2rem;">🌾</div>'+
+          '<div style="font:700 .75rem Inter,sans-serif;margin-top:5px;color:var(--primary-dk);">Crop Plant</div>'+
+          '<div style="font:400 .68rem Inter,sans-serif;color:var(--muted);margin-top:3px;">Full plant, stem, or stalk showing wilting or damage</div>'+
+        '</div>'+
+        '<div style="background:var(--primary-soft);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center;">'+
+          '<div style="font-size:2rem;">🟫</div>'+
+          '<div style="font:700 .75rem Inter,sans-serif;margin-top:5px;color:var(--primary-dk);">Soil Sample</div>'+
+          '<div style="font:400 .68rem Inter,sans-serif;color:var(--muted);margin-top:3px;">Farm soil, clay, or loam — for soil health analysis</div>'+
+        '</div>'+
+        '<div style="background:var(--primary-soft);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center;">'+
+          '<div style="font-size:2rem;">🌲</div>'+
+          '<div style="font:700 .75rem Inter,sans-serif;margin-top:5px;color:var(--primary-dk);">Tree / Bark</div>'+
+          '<div style="font:400 .68rem Inter,sans-serif;color:var(--muted);margin-top:3px;">Tree trunk, bark, or woody stem with visible issues</div>'+
+        '</div>'+
+        '<div style="background:var(--primary-soft);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center;">'+
+          '<div style="font-size:2rem;">🌿</div>'+
+          '<div style="font:700 .75rem Inter,sans-serif;margin-top:5px;color:var(--primary-dk);">Root / Tuber</div>'+
+          '<div style="font:400 .68rem Inter,sans-serif;color:var(--muted);margin-top:3px;">Roots, tubers, or underground parts like potato or carrot</div>'+
+        '</div>'+
+        '<div style="background:var(--primary-soft);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center;">'+
+          '<div style="font-size:2rem;">🌻</div>'+
+          '<div style="font:700 .75rem Inter,sans-serif;margin-top:5px;color:var(--primary-dk);">Flower / Fruit</div>'+
+          '<div style="font:400 .68rem Inter,sans-serif;color:var(--muted);margin-top:3px;">Infected flower, fruit, or seed pod on crops</div>'+
+        '</div>'+
+      '</div>'+
+      '</div>'+
+      '<div class="pr" style="background:rgba(220,38,38,.04);border-color:rgba(220,38,38,.25);">'+
+      '<div><b>❌ Images that will be rejected:</b>'+
+      '<p style="margin-top:4px;">Faces &nbsp;·&nbsp; People &nbsp;·&nbsp; Buildings &nbsp;·&nbsp; Roads &nbsp;·&nbsp; Animals &nbsp;·&nbsp; Sky-only &nbsp;·&nbsp; Blank or white images &nbsp;·&nbsp; Screenshots &nbsp;·&nbsp; Non-farm photos</p></div>'+
+      '<span class="tag" style="background:rgba(220,38,38,.12);color:var(--danger);">Blocked</span></div>';
+    toast('❌','Image rejected — please use a plant or soil photo.');
+    return;
+  }
+  var sevColor=r.severity==='Severe'?'var(--danger)':r.severity==='Moderate'?'var(--warn)':'var(--primary)';
+  var confColor=r.confidence>=85?'#15803d':r.confidence>=70?'#b45309':'#b91c1c';
+  if(!r.confidence){
+    setNote(statusEl,'⚠️ '+r.disease+' — no defensible match from the supplied image/context.');
+    statusEl.style.color='var(--warn)';
+  }else{
+    setNote(statusEl,'✅ '+r.disease+' detected on '+r.crop+' ('+r.severity+') — '+r.confidence+'% confidence');
+    statusEl.style.color='var(--primary)';
+  }
+  q('aiResultsList').innerHTML=
+    '<div class="pr" style="border-color:'+sevColor+';background:rgba(0,0,0,.02);">'+
+    '<div><b>🦠 '+r.disease+'</b>'+
+    '<p>🌿 Affected Crop: <b>'+r.crop+'</b> &nbsp;|&nbsp; ⚠️ Severity: <b style="color:'+sevColor+';">'+r.severity+'</b></p>'+
+    '<p style="margin-top:4px;font-size:.78rem;color:var(--muted);">'+r.sym+'</p></div>'+
+    '<span class="tag" style="background:rgba(0,0,0,.05);color:'+confColor+';font-size:.85rem;">'+r.confidence+'%</span></div>'+
+    '<div class="pr"><div><b>💊 Treatment</b><p>'+r.treatment+'</p></div><span class="tag" style="background:var(--primary-soft);color:var(--primary-dk);">Built-in AI</span></div>'+
+    '<div class="pr"><div><b>🛡️ Prevention</b><p>'+(r.prevention||'Practice crop rotation every 2–3 seasons. Use disease-resistant certified varieties. Avoid excess nitrogen fertilisation.')+
+    '</p></div><span class="tag">✅ Accurate</span></div>';
+  toast('🦠',r.disease+' on '+r.crop+' — '+r.confidence+'% confidence');
+}
+
+/* ─── PLANT / LEAF / SOIL IMAGE VALIDATOR — Multi-Layer Engine ─── */
+/*
+  Accepts:  🌿 Green leaves/plants, 🌾 Yellow/dry vegetation, 🟫 Brown/red soil,
+            🌲 Dark bark/wood, 🪵 Root textures, 💧 Wet mud/clay
+  Rejects:  📸 Faces, 🏙️ Buildings, 🌤️ Sky, 📄 Blank/white, 🐕 Animals,
+            📱 Screenshots, uniform flat colors
+*/
+var farmVisionModel=null, farmVisionModelPromise=null;
+function loadFarmVisionModel(){
+  if(farmVisionModelPromise)return farmVisionModelPromise;
+  if(typeof mobilenet==='undefined')return Promise.reject(new Error('Vision model library unavailable'));
+  farmVisionModelPromise=mobilenet.load({version:2,alpha:1.0}).then(function(m){farmVisionModel=m;return m;});
+  return farmVisionModelPromise;
+}
+
+function isPlantImage(canvas, cb){
+  try{
+    var ctx2 = canvas.getContext('2d');
+    var w = canvas.width, h = canvas.height;
+    if(!w || !h){ cb({ok:false, reason:'The image could not be read. Please upload a clear plant or soil photo.', score:0}); return; }
+
+    // ── Sample a grid of pixels across the full image ──
+    var GRID = 60; // 60×60 = 3600 samples
+    var stepX = Math.max(1, Math.floor(w / GRID));
+    var stepY = Math.max(1, Math.floor(h / GRID));
+
+    var green=0, yellowVeg=0, brown=0, redSoil=0,
+        bark=0, darkGreen=0,
+        sky=0, gray=0, white=0, skinTone=0, blue=0;
+    var total=0;
+
+    // Collect brightness to detect blank/overexposed images
+    var lumSum=0, lumSqSum=0;
+
+    for(var py=0; py<h; py+=stepY){
+      for(var px=0; px<w; px+=stepX){
+        var pix = ctx2.getImageData(px, py, 1, 1).data;
+        var R=pix[0], G=pix[1], B=pix[2];
+        total++;
+        var lum = 0.299*R + 0.587*G + 0.114*B;
+        var mx = Math.max(R,G,B), mn = Math.min(R,G,B), delta = mx - mn;
+        lumSum += lum;
+        lumSqSum += lum*lum;
+
+        // ── PLANT / SOIL SIGNALS ──
+
+        // 1. Vivid green leaf (chlorophyll-green, bright)
+        if(G > R && G > B && G > 50 && delta > 20 && lum > 40 && lum < 220){
+          green++;
+        }
+        // 2. Dark green (shaded leaves, dense canopy)
+        else if(G > R && G > B && G > 25 && lum >= 15 && lum < 90 && delta > 10){
+          darkGreen++;
+        }
+        // 3. Yellow / dry / withered vegetation
+        else if(R > 130 && G > 110 && B < 100 && R > B+45 && G > B+25 && delta > 22){
+          yellowVeg++;
+        }
+        // 4. Brown soil / loamy earth / roots / wood
+        else if(R > G && R > B && (R-B) > 22 && lum > 30 && lum < 195 && delta > 18){
+          brown++;
+        }
+        // 5. Red / laterite / clay soil
+        else if(R > 110 && R > G*1.22 && R > B*1.3 && delta > 28){
+          redSoil++;
+        }
+        // 6. Dark bark / tree trunk / woody stem (very dark brownish)
+        else if(R > 25 && G > 18 && B > 10 && R > G && R-B > 10 && lum > 12 && lum < 70 && delta > 8){
+          bark++;
+        }
+
+        // ── REJECTION SIGNALS ──
+
+        // 7. Sky blue
+        else if(B > R && B > G && B > 80 && lum > 120){
+          sky++;
+        }
+        // 8. Uniform gray (walls, asphalt, blank sensors)
+        else if(delta < 16 && lum > 28 && lum < 230){
+          gray++;
+        }
+        // 9. Near-white / blank / overexposed
+        else if(lum > 225 && delta < 22){
+          white++;
+        }
+        // 10. Skin tone (face detection heuristic)
+        else if(R > 100 && G > 60 && B > 40 && R > G && G > B &&
+                R-G > 8 && R-G < 80 && lum > 80 && lum < 210 && delta > 12 && delta < 90){
+          skinTone++;
+        }
+        // 11. Deep blue (water, cloth, sky)
+        else if(B > 100 && B > R+20 && B > G+10){
+          blue++;
+        }
+      }
+    }
+
+    if(total === 0){ cb({ok:false, reason:'The image could not be sampled. Please upload a clear agricultural photo.', score:0}); return; }
+
+    // ── Compute ratios ──
+    var plantScore = (green + darkGreen + yellowVeg + brown + redSoil + bark) / total;
+    var skyRatio   = sky   / total;
+    var grayRatio  = gray  / total;
+    var whiteRatio = white / total;
+    var skinRatio  = skinTone / total;
+    var blueRatio  = blue  / total;
+    var nonBioRatio= (sky + gray + white + blue) / total;
+
+    // ── Luminance variance (detect blank/solid images) ──
+    var lumMean = lumSum / total;
+    var lumVar  = (lumSqSum / total) - (lumMean * lumMean);
+    var lumStd  = Math.sqrt(Math.max(0, lumVar));
+
+    // ── Decision logic with specific reasons ──
+    var reason = '';
+    var ok = true;
+
+    // REJECT: Nearly blank / solid color / screenshot with solid bg
+    if(lumStd < 12){
+      ok = false;
+      reason = lumMean > 200
+        ? 'The image appears to be blank or overexposed (white/light solid color).'
+        : lumMean < 30
+        ? 'The image is too dark or completely black. Use a well-lit photo.'
+        : 'The image has almost no color variation — it may be a plain solid-color image.';
+    }
+    // REJECT: Mostly white
+    else if(whiteRatio > 0.68){
+      ok = false;
+      reason = 'The image is mostly white or blank. Please upload a photo of an actual plant, crop leaf, or soil.';
+    }
+    // REJECT: Sky-dominated
+    else if(skyRatio > 0.55){
+      ok = false;
+      reason = 'The image appears to show mostly sky or background. Please take a close-up photo of the plant or soil.';
+    }
+    // REJECT: Dominant non-biological pixels with little plant signal
+    else if(nonBioRatio > 0.70 && plantScore < 0.10){
+      ok = false;
+      reason = nonBioRatio > 0.80
+        ? 'The image does not contain recognizable plant or soil colors. It may be a wall, road, screenshot, or building.'
+        : 'Very little plant or soil content detected. Ensure the plant/leaf fills most of the frame.';
+    }
+    // REJECT: Skin-tone heavy, little plant content (likely a face photo)
+    else if(skinRatio > 0.35 && plantScore < 0.15){
+      ok = false;
+      reason = 'The image appears to show a person or skin tones rather than a plant or soil. Please use a photo of a crop, leaf, or field.';
+    }
+    // REJECT: Blue-dominant (water body, blue cloth, blue sky)
+    else if(blueRatio > 0.50 && plantScore < 0.12){
+      ok = false;
+      reason = 'The image appears to show water, blue fabric, or a blue background — not a plant or soil. Please upload an agricultural image.';
+    }
+    // REJECT: Not enough plant/soil signal at all
+    else if(plantScore < 0.18){
+      ok = false;
+      reason = 'No significant plant, leaf, or soil colors detected. Please upload a close-up photo of a crop leaf, root, stem, bark, or soil.';
+    }
+
+    var scorePercent = Math.round(Math.min(100, plantScore * 300));
+    cb({ok: ok, reason: reason, score: scorePercent,
+        green: Math.round(green/total*100), brown: Math.round((brown+redSoil)/total*100),
+        yellowVeg: Math.round(yellowVeg/total*100), bark: Math.round((bark+darkGreen)/total*100)});
+
+  }catch(e){
+    cb({ok:true, reason:'', score:100}); // Canvas security error — allow through
+  }
+}
+
+function runDiseaseScan(contextText, imageBlob, skipValidation){
+  var statusEl=q('scanStatus');
+  if(imageBlob && !skipValidation){
+    var img = new Image();
+    var objectUrl = URL.createObjectURL(imageBlob);
+    statusEl.textContent = '🔍 Validating image — checking for plant, leaf, soil, or tree content...';
+    statusEl.style.color = 'var(--muted)';
+    img.onload = function(){
+      // Draw onto canvas for pixel analysis — cap at 640px for performance
+      var cv = document.createElement('canvas');
+      var maxDim = 640;
+      var scale = Math.min(1, maxDim / Math.max(img.naturalWidth||img.width, img.naturalHeight||img.height));
+      cv.width  = Math.round((img.naturalWidth  || img.width)  * scale);
+      cv.height = Math.round((img.naturalHeight || img.height) * scale);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(objectUrl);
+
+      isPlantImage(cv, function(result){
+        if(!result.ok){
+          showDiseaseResult(null, 'not_plant', result.reason);
+        } else {
+          // Show what was detected
+          var detected = [];
+          if(result.green  > 8)  detected.push('🌿 Green plant ('+result.green+'%)');
+          if(result.brown  > 8)  detected.push('🟫 Soil/earth ('+result.brown+'%)');
+          if(result.yellowVeg>5) detected.push('🌾 Dry vegetation ('+result.yellowVeg+'%)');
+          if(result.bark   > 5)  detected.push('🌲 Bark/canopy ('+result.bark+'%)');
+          statusEl.textContent = '✅ Agricultural image confirmed — '+detected.join(' · ')+'. Analysing...';
+           if(result.brown >= 20 && result.green < 8 && result.yellowVeg < 8){ contextText += ' SOIL SAMPLE ONLY — perform soil image guidance, not disease diagnosis.'; }
+          statusEl.style.color = 'var(--primary)';
+          setTimeout(function(){
+            var r = analyzeDiseaseFallback(contextText);
+            showDiseaseResult(r);
+          }, 1100);
+        }
+      });
+    };
+    img.onerror = function(){
+      URL.revokeObjectURL(objectUrl);
+      statusEl.textContent = '⚠️ Could not read image file. Please try a different photo.';
+      statusEl.style.color = 'var(--danger)';
+    };
+    img.src = objectUrl;
+    return;
+  }
+  statusEl.textContent = '🔬 Analysing with built-in disease engine...';
+  statusEl.style.color = 'var(--muted)';
+  setTimeout(function(){
+    var r = analyzeDiseaseFallback(contextText);
+    showDiseaseResult(r);
+  }, 900);
+}
+
+q('quickBtn').addEventListener('click',function(){
+  runDiseaseScan('General crop disease scan. Common Indian crops like Rice, Wheat, Maize, Cotton. Leaf disease visible.',null,true);
+});
+
+q('camBtn').addEventListener('click',async function(){
+  if(!navigator.mediaDevices){setNote(q('scanStatus'),'Camera not supported in this browser.',true);return;}
+  try{
+    mediaStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},audio:false});
+    q('vidPrev').srcObject=mediaStream;q('vidPrev').style.display='';
+    q('capBtn').style.display='';q('stopBtn').style.display='';q('camBtn').style.display='none';
+    setNote(q('scanStatus'),'📷 Camera active. Point at a plant or leaf, then click Capture.');
+  }catch(e){setNote(q('scanStatus'),'Camera error: '+e.message,true);}
+});
+
+q('stopBtn').addEventListener('click',function(){
+  if(mediaStream)mediaStream.getTracks().forEach(function(t){t.stop();});
+  mediaStream=null;
+  q('vidPrev').style.display='none';
+  q('capBtn').style.display='none';
+  q('stopBtn').style.display='none';
+  q('camBtn').style.display='';
+  setNote(q('scanStatus'),'Camera stopped.');
+});
+
+q('capBtn').addEventListener('click',function(){
+  if(!mediaStream){setNote(q('scanStatus'),'Camera not active. Click Camera first.',true);return;}
+  var cv=q('cvsCap'), vp=q('vidPrev');
+  cv.width  = vp.videoWidth  || 1280;
+  cv.height = vp.videoHeight || 720;
+  cv.getContext('2d').drawImage(vp, 0, 0, cv.width, cv.height);
+  var statusEl = q('scanStatus');
+  statusEl.textContent = '🔍 Validating camera frame — checking for plant, leaf, soil, or tree...';
+  statusEl.style.color = 'var(--muted)';
+
+  // Down-sample to 640px for analysis speed
+  var anCv = document.createElement('canvas');
+  var scale = Math.min(1, 640 / Math.max(cv.width, cv.height));
+  anCv.width  = Math.round(cv.width  * scale);
+  anCv.height = Math.round(cv.height * scale);
+  anCv.getContext('2d').drawImage(cv, 0, 0, anCv.width, anCv.height);
+
+  isPlantImage(anCv, function(result){
+    if(!result.ok){
+      showDiseaseResult(null, 'not_plant', result.reason);
+      return;
+    }
+    var detected = [];
+    if(result.green    > 8) detected.push('🌿 Plant');
+    if(result.brown    > 8) detected.push('🟫 Soil');
+    if(result.yellowVeg> 5) detected.push('🌾 Dry veg');
+    if(result.bark     > 5) detected.push('🌲 Bark');
+    statusEl.textContent = '✅ Confirmed: '+detected.join(', ')+'. Scanning...';
+    if(result.visionLabels) contextText = 'Live camera image. Vision model labels: '+result.visionLabels;
+    if(result.brown >= 20 && result.green < 8 && result.yellowVeg < 8) contextText += ' SOIL SAMPLE ONLY — perform soil image guidance, not disease diagnosis.';
+    statusEl.style.color = 'var(--primary)';
+    cv.toBlob(function(blob){
+      if(!blob){ setNote(statusEl,'Image capture failed. Try again.',true); return; }
+      setTimeout(function(){
+        var r = analyzeDiseaseFallback('Live camera capture — crop plant or leaf.');
+        showDiseaseResult(r);
+      }, 900);
+    }, 'image/jpeg', 0.92);
+  });
+});
+
+// ── Show image preview inside the drop zone ──
+function showDropPreview(file){
+  if(!file || !file.type.startsWith('image/')) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    var dz = q('dropZone');
+    dz.innerHTML =
+      '<div style="position:relative;width:100%;">' +
+        '<img src="'+ev.target.result+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:11px;display:block;"/>'+
+        '<div style="position:absolute;top:7px;right:7px;background:rgba(0,0,0,.55);color:#fff;font:700 .72rem Inter,sans-serif;padding:4px 10px;border-radius:99px;">'+file.name.slice(0,28)+'</div>'+
+        '<div style="position:absolute;bottom:7px;left:7px;background:rgba(0,0,0,.55);color:#fff;font:500 .68rem Inter,sans-serif;padding:3px 9px;border-radius:99px;">'+(Math.round(file.size/1024))+' KB · '+file.type.split('/')[1].toUpperCase()+'</div>'+
+      '</div>'+
+      '<p class="note" style="margin-top:7px;text-align:center;">🔍 Validating image content...</p>';
+  };
+  reader.readAsDataURL(file);
+}
+
+q('fileInput').addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0];
+  if(!f) return;
+  if(!f.type.startsWith('image/')){
+    q('scanStatus').textContent = '❌ Please select an image file (JPG, PNG, WEBP, etc.)';
+    q('scanStatus').style.color = 'var(--danger)';
+    toast('❌','Only image files are accepted.');
+    return;
+  }
+  showDropPreview(f);
+  q('scanStatus').textContent = '📂 "'+f.name+'" selected — validating agricultural content...';
+  q('scanStatus').style.color = 'var(--muted)';
+  runDiseaseScan('Uploaded crop image: '+f.name, f, false);
+});
+
+q('dropZone').addEventListener('click', function(){ q('fileInput').click(); });
+
+q('dropZone').addEventListener('dragover', function(e){
+  e.preventDefault();
+  this.style.borderColor = 'var(--primary)';
+  this.style.background  = 'rgba(26,122,56,.09)';
+});
+q('dropZone').addEventListener('dragleave', function(){
+  this.style.borderColor = '';
+  this.style.background  = '';
+});
+q('dropZone').addEventListener('drop', function(e){
+  e.preventDefault();
+  this.style.borderColor = '';
+  this.style.background  = '';
+  var f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(!f){ return; }
+  if(!f.type.startsWith('image/')){
+    q('scanStatus').textContent = '❌ Only image files accepted (JPG, PNG, WEBP). Please drop an agricultural photo.';
+    q('scanStatus').style.color = 'var(--danger)';
+    toast('❌','Only image files are accepted.');
+    return;
+  }
+  showDropPreview(f);
+  q('scanStatus').textContent = '📂 "'+f.name+'" dropped — validating agricultural content...';
+  q('scanStatus').style.color = 'var(--muted)';
+  runDiseaseScan('Drag-and-drop crop image: '+f.name, f, false);
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   AI ASSISTANT — Gemini + Local fallback
+═══════════════════════════════════════════════════════════════ */
+q('aistBtn').addEventListener('click',function(){
+  var ques=q('aistQ').value.trim(),resp=q('aistResp');
+  resp.textContent=askAssistant(ques);
+  resp.style.color='var(--text)';
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   ADVISORY — Built-in AI
+═══════════════════════════════════════════════════════════════ */
+function renderAdvisory(items){
+  q('advList').innerHTML=items.map(function(i){
+    return '<div class="pr"><div><b>'+i.title+'</b><p>'+i.detail+'</p></div><span class="tag">'+(i.src||'AI')+'</span></div>';
+  }).join('');
+}
+
+function refreshAdvisoryAI(){
+  renderAdvisory(generateAdvisory(soilData));
+  toast('💡','Advisory updated!');
+}
+
+q('refAdvBtn').addEventListener('click',function(){refreshAdvisoryAI();});
+
+/* Market display and actions are handled by the source-backed extension below. */
+var mktSimulated=[];
+
+/* ═══════════════════════════════════════════════════════════════
+   PEST LIBRARY
+═══════════════════════════════════════════════════════════════ */
+var PESTS=[
+  {em:'🦟',name:'Brown Planthopper',crop:'Rice',sev:'hi',sym:'Yellow patches, honeydew sticky coating, lodging.',fix:'Buprofezin 25SC @ 1ml/L. Maintain 5 cm water depth.'},
+  {em:'🐛',name:'Stem Borer',crop:'Rice',sev:'hi',sym:'Dead hearts; white ears at grain filling.',fix:'Trichogramma 1,25,000/ha. Chlorpyrifos 20EC in severe cases.'},
+  {em:'🦠',name:'Blast Disease',crop:'Rice',sev:'hi',sym:'Diamond-shaped grey lesions on leaves and neck.',fix:'Tricyclazole 75WP @ 0.6g/L. Reduce nitrogen, drain field.'},
+  {em:'🐝',name:'Aphids',crop:'Wheat',sev:'md',sym:'Curling yellowing leaves, sticky honeydew, stunted growth.',fix:'Imidacloprid 17.8SL @ 0.3ml/L or Dimethoate 30EC.'},
+  {em:'🦠',name:'Yellow Rust',crop:'Wheat',sev:'hi',sym:'Yellow-orange powdery pustules in stripes on leaves.',fix:'Propiconazole 25EC @ 1ml/L at first sign. Use resistant varieties.'},
+  {em:'🦠',name:'Powdery Mildew',crop:'Wheat',sev:'md',sym:'White powdery patches on upper leaf surface.',fix:'Sulphur 80WP @ 3g/L or Hexaconazole 5EC @ 1ml/L.'},
+  {em:'🐛',name:'Fall Armyworm',crop:'Maize',sev:'hi',sym:'Ragged leaf feeding; sawdust-like frass in whorl.',fix:'Emamectin Benzoate 5SG @ 0.4g/L. Early morning spray into whorl.'},
+  {em:'🦠',name:'Northern Leaf Blight',crop:'Maize',sev:'md',sym:'Cigar-shaped grey-green lesions 2.5–15 cm on leaves.',fix:'Mancozeb 75WP @ 2.5g/L. Remove infected debris.'},
+  {em:'🐛',name:'Bollworm',crop:'Cotton',sev:'hi',sym:'Holes in bolls; larvae feeding inside; frass.',fix:'Chlorantraniliprole 18.5SC @ 0.4ml/L. Use Bt cotton varieties.'},
+  {em:'🦟',name:'Whitefly',crop:'Cotton',sev:'md',sym:'Yellowing leaves; silver sheen on leaf underside.',fix:'Spiromesifen 22.9SC @ 1ml/L. Avoid Pyrethroids.'},
+  {em:'🐛',name:'Helicoverpa',crop:'Cotton',sev:'hi',sym:'Feeding on squares and bolls; yellow frass.',fix:'Pheromone traps @ 5/ha. Profenofos 50EC @ 2ml/L.'},
+  {em:'🦠',name:'Early Blight',crop:'Tomato',sev:'md',sym:'Brown concentric ring lesions with yellow halo.',fix:'Mancozeb 75WP @ 2.5g/L every 7 days. Remove lower leaves.'},
+  {em:'🦠',name:'Late Blight',crop:'Tomato',sev:'hi',sym:'Water-soaked dark lesions; white mould in humid weather.',fix:'Metalaxyl-M 8%+Mancozeb 64% @ 2.5g/L immediately.'},
+  {em:'🐛',name:'Tuber Moth',crop:'Potato',sev:'hi',sym:'Mines in leaves and tubers; larvae inside tubers.',fix:'Deep planting 8–10 cm. Spinosad 45SC @ 0.3ml/L.'},
+  {em:'🦠',name:'Late Blight',crop:'Potato',sev:'hi',sym:'Brown water-soaked lesions on leaves; tuber rot.',fix:'Cymoxanil+Mancozeb @ 2.5g/L every 5–7 days.'},
+  {em:'🐛',name:'Pod Borer',crop:'Soybean',sev:'md',sym:'Holes in pods; seeds eaten; frass on pods.',fix:'Indoxacarb 14.5SC @ 1ml/L at 50% flowering.'},
+  {em:'🦠',name:'Rust',crop:'Soybean',sev:'md',sym:'Yellow-brown pustules on lower leaf surface.',fix:'Tebuconazole 25.9EC @ 1ml/L at first sign.'},
+];
+
+function renderPests(list){
+  q('pestGrid').innerHTML=list.length?list.map(function(p){
+    var sc={hi:'sev-hi',md:'sev-md',lo:'sev-lo'}[p.sev];
+    var sl={hi:'⚠️ High Risk',md:'⚡ Medium Risk',lo:'✅ Low Risk'}[p.sev];
+    return '<div class="pest-card"><div class="pest-head"><div class="pest-em">'+p.em+'</div><div><div class="pest-nm">'+p.name+'</div><div class="pest-crop">'+p.crop+'</div></div></div><span class="pest-sev '+sc+'">'+sl+'</span><div class="pest-sym"><b>Symptoms:</b> '+p.sym+'</div><div class="pest-fix"><b>✅ Control:</b> '+p.fix+'</div></div>';
+  }).join(''):'<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);">No pests match your search.</div>';
+}
+
+function filterPests(){
+  var srch=(q('pestSearch').value||'').toLowerCase();
+  var crop=q('pestCrop').value;
+  renderPests(PESTS.filter(function(p){return(crop==='all'||p.crop===crop)&&(!srch||p.name.toLowerCase().includes(srch)||p.crop.toLowerCase().includes(srch)||p.sym.toLowerCase().includes(srch));}));
+}
+q('pestSearch').addEventListener('input',filterPests);
+q('pestCrop').addEventListener('change',filterPests);
+
+/* ═══════════════════════════════════════════════════════════════
+   IRRIGATION CALCULATOR
+═══════════════════════════════════════════════════════════════ */
+var IRR={Wheat:{Germination:25,Vegetative:40,Flowering:55,'Grain Filling':45,Maturity:20},Rice:{Germination:80,Vegetative:120,Flowering:140,'Grain Filling':120,Maturity:60},Maize:{Germination:30,Vegetative:55,Flowering:75,'Grain Filling':60,Maturity:25},Sugarcane:{Germination:60,Vegetative:100,Flowering:120,'Grain Filling':110,Maturity:50},Cotton:{Germination:35,Vegetative:60,Flowering:80,'Grain Filling':65,Maturity:30},Soybean:{Germination:30,Vegetative:50,Flowering:65,'Grain Filling':55,Maturity:20},Groundnut:{Germination:28,Vegetative:48,Flowering:60,'Grain Filling':52,Maturity:22},Potato:{Germination:40,Vegetative:65,Flowering:80,'Grain Filling':70,Maturity:35},Tomato:{Germination:35,Vegetative:60,Flowering:75,'Grain Filling':65,Maturity:30},Mustard:{Germination:22,Vegetative:38,Flowering:50,'Grain Filling':42,Maturity:18},Sunflower:{Germination:28,Vegetative:50,Flowering:65,'Grain Filling':55,Maturity:22},Millet:{Germination:18,Vegetative:35,Flowering:45,'Grain Filling':38,Maturity:15},Sorghum:{Germination:20,Vegetative:38,Flowering:50,'Grain Filling':42,Maturity:18}};
+var SOIL_F={Loamy:1.0,Sandy:1.25,'Black Cotton':0.85,Clay:0.90,Silt:0.95};
+var FREQ_MAP={Germination:3,Vegetative:5,Flowering:4,'Grain Filling':5,Maturity:7};
+
+q('irrCalcBtn').addEventListener('click',function(){
+  var crop=q('irrCrop').value,stage=q('irrStage').value,area=parseFloat(q('irrArea').value)||1,soil=q('irrSoil').value;
+  var base=(IRR[crop]&&IRR[crop][stage])||50,sf=SOIL_F[soil]||1;
+  var wxF=1;if(wxData){if(wxData.temp>35)wxF+=.15;if(wxData.hum>80)wxF-=.10;}
+  var mmPerHa=Math.round(base*sf*wxF),ha=Math.round(area*0.4047*10)/10;
+  var kL=Math.round(mmPerHa*10*ha),freq=FREQ_MAP[stage]||5;
+  q('irrCards').innerHTML=
+    '<div class="irr-card"><div class="irr-val">'+mmPerHa+'</div><div class="irr-unit">mm per hectare</div><div class="irr-lbl">Water depth per event</div></div>'+
+    '<div class="irr-card"><div class="irr-val">'+kL+' kL</div><div class="irr-unit">kilolitres per event</div><div class="irr-lbl">For '+area+' acre'+(area>1?'s':'')+' ('+ha+' ha)</div></div>'+
+    '<div class="irr-card"><div class="irr-val">'+freq+'</div><div class="irr-unit">days between irrigations</div><div class="irr-lbl">'+stage+' stage — '+crop+'</div></div>';
+  var wxNote=wxData?'Weather adjusted: temp='+Math.round(wxData.temp)+'°C, hum='+wxData.hum+'%.':'Enable location for weather adjustment.';
+  q('irrAdvice').innerHTML='<b style="font-size:.85rem;">💡 Irrigation Advice — '+crop+' ('+stage+')</b><ul class="note" style="margin-top:8px;padding-left:16px;display:grid;gap:5px;"><li>Apply <b>'+mmPerHa+' mm/ha</b> at each irrigation event.</li><li>For <b>'+area+' acre'+(area>1?'s':'')+' ('+ha+' ha)</b>, total per event: <b>'+kL+' kL</b>.</li><li>Irrigate every <b>'+freq+' days</b> during '+stage+'.</li><li>'+soil+' soil factor: ×'+sf+'. '+wxNote+'</li><li>Check moisture at 10–15 cm depth before each irrigation.</li></ul>';
+  q('irrResult').style.display='block';
+  toast('💧','Irrigation calculated for '+crop+'!');
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLL SPY
+═══════════════════════════════════════════════════════════════ */
+var navLinks=Array.from(document.querySelectorAll('.snl'));
+var secIds=['auth','weather','farm','soil','history','chart','rec','scan','ai','results','advisory','market','pests','irr'];
+navLinks.forEach(function(lnk){
+  lnk.addEventListener('click',function(e){
+    e.preventDefault();var id=this.getAttribute('href').slice(1);
+    var el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+    navLinks.forEach(function(l){l.classList.toggle('active',l===lnk);});
+  });
+});
+window.addEventListener('scroll',function(){
+  var best=null,bestD=Infinity;
+  secIds.forEach(function(id){var el=document.getElementById(id);if(!el)return;var dist=Math.abs(el.getBoundingClientRect().top-140);if(dist<bestD){bestD=dist;best=id;}});
+  if(best)navLinks.forEach(function(l){l.classList.toggle('active',l.getAttribute('href')==='#'+best);});
+},{passive:true});
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER CLOCK
+═══════════════════════════════════════════════════════════════ */
+function tick(){var el=q('footerTime');if(el)el.textContent=new Date().toLocaleString();}
+tick();setInterval(tick,1000);
+
+/* ═══════════════════════════════════════════════════════════════
+   LANGUAGE SWITCHER — 10 Indian Regional Languages
+═══════════════════════════════════════════════════════════════ */
+var LANGS={
+  en:{
+    name:'English', flag:'🇬🇧',
+    ai_badge:'Built-in AI — Always On', live:'Live', dark:'Dark',
+    live_weather:'Live Weather', wx_awaiting:'Awaiting weather data.',
+    humidity:'💧 Humidity', wind:'💨 Wind km/h', feels_like:'🌡 Feels Like', uv_index:'☀️ UV Index',
+    wx_crop_note:'💡 Weather-aware scoring activates after sensor read.',
+    farmer_login:'Farmer Login', farm_profile:'Farm Profile & Location',
+    soil_sensor:'Soil Sensor — N · P · K', history:'Sensor Reading History',
+    trends:'Nutrient Trend Chart', crop_rec:'Crop Recommendation Engine',
+    disease_scan:'Crop Disease Scan', ai_assistant:'AI Farm Assistant',
+    ai_results:'AI Results', advisory:'Farm Advisory', market:'Commodity Market Prices',
+    pests:'Pest & Disease Library', irrigation:'Irrigation Water Requirement Calculator',
+    simulate:'📡 Read Live Sensor', download_pdf:'📄 Download PDF Report',
+    analyze:'🔬 Analyze Values', get_rec:'🌾 Get Recommendations', ask:'💬 Ask Assistant'
+  },
+  hi:{
+    name:'हिंदी', flag:'🇮🇳',
+    ai_badge:'अंतर्निहित AI — सदैव सक्रिय', live:'लाइव', dark:'डार्क',
+    live_weather:'लाइव मौसम', wx_awaiting:'मौसम डेटा की प्रतीक्षा है।',
+    humidity:'💧 आर्द्रता', wind:'💨 हवा km/h', feels_like:'🌡 महसूस तापमान', uv_index:'☀️ यूवी इंडेक्स',
+    wx_crop_note:'💡 मौसम-जागरूक स्कोरिंग सेंसर पढ़ने के बाद सक्रिय होती है।',
+    farmer_login:'किसान लॉगिन', farm_profile:'खेत प्रोफ़ाइल और स्थान',
+    soil_sensor:'मृदा पोषक सेंसर — N · P · K', history:'सेंसर रीडिंग इतिहास',
+    trends:'पोषक तत्व ट्रेंड चार्ट', crop_rec:'फसल सिफारिश इंजन',
+    disease_scan:'फसल रोग स्कैन', ai_assistant:'AI कृषि सहायक',
+    ai_results:'AI परिणाम', advisory:'कृषि सलाह', market:'जिंस बाजार मूल्य',
+    pests:'कीट एवं रोग पुस्तकालय', irrigation:'सिंचाई जल आवश्यकता गणना',
+    simulate:'⚡ सेंसर सिम्युलेट', download_pdf:'📄 PDF रिपोर्ट डाउनलोड',
+    analyze:'🔬 मान विश्लेषण', get_rec:'🌾 सिफारिशें प्राप्त करें', ask:'💬 सहायक से पूछें'
+  },
+  ta:{
+    name:'தமிழ்', flag:'🏴',
+    ai_badge:'உள்ளமைந்த AI — எப்போதும் இயங்கும்', live:'நேரடி', dark:'இருண்ட',
+    live_weather:'நேரடி வானிலை', wx_awaiting:'வானிலை தரவை எதிர்பார்க்கிறது.',
+    humidity:'💧 ஈரப்பதம்', wind:'💨 காற்று km/h', feels_like:'🌡 உணரும் வெப்பம்', uv_index:'☀️ UV குறியீடு',
+    wx_crop_note:'💡 வானிலை-விழிப்புணர்வு மதிப்பீடு சென்சார் படித்த பிறகு செயல்படும்.',
+    farmer_login:'விவசாயி உள்நுழைவு', farm_profile:'பண்ணை சுயவிவரம் & இடம்',
+    soil_sensor:'மண் ஊட்டச்சத்து சென்சார் — N · P · K', history:'சென்சார் வாசிப்பு வரலாறு',
+    trends:'ஊட்டச்சத்து போக்கு விளக்கப்படம்', crop_rec:'பயிர் பரிந்துரை இயந்திரம்',
+    disease_scan:'பயிர் நோய் ஸ்கேன்', ai_assistant:'AI வேளாண் உதவியாளர்',
+    ai_results:'AI முடிவுகள்', advisory:'வேளாண் ஆலோசனை', market:'கொள்ளை சந்தை விலைகள்',
+    pests:'பூச்சி & நோய் நூலகம்', irrigation:'நீர்ப்பாசன தண்ணீர் தேவை கணிப்பி',
+    simulate:'⚡ சென்சார் உருவகப்படுத்து', download_pdf:'📄 PDF அறிக்கை பதிவிறக்கம்',
+    analyze:'🔬 மதிப்புகளை பகுப்பாய்', get_rec:'🌾 பரிந்துரைகள் பெறு', ask:'💬 உதவியாளரிடம் கேளு'
+  },
+  te:{
+    name:'తెలుగు', flag:'🏴',
+    ai_badge:'అంతర్నిర్మిత AI — ఎప్పుడూ ఆన్‌లో', live:'లైవ్', dark:'డార్క్',
+    live_weather:'లైవ్ వాతావరణం', wx_awaiting:'వాతావరణ డేటా కోసం వేచి ఉంది.',
+    humidity:'💧 తేమ', wind:'💨 గాలి km/h', feels_like:'🌡 అనిపించే ఉష్ణోగ్రత', uv_index:'☀️ UV సూచిక',
+    wx_crop_note:'💡 వాతావరణ-అవగాహన స్కోరింగ్ సెన్సార్ రీడింగ్ తర్వాత సక్రియమవుతుంది.',
+    farmer_login:'రైతు లాగిన్', farm_profile:'వ్యవసాయ ప్రొఫైల్ & స్థానం',
+    soil_sensor:'నేల పోషక సెన్సార్ — N · P · K', history:'సెన్సార్ రీడింగ్ చరిత్ర',
+    trends:'పోషక ధోరణి చార్ట్', crop_rec:'పంట సిఫారసు ఇంజిన్',
+    disease_scan:'పంట రోగ స్కాన్', ai_assistant:'AI వ్యవసాయ సహాయకుడు',
+    ai_results:'AI ఫలితాలు', advisory:'వ్యవసాయ సలహా', market:'వస్తు మార్కెట్ ధరలు',
+    pests:'క్రిమి & రోగ లైబ్రరీ', irrigation:'నీటిపారుదల అవసరాల గణన',
+    simulate:'⚡ సెన్సార్ అనుకరణ', download_pdf:'📄 PDF నివేదిక డౌన్‌లోడ్',
+    analyze:'🔬 విలువలు విశ్లేషించు', get_rec:'🌾 సిఫారసులు పొందు', ask:'💬 సహాయకుడిని అడుగు'
+  },
+  kn:{
+    name:'ಕನ್ನಡ', flag:'🏴',
+    ai_badge:'ಅಂತರ್ನಿರ್ಮಿತ AI — ಯಾವಾಗಲೂ ಚಾಲೂ', live:'ನೇರ', dark:'ಡಾರ್ಕ್',
+    live_weather:'ನೇರ ಹವಾಮಾನ', wx_awaiting:'ಹವಾಮಾನ ಮಾಹಿತಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ.',
+    humidity:'💧 ಆರ್ದ್ರತೆ', wind:'💨 ಗಾಳಿ km/h', feels_like:'🌡 ಅನಿಸುವ ತಾಪಮಾನ', uv_index:'☀️ UV ಸೂಚ್ಯಂಕ',
+    wx_crop_note:'💡 ಹವಾಮಾನ-ಅರಿವಿನ ಸ್ಕೋರಿಂಗ್ ಸೆನ್ಸಾರ್ ರೀಡಿಂಗ್ ನಂತರ ಸಕ್ರಿಯಗೊಳ್ಳುತ್ತದೆ.',
+    farmer_login:'ರೈತ ಲಾಗಿನ್', farm_profile:'ಕೃಷಿ ಪ್ರೊಫೈಲ್ & ಸ್ಥಳ',
+    soil_sensor:'ಮಣ್ಣು ಪೋಷಕ ಸಂವೇದಕ — N · P · K', history:'ಸಂವೇದಕ ರೀಡಿಂಗ್ ಇತಿಹಾಸ',
+    trends:'ಪೋಷಕ ಪ್ರವೃತ್ತಿ ಚಾರ್ಟ್', crop_rec:'ಬೆಳೆ ಶಿಫಾರಸು ಎಂಜಿನ್',
+    disease_scan:'ಬೆಳೆ ರೋಗ ಸ್ಕ್ಯಾನ್', ai_assistant:'AI ಕೃಷಿ ಸಹಾಯಕ',
+    ai_results:'AI ಫಲಿತಾಂಶಗಳು', advisory:'ಕೃಷಿ ಸಲಹೆ', market:'ಸರಕು ಮಾರುಕಟ್ಟೆ ಬೆಲೆಗಳು',
+    pests:'ಕೀಟ & ರೋಗ ಗ್ರಂಥಾಲಯ', irrigation:'ನೀರಾವರಿ ಅಗತ್ಯ ಲೆಕ್ಕಾಚಾರ',
+    simulate:'⚡ ಸಂವೇದಕ ಅನುಕರಿಸು', download_pdf:'📄 PDF ವರದಿ ಡೌನ್‌ಲೋಡ್',
+    analyze:'🔬 ಮೌಲ್ಯಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಿ', get_rec:'🌾 ಶಿಫಾರಸುಗಳು ಪಡೆಯಿರಿ', ask:'💬 ಸಹಾಯಕನನ್ನು ಕೇಳಿ'
+  },
+  ml:{
+    name:'മലയാളം', flag:'🏴',
+    ai_badge:'ബിൽറ്റ്-ഇൻ AI — എല്ലായ്പ്പോഴും ഓണ്‍', live:'തൽസമയ', dark:'ഡാർക്ക്',
+    live_weather:'തൽസമയ കാലാവസ്ഥ', wx_awaiting:'കാലാവസ്ഥ ഡേറ്റ കാത്തിരിക്കുന്നു.',
+    humidity:'💧 ആർദ്രത', wind:'💨 കാറ്റ് km/h', feels_like:'🌡 അനുഭവ താപനില', uv_index:'☀️ UV സൂചിക',
+    wx_crop_note:'💡 കാലാവസ്ഥ-ബോധ സ്കോറിംഗ് സെൻസർ റീഡിംഗിനു ശേഷം സക്രിയമാകുന്നു.',
+    farmer_login:'കർഷക ലോഗിൻ', farm_profile:'ഫാം പ്രൊഫൈൽ & സ്ഥലം',
+    soil_sensor:'മണ്ണ് പോഷക സെൻസർ — N · P · K', history:'സെൻസർ റീഡിംഗ് ചരിത്രം',
+    trends:'പോഷക ട്രെൻഡ് ചാർട്ട്', crop_rec:'വിള ശുപാർശ എഞ്ചിൻ',
+    disease_scan:'വിള രോഗ സ്കാൻ', ai_assistant:'AI കൃഷി സഹായി',
+    ai_results:'AI ഫലങ്ങൾ', advisory:'കൃഷി ഉപദേശം', market:'ചരക്ക് വിപണി വില',
+    pests:'കീടം & രോഗ ലൈബ്രറി', irrigation:'ജലസേചന ആവശ്യ കണക്കുകൂട്ടൽ',
+    simulate:'⚡ സെൻസർ സിമുലേറ്റ്', download_pdf:'📄 PDF റിപ്പോർട്ട് ഡൗൺലോഡ്',
+    analyze:'🔬 മൂല്യങ്ങൾ വിശകലനം', get_rec:'🌾 ശുപാർശകൾ നേടുക', ask:'💬 സഹായിയോട് ചോദിക്കുക'
+  },
+  bn:{
+    name:'বাংলা', flag:'🏴',
+    ai_badge:'বিল্ট-ইন AI — সর্বদা চালু', live:'লাইভ', dark:'ডার্ক',
+    live_weather:'লাইভ আবহাওয়া', wx_awaiting:'আবহাওয়া ডেটার অপেক্ষায়।',
+    humidity:'💧 আর্দ্রতা', wind:'💨 বায়ু km/h', feels_like:'🌡 অনুভূত তাপমাত্রা', uv_index:'☀️ UV সূচক',
+    wx_crop_note:'💡 আবহাওয়া-সচেতন স্কোরিং সেন্সর পড়ার পরে সক্রিয় হয়।',
+    farmer_login:'কৃষক লগইন', farm_profile:'খামার প্রোফাইল ও অবস্থান',
+    soil_sensor:'মাটি পুষ্টি সেন্সর — N · P · K', history:'সেন্সর রিডিং ইতিহাস',
+    trends:'পুষ্টি প্রবণতা চার্ট', crop_rec:'ফসল সুপারিশ ইঞ্জিন',
+    disease_scan:'ফসল রোগ স্ক্যান', ai_assistant:'AI কৃষি সহকারী',
+    ai_results:'AI ফলাফল', advisory:'কৃষি পরামর্শ', market:'পণ্য বাজার মূল্য',
+    pests:'কীটপতঙ্গ ও রোগ লাইব্রেরি', irrigation:'সেচ জলের প্রয়োজনীয়তা হিসাব',
+    simulate:'⚡ সেন্সর সিমুলেট', download_pdf:'📄 PDF রিপোর্ট ডাউনলোড',
+    analyze:'🔬 মান বিশ্লেষণ', get_rec:'🌾 সুপারিশ পান', ask:'💬 সহকারীকে জিজ্ঞাসা করুন'
+  },
+  mr:{
+    name:'मराठी', flag:'🏴',
+    ai_badge:'अंगभूत AI — नेहमी सुरू', live:'थेट', dark:'गडद',
+    live_weather:'थेट हवामान', wx_awaiting:'हवामान डेटाची प्रतीक्षा आहे.',
+    humidity:'💧 आर्द्रता', wind:'💨 वारा km/h', feels_like:'🌡 जाणवणारे तापमान', uv_index:'☀️ UV निर्देशांक',
+    wx_crop_note:'💡 हवामान-जागरूक स्कोरिंग सेन्सर वाचनानंतर सक्रिय होते.',
+    farmer_login:'शेतकरी लॉगिन', farm_profile:'शेत प्रोफाइल व स्थान',
+    soil_sensor:'मृदा पोषक सेन्सर — N · P · K', history:'सेन्सर रीडिंग इतिहास',
+    trends:'पोषण ट्रेंड चार्ट', crop_rec:'पीक शिफारस इंजिन',
+    disease_scan:'पीक रोग स्कॅन', ai_assistant:'AI कृषी सहाय्यक',
+    ai_results:'AI परिणाम', advisory:'कृषी सल्ला', market:'वस्तू बाजार किंमती',
+    pests:'कीड व रोग ग्रंथालय', irrigation:'सिंचन पाणी आवश्यकता गणना',
+    simulate:'🔌 ESP32 कनेक्ट', download_pdf:'📄 PDF अहवाल डाउनलोड',
+    analyze:'🔬 मूल्ये विश्लेषण', get_rec:'🌾 शिफारसी मिळवा', ask:'💬 सहाय्यकाला विचारा'
+  },
+  gu:{
+    name:'ગુજરાતી', flag:'🏴',
+    ai_badge:'બિલ્ટ-ઇન AI — હંમેશા ચાલુ', live:'લાઇવ', dark:'ડાર્ક',
+    live_weather:'લાઇવ હવામાન', wx_awaiting:'હવામાન ડેટાની રાહ જોઈ રહ્યા છીએ.',
+    humidity:'💧 ભેજ', wind:'💨 પવન km/h', feels_like:'🌡 અનુભવ તાપમાન', uv_index:'☀️ UV ઇન્ડેક્સ',
+    wx_crop_note:'💡 હવામાન-જ્ઞાત સ્કોરિંગ સેન્સર રીડિંગ પછી સક્રિય થાય છે.',
+    farmer_login:'ખેડૂત લૉગિન', farm_profile:'ખેત પ્રોફાઇલ અને સ્થાન',
+    soil_sensor:'માટી પોષક સેન્સર — N · P · K', history:'સેન્સર રીડિંગ ઇતિહાસ',
+    trends:'પોષક ટ્રેન્ડ ચાર્ટ', crop_rec:'પાક ભલામણ એન્જિન',
+    disease_scan:'પાક રોગ સ્કૅન', ai_assistant:'AI કૃષિ સહાયક',
+    ai_results:'AI પરિણામો', advisory:'કૃષિ સલાહ', market:'ચીજ-વસ્તુ બજાર ભાવ',
+    pests:'જીવાત અને રોગ પુસ્તકાલય', irrigation:'સિંચાઈ પાણીની જરૂરિયાત ગણતરી',
+    simulate:'🔌 ESP32 કનેક્ટ', download_pdf:'📄 PDF રિપોર્ટ ડાઉનલોડ',
+    analyze:'🔬 મૂલ્ય વિશ્લેષણ', get_rec:'🌾 ભલામણો મેળવો', ask:'💬 સહાયકને પૂછો'
+  },
+  pa:{
+    name:'ਪੰਜਾਬੀ', flag:'🏴',
+    ai_badge:'ਬਿਲਟ-ਇਨ AI — ਹਮੇਸ਼ਾ ਚਾਲੂ', live:'ਲਾਈਵ', dark:'ਡਾਰਕ',
+    live_weather:'ਲਾਈਵ ਮੌਸਮ', wx_awaiting:'ਮੌਸਮ ਡੇਟਾ ਦੀ ਉਡੀਕ ਕਰ ਰਹੇ ਹਾਂ।',
+    humidity:'💧 ਨਮੀ', wind:'💨 ਹਵਾ km/h', feels_like:'🌡 ਮਹਿਸੂਸ ਤਾਪਮਾਨ', uv_index:'☀️ UV ਸੂਚਕਾਂਕ',
+    wx_crop_note:'💡 ਮੌਸਮ-ਜਾਗਰੂਕ ਸਕੋਰਿੰਗ ਸੈਂਸਰ ਰੀਡਿੰਗ ਤੋਂ ਬਾਅਦ ਸਰਗਰਮ ਹੁੰਦੀ ਹੈ।',
+    farmer_login:'ਕਿਸਾਨ ਲੌਗਿਨ', farm_profile:'ਖੇਤ ਪ੍ਰੋਫਾਈਲ ਅਤੇ ਸਥਾਨ',
+    soil_sensor:'ਮਿੱਟੀ ਪੋਸ਼ਕ ਸੈਂਸਰ — N · P · K', history:'ਸੈਂਸਰ ਰੀਡਿੰਗ ਇਤਿਹਾਸ',
+    trends:'ਪੋਸ਼ਕ ਰੁਝਾਨ ਚਾਰਟ', crop_rec:'ਫ਼ਸਲ ਸਿਫ਼ਾਰਿਸ਼ ਇੰਜਣ',
+    disease_scan:'ਫ਼ਸਲ ਰੋਗ ਸਕੈਨ', ai_assistant:'AI ਖੇਤੀ ਸਹਾਇਕ',
+    ai_results:'AI ਨਤੀਜੇ', advisory:'ਖੇਤੀ ਸਲਾਹ', market:'ਵਸਤੂ ਬਾਜ਼ਾਰ ਕੀਮਤਾਂ',
+    pests:'ਕੀੜੇ ਅਤੇ ਰੋਗ ਲਾਇਬ੍ਰੇਰੀ', irrigation:'ਸਿੰਚਾਈ ਪਾਣੀ ਲੋੜ ਗਣਨਾ',
+    simulate:'⚡ ਸੈਂਸਰ ਸਿਮੂਲੇਟ', download_pdf:'📄 PDF ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ',
+    analyze:'🔬 ਮੁੱਲ ਵਿਸ਼ਲੇਸ਼ਣ', get_rec:'🌾 ਸਿਫ਼ਾਰਿਸ਼ਾਂ ਪ੍ਰਾਪਤ ਕਰੋ', ask:'💬 ਸਹਾਇਕ ਨੂੰ ਪੁੱਛੋ'
+  },
+  or:{
+    name:'ଓଡ଼ିଆ', flag:'🏴',
+    ai_badge:'ବିଲ୍ଟ-ଇନ AI — ସବୁ ସମୟ ଚାଲୁ', live:'ସରାସରି', dark:'ଅନ୍ଧକାର',
+    live_weather:'ସରାସରି ପାଣିପାଗ', wx_awaiting:'ପାଣିପାଗ ତଥ୍ୟ ଅପେକ୍ଷା କରୁଛି।',
+    humidity:'💧 ଆର୍ଦ୍ରତା', wind:'💨 ବାୟୁ km/h', feels_like:'🌡 ଅନୁଭବ ତାପମାତ୍ରା', uv_index:'☀️ UV ଇଣ୍ଡେକ୍ସ',
+    wx_crop_note:'💡 ପାଣିପାଗ-ଜ୍ଞ ସ୍କୋରିଂ ସେନ୍ସର ପଢ଼ିବା ପରେ ସକ୍ରିୟ ହୁଏ।',
+    farmer_login:'କୃଷକ ଲଗ୍ ଇନ', farm_profile:'ଖାମାର ପ୍ରୋଫାଇଲ ଏବଂ ସ୍ଥାନ',
+    soil_sensor:'ମୃଦା ପୋଷକ ସେନ୍ସର — N · P · K', history:'ସେନ୍ସର ରିଡିଂ ଇତିହାସ',
+    trends:'ପୋଷକ ଟ୍ରେଣ୍ଡ ଚାର୍ଟ', crop_rec:'ଫସଲ ସୁପାରିଶ ଇଞ୍ଜିନ',
+    disease_scan:'ଫସଲ ରୋଗ ସ୍କ୍ୟାନ', ai_assistant:'AI କୃଷି ସହାୟକ',
+    ai_results:'AI ଫଳ', advisory:'କୃଷି ପରାମର୍ଶ', market:'ଦ୍ରବ୍ୟ ବଜାର ମୂଲ୍ୟ',
+    pests:'ଅନ୍ନ ଓ ରୋଗ ପୁସ୍ତକାଳୟ', irrigation:'ଜଳସେଚନ ଜଳ ଆବଶ୍ୟକ ଗଣନା',
+    simulate:'🔌 ESP32 କନେକ୍ଟ', download_pdf:'📄 PDF ରିପୋର୍ଟ ଡାଉନଲୋଡ',
+    analyze:'🔬 ମୂଲ୍ୟ ବିଶ୍ଳେଷଣ', get_rec:'🌾 ସୁପାରିଶ ପ୍ରାପ୍ତ ଓ', ask:'💬 ସହାୟକଙ୍କୁ ପଚାରନ୍ତୁ'
+  }
+};
+
+var currentLang='en';
+
+function toggleLangMenu(){
+  var m=q('langMenu');
+  m.classList.toggle('open');
+  // Close when clicking outside
+  if(m.classList.contains('open')){
+    setTimeout(function(){
+      document.addEventListener('click',closeLangMenu,{once:true});
+    },10);
+  }
+}
+function closeLangMenu(e){
+  if(!q('langDropdown').contains(e.target)){
+    q('langMenu').classList.remove('open');
+  }
+}
+
+function setLanguage(lang,el){
+  if(!LANGS[lang])return;
+  currentLang=lang;
+  var t=LANGS[lang];
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(function(node){
+    var key=node.getAttribute('data-i18n');
+    if(t[key]!==undefined)node.textContent=t[key];
+  });
+  // Update theme button
+  var thBtn=q('themeBtn');
+  if(thBtn){var thSpan=thBtn.querySelector('[data-i18n="dark"]');if(thSpan)thSpan.textContent=t.dark||'Dark';}
+  // Update section headings dynamically
+  var sectionMap={
+    'auth':t.farmer_login,'weather':t.live_weather,'farm':t.farm_profile,
+    'soil':t.soil_sensor,'history':t.history,'chart':t.trends,
+    'rec':t.crop_rec,'scan':t.disease_scan,'ai':t.ai_assistant,
+    'results':t.ai_results,'advisory':t.advisory,'market':t.market,
+    'pests':t.pests,'irr':t.irrigation
+  };
+  Object.keys(sectionMap).forEach(function(id){
+    var sec=document.getElementById(id);
+    if(!sec)return;
+    var ctEl=sec.querySelector('.ct');
+    if(!ctEl)return;
+    var ico=ctEl.querySelector('.ico');
+    var icoHtml=ico?ico.outerHTML:'';
+    // Only update text, preserve icon
+    ctEl.innerHTML=icoHtml+(sectionMap[id]||'');
+  });
+  // Update key button texts
+  // Keep the physical sensor button label accurate in every language.
+  var dlBtn=q('dlPdfBtn');if(dlBtn)dlBtn.innerHTML=t.download_pdf||dlBtn.innerHTML;
+  var anBtn=q('analyzeManualBtn');if(anBtn)anBtn.innerHTML=t.analyze||anBtn.innerHTML;
+  var recBtn=q('recBtn');if(recBtn)recBtn.innerHTML=t.get_rec||recBtn.innerHTML;
+  var aistBtn=q('aistBtn');if(aistBtn)aistBtn.innerHTML=t.ask||aistBtn.innerHTML;
+  // Update lang button label
+  var btnLabel=q('langBtnLabel');if(btnLabel)btnLabel.textContent=LANGS[lang].name;
+  // Update active state
+  document.querySelectorAll('.lang-opt').forEach(function(o){o.classList.toggle('active',o.dataset.lang===lang);});
+  // Close menu
+  q('langMenu').classList.remove('open');
+  // Update page direction for proper display (all these scripts are LTR)
+  document.documentElement.lang=lang;
+  toast('🌐','Language: '+LANGS[lang].name);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+loadFarm();loadHistory();
+document.documentElement.dataset.theme='light';
+updateTrendChart();
+renderAdvisory(generateAdvisory(null));
+renderPests(PESTS);
+</script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var marketRows = [];
+  var weatherTimer = null;
+  var escapeHtml = function(value){
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function(ch){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];
+    });
+  };
+  var localTime = function(value){
+    if(!value)return "—";
+    var date = new Date(value);
+    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+  };
+  var statusText = function(id, text, isError){
+    var el = $(id);
+    if(el){ el.textContent = text; el.style.color = isError ? "var(--danger)" : "var(--muted)"; }
+  };
+
+  window.setLanguage = function(lang){
+    if(!window.LANGS || !LANGS[lang])return;
+    currentLang = lang;
+    try { localStorage.setItem("farmwise.language", lang); } catch(_){}
+    document.documentElement.lang = lang;
+    var dictionary = LANGS[lang];
+    document.querySelectorAll("[data-i18n]").forEach(function(node){
+      var key = node.getAttribute("data-i18n");
+      if(dictionary[key] !== undefined && node.textContent !== dictionary[key]) node.textContent = dictionary[key];
+    });
+    var sections = {
+      weather:dictionary.live_weather, farm:dictionary.farm_profile,
+      soil:dictionary.soil_sensor, history:dictionary.history, chart:dictionary.trends,
+      rec:dictionary.crop_rec, scan:dictionary.disease_scan,
+      advisory:dictionary.advisory, market:dictionary.market,
+      pests:dictionary.pests, irr:dictionary.irrigation
+    };
+    Object.keys(sections).forEach(function(id){
+      var heading = $(id) && $(id).querySelector(".ct");
+      if(!heading || !sections[id])return;
+      var icon = heading.querySelector(".ico");
+      heading.textContent = "";
+      if(icon)heading.appendChild(icon);
+      heading.appendChild(document.createTextNode(sections[id]));
+    });
+    document.querySelectorAll(".lang-opt").forEach(function(option){
+      option.classList.toggle("active", option.dataset.lang === lang);
+    });
+    var name = $("langBtnLabel");
+    if(name)name.textContent = dictionary.name;
+    var themeWord = $("themeBtn") && $("themeBtn").querySelector('[data-i18n="dark"]');
+    if(themeWord && dictionary.dark)themeWord.textContent = dictionary.dark;
+  };
+
+  var translateTree = function(root){
+    if(!window.LANGS || !LANGS[currentLang])return;
+    var nodes = [];
+    if(root.nodeType === 1 && root.matches && root.matches("[data-i18n]"))nodes.push(root);
+    if(root.querySelectorAll)nodes = nodes.concat(Array.prototype.slice.call(root.querySelectorAll("[data-i18n]")));
+    nodes.forEach(function(node){
+      var translated = LANGS[currentLang][node.getAttribute("data-i18n")];
+      if(translated !== undefined && node.textContent !== translated)node.textContent = translated;
+    });
+  };
+  var translationObserver = new MutationObserver(function(mutations){
+    mutations.forEach(function(mutation){
+      mutation.addedNodes.forEach(function(node){ if(node.nodeType === 1)translateTree(node); });
+    });
+  });
+  translationObserver.observe(document.body, {childList:true, subtree:true});
+
+  window.loadWeather = async function(locationOverride){
+    var farm = {};
+    try { farm = JSON.parse(localStorage.getItem("nx.farm") || "{}"); } catch(_){}
+    var town = $("farmVillage") && $("farmVillage").value.trim();
+    if(!town)town = farm.farmVillage || "";
+    var params = new URLSearchParams();
+    if(locationOverride && Number.isFinite(locationOverride.lat) && Number.isFinite(locationOverride.lon)){
+      params.set("lat", String(locationOverride.lat));
+      params.set("lon", String(locationOverride.lon));
+    } else if(town) {
+      params.set("location", town);
+    } else {
+      window.wxData = null;
+      $("wxTemp").textContent = "-- °C";
+      $("wxHum").textContent = "--%"; $("wxWind").textContent = "--";
+      $("wxFeels").textContent = "--°C"; $("wxUV").textContent = "--";
+      $("wxIcon").textContent = "🌤️";
+      $("wxCity").textContent = "📍 Add a town in Farm Profile";
+      $("wxLoc").textContent = "";
+      $("wxMeta").textContent = "Weather is not loaded until you choose a farm location.";
+      $("wxCropNote").textContent = "Save a town or use the location button to request a forecast.";
+      return;
+    }
+    $("wxCity").textContent = "Loading weather model data…";
+    $("wxMeta").textContent = "Requesting current conditions and a five-day forecast.";
+    try{
+      var response = await fetch("/api/weather/current?" + params.toString(), {headers:{"Accept":"application/json"}});
+      var data = await response.json();
+      if(!response.ok || !data.available)throw new Error(data.message || "Weather data is unavailable.");
+      var c = data.current, day = (data.forecast || [])[0] || {};
+      var temp = c.temperatureC, humidity = c.humidityPct, wind = c.windKmh;
+      $("wxTemp").textContent = Math.round(temp) + " °C";
+      $("wxIcon").textContent = (window.WX_ICONS && WX_ICONS[c.weatherCode]) || "🌤️";
+      $("wxCity").textContent = "📍 " + data.location.label;
+      $("wxLoc").textContent = "Model location · " + Number(data.location.latitude).toFixed(3) + ", " + Number(data.location.longitude).toFixed(3);
+      $("wxMeta").textContent = ((window.WX_LABELS && WX_LABELS[c.weatherCode]) || "Current conditions") + " · updated " + localTime(data.fetchedAt);
+      $("wxHum").textContent = humidity == null ? "—" : humidity + "%";
+      $("wxWind").textContent = wind == null ? "—" : Math.round(wind) + " km/h";
+      $("wxFeels").textContent = c.feelsLikeC == null ? "—" : Math.round(c.feelsLikeC) + "°C";
+      $("wxUV").textContent = day.uvMax == null ? "—" : Number(day.uvMax).toFixed(1);
+      window.wxData = {
+        temp:temp, hum:humidity, wind:wind, code:c.weatherCode, feels:c.feelsLikeC,
+        rain:c.precipitationMm, rainSum:day.precipitationMm, et0:day.et0Mm,
+        city:data.location.label, lat:data.location.latitude, lon:data.location.longitude,
+        maxT:day.maxC, minT:day.minC, uvIndex:day.uvMax,
+        forecast:data.forecast || [], fetchedAt:data.fetchedAt
+      };
+      $("wxCropNote").textContent = data.sourceNote + (day.et0Mm != null ? " Today's reference ET₀: " + day.et0Mm + " mm." : "");
+      if(typeof renderAdvisory === "function")renderAdvisory(generateAdvisory(window.soilData));
+    }catch(error){
+      window.wxData = null;
+      $("wxTemp").textContent = "-- °C";
+      $("wxCity").textContent = "Weather source unavailable";
+      $("wxMeta").textContent = error.message;
+      $("wxLoc").textContent = "";
+      $("wxHum").textContent = "--%"; $("wxWind").textContent = "--";
+      $("wxFeels").textContent = "--°C"; $("wxUV").textContent = "--";
+      $("wxIcon").textContent = "⚠️";
+      $("wxCropNote").textContent = "No substitute or default weather values are shown.";
+      if(typeof renderAdvisory === "function")renderAdvisory(generateAdvisory(window.soilData));
+    }
+  };
+
+  window.updateSensorUI = function(d){
+    if(!d)return;
+    ["N","P","K"].forEach(function(k){
+      var value = Number(d[k]), ref = REF[k], state = nStatus(value, ref);
+      $("b"+k).style.width = clamp((value/ref.max)*100,0,100) + "%";
+      animGauge("g"+k,"g"+k+"Txt",value,ref.max);
+      var element = $("st"+k);
+      element.textContent = state === "optimal" ? "Within reference band" : state === "low" ? "Below reference band" : "Above reference band";
+      element.className = "s-status " + (state === "optimal" ? "st-ok" : state === "low" ? "st-lo" : "st-hi");
+    });
+    var fit = function(v,r){var mid=(r.ol+r.oh)/2,span=r.oh-r.ol;return clamp(100-Math.abs(v-mid)/Math.max(1,span*.8)*50,0,100);};
+    var score = Math.round(fit(d.N,REF.N)*.4 + fit(d.P,REF.P)*.3 + fit(d.K,REF.K)*.3);
+    $("soilScore").textContent = score;
+    $("soilBar").style.width = score + "%";
+    $("soilNote").textContent = "Rule-based comparison with dashboard reference bands; not a laboratory soil-health result.";
+    $("soilSummary").innerHTML =
+      '<div class="pr" style="padding:9px 13px;"><div><b>pH</b><p>Not reported by this NPK source</p></div><span class="tag">'+(d.pH == null ? "—" : escapeHtml(d.pH))+'</span></div>'+
+      '<div class="pr" style="padding:9px 13px;"><div><b>Moisture</b><p>Not reported by this NPK source</p></div><span class="tag">'+(d.moisture == null ? "—" : escapeHtml(d.moisture)+"%")+'</span></div>'+
+      '<div class="pr" style="padding:9px 13px;"><div><b>N : P : K</b><p>Reported nutrients · mg/kg</p></div><span class="tag">'+escapeHtml(d.N)+' : '+escapeHtml(d.P)+' : '+escapeHtml(d.K)+'</span></div>'+
+      '<div class="pr" style="padding:9px 13px;"><div><b>Source and time</b><p>'+escapeHtml(d.source || "Sensor / user entry")+'</p></div><span class="tag">'+escapeHtml(d.timestamp || "—")+'</span></div>';
+    d._score = score;
+    window.soilData = d;
+    if(typeof renderAdvisory === "function")renderAdvisory(generateAdvisory(d));
+  };
+
+  window.renderHistory = function(){
+    var body = $("histBody");
+    if(!readingHistory || !readingHistory.length){
+      body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted);">No verified sensor readings are available yet.</td></tr>';
+      return;
+    }
+    body.innerHTML = readingHistory.map(function(d,index){
+      var score = d._score == null ? "—" : d._score;
+      return "<tr><td>"+(index+1)+"</td><td>"+escapeHtml(d.timestamp||"—")+"</td><td>"+escapeHtml(d.location||d.deviceId||d.source||"—")+"</td>"+
+        '<td style="font-weight:700;color:var(--n-color);">'+escapeHtml(d.N)+'</td><td style="font-weight:700;color:var(--p-color);">'+escapeHtml(d.P)+'</td>'+
+        '<td style="font-weight:700;color:var(--k-color);">'+escapeHtml(d.K)+'</td><td>—</td><td>—</td><td>'+escapeHtml(score)+'</td></tr>';
+    }).join("");
+  };
+
+  window.generateAdvisory = function(d){
+    var items = [];
+    if(d){
+      [["Nitrogen",d.N,REF.N],["Phosphorus",d.P,REF.P],["Potassium",d.K,REF.K]].forEach(function(entry){
+        var state = nStatus(Number(entry[1]),entry[2]);
+        items.push({title:entry[0]+" is "+state,detail:entry[0]+" measured "+entry[1]+" mg/kg, which is "+state+" the dashboard's reference band. Confirm with a current soil test before changing inputs.",src:d.source||"Farm data"});
+      });
+    } else {
+      items.push({title:"Waiting for verified soil readings",detail:"Connect the ESP32 sensor or enter measured NPK values. FarmWise will not generate sample readings.",src:"Sensor status"});
+    }
+    if(wxData){
+      var conditions=[];
+      if(wxData.temp!=null)conditions.push(Math.round(wxData.temp)+"°C");
+      if(wxData.hum!=null)conditions.push(wxData.hum+"% humidity");
+      items.push({title:"Weather model for "+wxData.city,detail:conditions.join(" · ")+"; model refreshed "+localTime(wxData.fetchedAt)+". Use local forecasts and field observation when deciding work.",src:"Open-Meteo"});
+    } else {
+      items.push({title:"Weather location not loaded",detail:"Save a farm town or use the location button to request model data. No default location is assumed.",src:"Weather status"});
+    }
+    items.push({title:"Check advice locally",detail:"These summaries are not agronomic prescriptions. Confirm diagnosis and application rates with a qualified local agricultural extension service.",src:"FarmWise"});
+    return items;
+  };
+  window.renderAdvisory = function(items){
+    var list = $("advList");
+    if(!list)return;
+    list.innerHTML = (items || []).map(function(item){
+      return '<div class="pr"><div><b>'+escapeHtml(item.title)+'</b><p>'+escapeHtml(item.detail)+'</p></div><span class="tag">'+escapeHtml(item.src||"FarmWise")+'</span></div>';
+    }).join("");
+  };
+  window.renderPests = function(list){
+    var grid=$("pestGrid"), rows=(list || window.PESTS || []);
+    if(!grid)return;
+    var search=$("pestSearch").value.trim().toLowerCase();
+    var crop=$("pestCrop").value.toLowerCase();
+    rows=rows.filter(function(item){
+      var matchCrop=crop==="all" || String(item.crop||"").toLowerCase()===crop;
+      var haystack=[item.name,item.crop,item.sym].join(" ").toLowerCase();
+      return matchCrop && (!search || haystack.indexOf(search)!==-1);
+    });
+    grid.innerHTML=rows.length ? rows.map(function(item){
+      return '<div class="pr" style="display:block;padding:14px;"><b>'+escapeHtml(item.name)+' · '+escapeHtml(item.crop)+'</b><p class="note" style="margin-top:5px;">'+escapeHtml(item.sym)+'</p><p class="note" style="margin-top:7px;">Reference only. Confirm diagnosis and safe treatment locally; no pesticide rate is supplied.</p></div>';
+    }).join("") : '<p class="note">No matching reference entries.</p>';
+  };
+
+  window.getFertAdvice = function(){
+    return [{t:"No fertilizer dose provided",d:"Use a current laboratory soil report and crop-specific advice from your local agricultural extension service before applying fertilizer."}];
+  };
+
+  window.askAssistant = function(question){
+    var text = String(question || "").trim();
+    if(!text)return "Type or speak a question first.";
+    var lower = text.toLowerCase();
+    if(/weather|rain|temperature|humidity|wind/.test(lower)){
+      return wxData ? "Weather model for "+wxData.city+": "+Math.round(wxData.temp)+"°C, humidity "+(wxData.hum == null ? "not reported" : wxData.hum+"%")+", wind "+(wxData.wind == null ? "not reported" : Math.round(wxData.wind)+" km/h")+". These are model values, not a field station reading." : "Weather is not loaded. Save a town in Farm Profile or press Use my location. No default weather is shown.";
+    }
+    if(/soil|sensor|nitrogen|phosphorus|potassium|npk/.test(lower)){
+      return soilData ? "Latest displayed "+(soilData.source||"farm")+" values: nitrogen "+soilData.N+", phosphorus "+soilData.P+", potassium "+soilData.K+" mg/kg, measured "+(soilData.timestamp||"time not reported")+". pH and moisture are not included unless a connected source reports them." : "There is no verified NPK reading yet. Connect an ESP32 sensor or enter values from a soil test. The dashboard will not make up a reading.";
+    }
+    if(/market|price|mandi|sell|crop price/.test(lower)){
+      if(!marketRows.length)return "Official market prices are not connected. Add a data.gov.in API key in Hatchable project setup, then load the Market section. Its data is reported daily, not as a real-time exchange quote.";
+      return "The Market section currently shows "+marketRows.length+" official records from "+(marketRows[0].arrivalDate||"the dates provided by AGMARKNET")+". These daily records are historical observations and are not a price forecast.";
+    }
+    if(/voice|speak|language/.test(lower))return "Choose a language at the top. Use Speak question for browser speech recognition and Read answer to hear the response; your browser may ask for microphone permission when you start voice input.";
+    return "I can summarize FarmWise values already on this page and explain its controls. A generative AI provider is not connected, so I cannot provide AI-generated diagnosis or treatment advice. For crop-specific decisions, contact your local agricultural extension service.";
+  };
+
+  window.runDiseaseScan = function(){
+    statusText("scanStatus","Photo review is available, but no validated crop-disease model is connected. FarmWise will not guess a diagnosis.",true);
+    var results = $("aiResultsList");
+    if(results)results.innerHTML = '<div class="pr"><div><b>Photo analysis</b><p>No crop-specific diagnosis model is connected.</p></div><span class="tag">Not analyzed</span></div><div class="pr"><div><b>Next step</b><p>Ask a local agricultural extension service to review the crop and symptoms.</p></div><span class="tag">Human review</span></div>';
+  };
+
+  var categoryFor = function(name){
+    var value=String(name||"").toLowerCase();
+    if(/tomato|onion|potato|vegetable|brinjal|okra|chilli|chili|cabbage|cauliflower/.test(value))return "vegetable";
+    if(/gram|chickpea|chana|pulse|lentil|tur|arhar|urad|moong|masur|bean|peas/.test(value))return "pulse";
+    if(/groundnut|soybean|soyabean|mustard|sunflower|sesame|castor|oilseed|safflower/.test(value))return "oil";
+    if(/wheat|rice|paddy|maize|corn|bajra|jowar|sorghum|millet|barley/.test(value))return "cereal";
+    return "other";
+  };
+  window.marketRecords = marketRows;
+  window.mktSimulated = [];
+  window.renderMarket = function(){
+    var body=$("mktBody"), filter=$("mktFilter") ? $("mktFilter").value : "all";
+    var rows=marketRows.filter(function(row){return filter==="all" || row.category===filter;});
+    if(!rows.length){
+      body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">No official records to show. Load data after connecting the market source.</td></tr>';
+      return;
+    }
+    var money=function(value){return value==null ? "—" : "₹"+Number(value).toLocaleString("en-IN");};
+    body.innerHTML=rows.map(function(row){
+      var where=[row.state,row.district,row.market].filter(Boolean).map(escapeHtml).join(" · ") || "—";
+      var product=escapeHtml(row.commodity)+(row.variety ? "<br><span class=\"note\">"+escapeHtml(row.variety)+"</span>" : "");
+      return "<tr><td><b>"+product+"</b></td><td>"+where+"</td><td>"+money(row.minPrice)+"</td><td><b>"+money(row.modalPrice)+"</b></td><td>"+money(row.maxPrice)+"<br><span class=\"note\">"+escapeHtml(row.arrivalDate||"Date unavailable")+"</span></td></tr>";
+    }).join("");
+  };
+  window.fetchLiveMarket = async function(){
+    var button=$("mktRefreshBtn");
+    if(button)button.disabled=true;
+    statusText("marketStatus","Requesting official AGMARKNET daily records…");
+    $("mktTime").textContent="Connecting to official daily data";
+    var query=new URLSearchParams();
+    if($("mktState").value)query.set("state",$("mktState").value);
+    if($("mktDistrict").value.trim())query.set("district",$("mktDistrict").value.trim());
+    if($("mktCommodity").value.trim())query.set("commodity",$("mktCommodity").value.trim());
+    try{
+      var response=await fetch("/api/market/prices?"+query.toString(),{headers:{"Accept":"application/json"}});
+      var data=await response.json();
+      if(!response.ok || !data.available)throw new Error(data.message||"Market data is unavailable.");
+      marketRows=(data.records||[]).map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
+      window.marketRecords=marketRows;
+      window.mktSimulated=marketRows;
+      window.renderMarket();
+      statusText("marketStatus",data.sourceNote+" "+marketRows.length+" record(s) returned. Retrieved "+localTime(data.fetchedAt)+".");
+      $("mktTime").textContent=data.source+" · "+localTime(data.fetchedAt);
+    }catch(error){
+      marketRows=[];window.marketRecords=marketRows;window.mktSimulated=[];
+      window.renderMarket();
+      statusText("marketStatus",error.message,true);
+      $("mktTime").textContent="No official records loaded";
+    }finally{if(button)button.disabled=false;}
+  };
+
+  var exportMarket = function(){
+    if(!marketRows.length){statusText("marketStatus","No official rows are loaded to export.",true);return;}
+    var csvRows=[["State","District","Market","Commodity","Variety","Grade","Arrival date","Min ₹/qtl","Modal ₹/qtl","Max ₹/qtl"]];
+    marketRows.forEach(function(row){csvRows.push([row.state,row.district,row.market,row.commodity,row.variety,row.grade,row.arrivalDate,row.minPrice,row.modalPrice,row.maxPrice]);});
+    var csv=csvRows.map(function(row){return row.map(function(value){return '"'+String(value==null?"":value).replace(/"/g,'""')+'"';}).join(",");}).join("\r\n");
+    var link=document.createElement("a"),url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    link.href=url;link.download="FarmWise_AGMARKNET_"+new Date().toISOString().slice(0,10)+".csv";link.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  };
+
+  var refreshSensorFromServer = async function(){
+    try{
+      var responses=await Promise.all([fetch("/api/sensor/latest"),fetch("/api/sensor/history?limit=30")]);
+      var latest=await responses[0].json(),history=await responses[1].json();
+      if(!responses[0].ok || !responses[1].ok)throw new Error("Sensor service unavailable.");
+      var readings=Array.isArray(history.readings)?history.readings:[];
+      if(readings.length){
+        readingHistory=readings.map(function(item){return {N:Number(item.n),P:Number(item.p),K:Number(item.k),timestamp:localTime(item.timestamp),location:item.deviceId||"ESP32",deviceId:item.deviceId,source:"ESP32 database"};});
+      } else if(!serialConnected) {
+        readingHistory=[];
+      }
+      if(latest.available && latest.reading){
+        var r=latest.reading, timestamp=localTime(r.timestamp);
+        var record={N:Number(r.n),P:Number(r.p),K:Number(r.k),timestamp:timestamp,location:r.deviceId||"ESP32",deviceId:r.deviceId,source:"ESP32 database",pH:null,moisture:null};
+        if(!serialConnected)window.updateSensorUI(record);
+        var age=Date.now()-new Date(r.timestamp).getTime();
+        if(!serialConnected)setSensorConnectionState(age<300000,age<300000 ? "Latest database reading received "+timestamp : "Last database reading "+timestamp+" · device may be offline");
+        if(!readings.length)readingHistory=[record];
+      } else if(!serialConnected) {
+        window.soilData=null;
+        setSensorConnectionState(false,"No ESP32 reading has reached the database");
+      }
+      window.renderHistory();
+      if(typeof updateTrendChart==="function")updateTrendChart();
+    }catch(_){
+      if(!serialConnected)setSensorConnectionState(false,"Sensor history service unavailable");
+    }
+  };
+
+  var locationButton=$("wxLocationBtn");
+  locationButton.addEventListener("click",function(){
+    if(!navigator.geolocation){statusText("wxMeta","This browser does not provide device location.",true);return;}
+    statusText("wxMeta","Requesting location permission after your button press…");
+    navigator.geolocation.getCurrentPosition(function(position){
+      window.loadWeather({lat:position.coords.latitude,lon:position.coords.longitude,accuracy:position.coords.accuracy});
+    },function(error){
+      var message=error.code===1?"Location permission was denied. You can enter a town in Farm Profile instead.":"Device location is unavailable. You can enter a town in Farm Profile instead.";
+      statusText("wxCity","📍 Location not available");
+      statusText("wxMeta",message,true);
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:300000});
+  });
+  $("saveFarmBtn").addEventListener("click",function(){setTimeout(function(){window.loadWeather();},0);});
+  // The workspace button uses the existing farm-profile save action.
+
+  $("analyzeManualBtn").addEventListener("click",function(event){
+    event.stopImmediatePropagation();
+    var N=Number($("inN").value),P=Number($("inP").value),K=Number($("inK").value);
+    if([$("inN").value,$("inP").value,$("inK").value].some(function(value){return value===""}) || ![N,P,K].every(function(value){return Number.isFinite(value)&&value>=0&&value<=100000;})){
+      toast("⚠️","Enter measured N, P and K values (0–100000 mg/kg).");return;
+    }
+    var item={N:N,P:P,K:K,timestamp:new Date().toLocaleString(),location:"Manual soil-test entry",source:"Manual entry",pH:null,moisture:null};
+    window.updateSensorUI(item);addHistory(item);updateTrendChart();
+    statusText("sensorDot","Manual values only · no physical sensor reading");
+  },true);
+
+  $("mktRefreshBtn").addEventListener("click",function(event){event.stopImmediatePropagation();window.fetchLiveMarket();},true);
+  $("mktFilter").addEventListener("change",function(){window.renderMarket();});
+  $("mktState").addEventListener("change",function(){window.fetchLiveMarket();});
+  $("mktDistrict").addEventListener("change",function(){window.fetchLiveMarket();});
+  $("mktCommodity").addEventListener("keydown",function(event){if(event.key==="Enter"){event.preventDefault();window.fetchLiveMarket();}});
+  $("mktAiBtn").addEventListener("click",function(event){
+    event.stopImmediatePropagation();
+    $("mktAiBox").style.display="block";
+    $("mktAiText").textContent=marketRows.length ? "Data summary only: "+marketRows.length+" official daily records are loaded. Check each arrival date and market before using the values. This is not an AI forecast or sell/hold recommendation." : "No official market records are loaded. Connect the data.gov.in key and load the Market section first.";
+  },true);
+  $("mktExportCsvBtn").addEventListener("click",function(event){event.stopImmediatePropagation();exportMarket();},true);
+
+  var recognition = null;
+  var speechCodes={en:"en-IN",hi:"hi-IN",ta:"ta-IN",te:"te-IN",kn:"kn-IN",ml:"ml-IN",bn:"bn-IN",mr:"mr-IN",gu:"gu-IN",pa:"pa-IN",or:"or-IN"};
+  var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(SpeechRecognition){
+    recognition = new SpeechRecognition();
+    recognition.lang=speechCodes[currentLang]||"en-IN";
+    recognition.interimResults=false;
+    recognition.maxAlternatives=1;
+    recognition.onstart=function(){statusText("assistantVoiceStatus","Listening… speak your question now.");};
+    recognition.onerror=function(event){statusText("assistantVoiceStatus","Voice input could not start: "+event.error+". You can type your question instead.",true);};
+    recognition.onresult=function(event){
+      var transcript=event.results && event.results[0] && event.results[0][0] ? event.results[0][0].transcript : "";
+      $("aistQ").value=transcript;
+      $("aistBtn").click();
+      window.setTimeout(function(){$("assistantSpeakBtn").click();},100);
+    };
+    recognition.onend=function(){if($("assistantVoiceStatus").textContent==="Listening… speak your question now.")statusText("assistantVoiceStatus","Voice input ended.");};
+  } else {
+    $("assistantMicBtn").disabled=true;
+    statusText("assistantVoiceStatus","This browser does not support speech recognition. Typing still works; speech playback may be available.");
+  }
+  $("assistantMicBtn").addEventListener("click",function(){
+    if(!recognition)return;
+    recognition.lang=speechCodes[currentLang]||"en-IN";
+    try{recognition.start();}catch(_){statusText("assistantVoiceStatus","Voice input is already listening.",true);}
+  });
+  $("assistantSpeakBtn").addEventListener("click",function(){
+    if(!window.speechSynthesis || !window.SpeechSynthesisUtterance){statusText("assistantVoiceStatus","Speech playback is not supported by this browser.",true);return;}
+    var response=$("aistResp").textContent.trim();
+    if(!response){statusText("assistantVoiceStatus","There is no answer to read aloud.");return;}
+    window.speechSynthesis.cancel();
+    var utterance=new SpeechSynthesisUtterance(response);
+    utterance.lang=speechCodes[currentLang]||"en-IN";
+    window.speechSynthesis.speak(utterance);
+    statusText("assistantVoiceStatus","Reading the answer using browser speech.");
+  });
+
+  var originalSetLanguage=window.setLanguage;
+  $("mktTime").textContent="Official daily mandi report — not a real-time exchange";
+  window.renderPests(window.PESTS || []);
+  window.setLanguage(localStorage.getItem("farmwise.language") || "en");
+  if(typeof window.loadFarmWiseLive==="function")return;
+  window.loadFarmWiseLive=true;
+  window.loadWeather();
+  window.fetchLiveMarket();
+  refreshSensorFromServer();
+  window.setInterval(refreshSensorFromServer,30000);
+  weatherTimer=window.setInterval(function(){window.loadWeather();},900000);
+  window.renderMarket();
+  if(typeof window.renderAdvisory==="function")window.renderAdvisory(window.generateAdvisory(window.soilData));
+})();
+</script>
+</body>
+</html>

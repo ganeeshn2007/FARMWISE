@@ -1,3 +1,7 @@
 [[secret]]
 name = "NEXUS_DEVICE_TOKEN"
-expose = true
+required = false
+
+[[secret]]
+name = "DATA_GOV_IN_API_KEY"
+required = false
