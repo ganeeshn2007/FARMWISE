@@ -14,15 +14,17 @@ export default async function (req, res) {
   }
 
   const body = req.body || {};
+  const userId = typeof body.userId === "string" ? body.userId.trim().slice(0, 200) : "";
   const n = Number(body.nitrogen), p = Number(body.phosphorus), k = Number(body.potassium);
+  if (!userId) return res.status(400).json({ ok: false, error: "userId is required so readings are stored with the correct FarmWise account." });
   if (![n, p, k].every(value => Number.isFinite(value) && value >= 0 && value <= 100000)) {
     return res.status(400).json({ ok: false, error: "nitrogen, phosphorus and potassium must be finite non-negative numbers in mg/kg." });
   }
   const deviceId = String(body.deviceId || "esp32-gateway").slice(0, 100);
   const deviceTimestamp = body.timestamp && !Number.isNaN(Date.parse(body.timestamp)) ? new Date(body.timestamp).toISOString() : null;
   const { rows } = await db.query(
-    "INSERT INTO sensor_readings (device_id, nitrogen, phosphorus, potassium, device_timestamp) VALUES ($1, $2, $3, $4, $5) RETURNING id, received_at",
-    [deviceId, n, p, k, deviceTimestamp]
+    "INSERT INTO sensor_readings (user_id, device_id, nitrogen, phosphorus, potassium, device_timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, received_at",
+    [userId, deviceId, n, p, k, deviceTimestamp]
   );
   return res.status(201).json({ ok: true, id: rows[0].id, receivedAt: rows[0].received_at });
 }

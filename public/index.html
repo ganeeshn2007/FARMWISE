@@ -99,6 +99,10 @@ body{
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 14px 44px var(--shadow);padding:20px;transition:box-shadow .25s,transform .25s;backdrop-filter:blur(10px);}
 .card:hover{box-shadow:0 22px 60px var(--shadow-lg);transform:translateY(-2px);}
 .s3{grid-column:span 6;}.s4{grid-column:span 4;}.s6{grid-column:span 6;}.s12{grid-column:span 12;}
+.workspace-card{display:flex;flex-direction:column;gap:12px;}
+.workspace-source-list{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:grid;gap:10px;}
+.workspace-source-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;font-size:.77rem;color:var(--text);}
+.workspace-source-row strong{max-width:65%;color:var(--muted);font-size:.69rem;font-weight:600;text-align:right;}
 
 /* ── CARD HEADER ── */
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:8px;}
@@ -370,13 +374,23 @@ body{
 <!-- ══ DASHBOARD ══ -->
 <section class="dashboard">
 
-<!-- WORKSPACE STATUS -->
-<div id="auth" class="card s3" style="scroll-margin-top:130px;">
-  <div class="ch"><div class="ct"><div class="ico">🌿</div>FarmWise Workspace</div></div>
-  <p class="note" style="line-height:1.65;">Your farm profile is saved in this browser. Secure farmer accounts are not connected yet, so this page does not collect passwords or personal login details.</p>
-  <div class="sp"></div>
-  <button id="loginBtn" class="btn btn-primary" style="width:100%;">Save farm profile →</button>
-  <div id="loginStatus" class="note" style="margin-top:9px;" aria-live="polite"></div>
+<!-- FARMER LOGIN -->
+<div id="auth" class="card s3 workspace-card" style="scroll-margin-top:130px;">
+  <div class="ch"><div class="ct"><div class="ico">🔐</div><span data-i18n="farmer_login">Farmer Login</span></div></div>
+  <p class="note" style="line-height:1.65;">Sign in or create a FarmWise account using a one-time email code. No sample passwords or fake accounts.</p>
+  <div class="ib">
+    <p id="loginStatus" class="note" style="margin-bottom:10px;" aria-live="polite">Checking account…</p>
+    <a id="loginBtn" class="btn btn-primary" style="width:100%;text-align:center;" href="/login?next=%2F">Sign in / Create account →</a>
+    <button id="signOutBtn" class="btn btn-ghost" type="button" style="width:100%;display:none;">Sign out</button>
+    <p id="workspaceDeviceConfig" class="note" style="display:none;margin-top:10px;">ESP32 account ID: <code id="workspaceUserId"></code> · include this as <code>userId</code> in device readings.</p>
+  </div>
+  <p id="profileSyncNote" class="note">Your farm profile stays in this browser until you sign in and save it to your account.</p>
+  <div class="workspace-source-list">
+    <div class="ct">Live data connections</div>
+    <div class="workspace-source-row"><span>🌦 Weather</span><strong>Forecast loads after you set a farm town</strong></div>
+    <div class="workspace-source-row"><span>📡 Soil nutrients</span><strong>Needs your ESP32 sensor</strong></div>
+    <div class="workspace-source-row"><span>💹 Mandi prices</span><strong>Needs an official data.gov.in key</strong></div>
+  </div>
 </div>
 
 <!-- WEATHER -->
@@ -1023,27 +1037,37 @@ function analyzeDiseaseFallback(context){
   };
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   LOGIN
-═══════════════════════════════════════════════════════════════ */
-q('loginBtn').addEventListener('click',function(){
-  q('saveFarmBtn').click();
-  q('loginStatus').textContent='Farm profile saved in this browser; account sign-in is not connected.';
-});
+/* FarmWise account sign-in is provided by Hatchable email-code authentication. */
 
 /* ═══════════════════════════════════════════════════════════════
    FARM PROFILE
 ═══════════════════════════════════════════════════════════════ */
-function loadFarm(){
-  var f=JSON.parse(localStorage.getItem('nx.farm')||'{}');
+function farmProfileStorageKey(){return window.farmwiseProfileKey||'nx.farm';}
+function historyStorageKey(){return window.farmwiseHistoryKey||'nx.history';}
+function loadFarm(profileOverride){
+  var f=profileOverride;
+  if(!f){try{f=JSON.parse(localStorage.getItem(farmProfileStorageKey())||'{}');}catch(e){f={};}}
   ['farmName','farmerName','farmVillage','farmPlot','farmArea'].forEach(function(k){if(f[k])q(k).value=f[k];});
   ['farmSoilType','farmSeason','farmIrrigation'].forEach(function(k){if(f[k])q(k).value=f[k];});
 }
-q('saveFarmBtn').addEventListener('click',function(){
+q('saveFarmBtn').addEventListener('click',async function(){
   var f={};
   ['farmName','farmerName','farmVillage','farmPlot','farmSoilType','farmSeason','farmArea','farmIrrigation'].forEach(function(k){f[k]=q(k)&&q(k).value;});
-  localStorage.setItem('nx.farm',JSON.stringify(f));
-  setNote(q('farmStatus'),'✅ Farm profile saved.');toast('🏡','Farm profile saved!');
+  localStorage.setItem(farmProfileStorageKey(),JSON.stringify(f));
+  var savedMessage='✅ Saved in this browser.';
+  try{
+    var A=window.hatchable&&window.hatchable.auth;
+    var session=A?await A.getSession():null;
+    if(session&&session.user){
+      var response=await fetch('/api/farm/profile',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(f)});
+      var result=await response.json();
+      if(!response.ok)throw new Error(result.message||'Account sync failed.');
+      savedMessage='✅ Saved in this browser and your FarmWise account.';
+    }else{
+      savedMessage='✅ Saved in this browser. Sign in to sync it to your FarmWise account.';
+    }
+  }catch(error){savedMessage='Saved in this browser, but account sync failed. Check your connection and try again.';}
+  setNote(q('farmStatus'),savedMessage);toast('🏡','Farm profile saved.');
 });
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1323,8 +1347,8 @@ q('clearManualBtn').addEventListener('click',function(){['inN','inP','inK'].forE
 /* ═══════════════════════════════════════════════════════════════
    HISTORY
 ═══════════════════════════════════════════════════════════════ */
-function addHistory(d){readingHistory.unshift(d);if(readingHistory.length>10)readingHistory.pop();renderHistory();localStorage.setItem('nx.history',JSON.stringify(readingHistory));}
-function loadHistory(){try{readingHistory=JSON.parse(localStorage.getItem('nx.history')||'[]');}catch(e){readingHistory=[];}renderHistory();}
+function addHistory(d){readingHistory.unshift(d);if(readingHistory.length>10)readingHistory.pop();renderHistory();localStorage.setItem(historyStorageKey(),JSON.stringify(readingHistory));}
+function loadHistory(){try{readingHistory=JSON.parse(localStorage.getItem(historyStorageKey())||'[]');}catch(e){readingHistory=[];}renderHistory();}
 function renderHistory(){
   var tb=q('histBody');
   if(!readingHistory.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted);font-style:italic;">No readings yet.</td></tr>';return;}
@@ -1336,7 +1360,14 @@ function renderHistory(){
       '<td>'+d.pH+'</td><td>'+d.moisture+'%</td><td style="font-weight:800;color:'+scColor+';">'+sc+'</td></tr>';
   }).join('');
 }
-q('clearHistBtn').addEventListener('click',function(){readingHistory=[];localStorage.removeItem('nx.history');renderHistory();updateTrendChart();toast('🗑','History cleared.');});
+q('clearHistBtn').addEventListener('click',async function(){
+  readingHistory=[];localStorage.removeItem(historyStorageKey());renderHistory();updateTrendChart();
+  try{
+    var A=window.hatchable&&window.hatchable.auth,session=A?await A.getSession():null;
+    if(session&&session.user){var response=await fetch('/api/sensor/history',{method:'DELETE'});if(!response.ok)throw new Error('Could not clear account history.');}
+    toast('🗑','Sensor history cleared.');
+  }catch(e){toast('⚠️','This browser’s history cleared, but account history could not be cleared.');}
+});
 q('exportCsvBtn').addEventListener('click',function(){
   if(!readingHistory.length){toast('⚠️','No history to export.');return;}
   var rows=['#,Timestamp,Plot,N,P,K,pH,Moisture,Score'];
@@ -2280,7 +2311,6 @@ function setLanguage(lang,el){
 /* ═══════════════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════════════ */
-loadFarm();loadHistory();
 document.documentElement.dataset.theme='light';
 updateTrendChart();
 renderAdvisory(generateAdvisory(null));
@@ -2612,6 +2642,9 @@ renderPests(PESTS);
 
   var refreshSensorFromServer = async function(){
     try{
+      var A=window.hatchable&&window.hatchable.auth;
+      var session=A?await A.getSession():null;
+      if(!session||!session.user){if(!serialConnected)setSensorConnectionState(false,"Sign in to view this account’s sensor readings");return;}
       var responses=await Promise.all([fetch("/api/sensor/latest"),fetch("/api/sensor/history?limit=30")]);
       var latest=await responses[0].json(),history=await responses[1].json();
       if(!responses[0].ok || !responses[1].ok)throw new Error("Sensor service unavailable.");
@@ -2652,7 +2685,59 @@ renderPests(PESTS);
     },{enableHighAccuracy:true,timeout:15000,maximumAge:300000});
   });
   $("saveFarmBtn").addEventListener("click",function(){setTimeout(function(){window.loadWeather();},0);});
-  // The workspace button uses the existing farm-profile save action.
+
+  function loginUrl(){
+    var search=new URLSearchParams(location.search),preview=search.get("_preview");
+    var target=new URL("/login",location.href),next="/";
+    if(preview){target.searchParams.set("_preview",preview);var home=new URL("/",location.origin);home.searchParams.set("_preview",preview);next=home.pathname+home.search;}
+    target.searchParams.set("next",next);return target.pathname+target.search;
+  }
+  async function updateFarmwiseAccount(){
+    var A=window.hatchable&&window.hatchable.auth;
+    var status=$("loginStatus"),link=$("loginBtn"),out=$("signOutBtn"),syncNote=$("profileSyncNote");
+    if(link)link.href=loginUrl();
+    if(!A){if(status)status.textContent="Secure sign-in is unavailable right now.";return null;}
+    var session=null;
+    try{session=await A.getSession();}catch(_){if(status)status.textContent="Could not check your account. Refresh and try again.";return null;}
+    var user=session&&session.user;
+    var namespace=user?encodeURIComponent(String(user.id)):"anonymous";
+    window.farmwiseAccountId=user?String(user.id):null;
+    window.farmwiseProfileKey=user?"nx.farm.user."+namespace:"nx.farm";
+    window.farmwiseHistoryKey=user?"nx.history.user."+namespace:"nx.history";
+    if(typeof loadFarm==="function")loadFarm();
+    if(typeof loadHistory==="function")loadHistory();
+    var deviceConfig=$("workspaceDeviceConfig"),userId=$("workspaceUserId");
+    if(user&&deviceConfig&&userId){userId.textContent=String(user.id);deviceConfig.style.display="block";}else if(deviceConfig){deviceConfig.style.display="none";}
+    if(!user){
+      if(status)status.textContent="Not signed in. Use an email code to create an account or sign in.";
+      if(link)link.style.display="block";if(out)out.style.display="none";
+      if(syncNote)syncNote.textContent="Anonymous farm details stay in this browser and are not copied into accounts automatically.";
+      return null;
+    }
+    if(status)status.textContent="Signed in as "+(user.email||"FarmWise user");
+    if(link)link.style.display="none";if(out)out.style.display="block";
+    if(syncNote)syncNote.textContent="Press Save Profile to sync these account-specific farm details. This browser keeps a local copy too.";
+    if(typeof updateTrendChart==="function")updateTrendChart();
+    try{
+      var response=await fetch("/api/farm/profile");
+      if(response.ok){
+        var data=await response.json();
+        if(data.profile){
+          var profile=data.profile;
+          ["farmName","farmerName","farmVillage","farmPlot","farmArea","farmSoilType","farmSeason","farmIrrigation"].forEach(function(key){if($(key)&&profile[key]!==undefined)$(key).value=profile[key];});
+          localStorage.setItem(farmProfileStorageKey(),JSON.stringify(profile));
+          if(status)status.textContent="Signed in as "+(user.email||"FarmWise user")+" · account profile loaded";
+        }
+      }
+    }catch(_){if(status)status.textContent="Signed in, but the saved account profile could not be loaded.";}
+    return user;
+  }
+  window.updateFarmwiseAccount=updateFarmwiseAccount;
+  $("signOutBtn").addEventListener("click",async function(){
+    var A=window.hatchable&&window.hatchable.auth;
+    if(!A)return;
+    try{await A.signOut();location.reload();}catch(_){statusText("loginStatus","Could not sign out. Try again.",true);}
+  });
 
   $("analyzeManualBtn").addEventListener("click",function(event){
     event.stopImmediatePropagation();
@@ -2720,9 +2805,11 @@ renderPests(PESTS);
   window.setLanguage(localStorage.getItem("farmwise.language") || "en");
   if(typeof window.loadFarmWiseLive==="function")return;
   window.loadFarmWiseLive=true;
-  window.loadWeather();
+  Promise.resolve(window.updateFarmwiseAccount()).then(function(user){
+    window.loadWeather();
+    if(user)refreshSensorFromServer();else setSensorConnectionState(false,"Sign in to view account sensor readings");
+  }).catch(function(){window.loadWeather();setSensorConnectionState(false,"Account status is unavailable.");});
   window.fetchLiveMarket();
-  refreshSensorFromServer();
   window.setInterval(refreshSensorFromServer,30000);
   weatherTimer=window.setInterval(function(){window.loadWeather();},900000);
   window.renderMarket();

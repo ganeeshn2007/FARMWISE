@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1a7a38">
+<title>Sign in · FarmWise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0f7f1;--panel:#fff;--text:#0a1f10;--muted:#4a6855;--border:rgba(16,56,28,.15);--primary:#1a7a38;--soft:rgba(26,122,56,.09);--danger:#b42318;--r:20px}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:22px;display:grid;place-items:center;background:radial-gradient(circle at 20% 0,#d8f0de,transparent 48%),var(--bg);color:var(--text);font:400 15px/1.5 Inter,system-ui,sans-serif}
+main{width:min(100%,460px);padding:34px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 18px 55px rgba(10,40,18,.12)}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.logo{width:48px;height:48px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(135deg,#1a7a38,#52b862);color:#fff;font-size:25px}
+.brand strong{font-size:22px;letter-spacing:-.04em}
+.brand em{color:var(--primary);font-style:normal}
+h1{margin:0 0 6px;font-size:25px;letter-spacing:-.04em}
+.sub{margin:0 0 24px;color:var(--muted)}
+input,button{width:100%;height:48px;border-radius:12px;font:600 14px Inter,system-ui,sans-serif}
+input{padding:0 14px;border:1px solid var(--border);background:#fff;color:var(--text);outline:none}
+input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--soft)}
+button{margin-top:10px;border:0;background:linear-gradient(135deg,#1a7a38,#52b862);color:white;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
+button.secondary{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.note{margin:0 0 12px;color:var(--muted);font-size:13px}
+.msg{min-height:22px;margin:14px 0 0;color:var(--muted);font-size:13px}
+.msg.err{color:var(--danger)}
+a{display:inline-block;margin-top:18px;color:var(--primary);font-size:13px;text-decoration:none;font-weight:700}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><div class="logo">🌿</div><strong>FARM<em>WISE</em></strong></div>
+  <h1 id="title">Farmer sign in</h1>
+  <p class="sub" id="subtitle">Use an email code to sign in or create your account. No password needed.</p>
+  <form id="form" novalidate>
+    <div id="email-row">
+      <label class="note" for="email">Email address</label>
+      <input id="email" type="email" autocomplete="username webauthn" autocapitalize="off" spellcheck="false" placeholder="you@example.com" required>
+    </div>
+    <div id="code-row" hidden>
+      <label class="note" for="code">6-digit email code</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="000000">
+    </div>
+    <button id="submit" type="submit">Continue</button>
+    <button id="back" class="secondary" type="button" hidden>Use a different email</button>
+  </form>
+  <div id="passkey" hidden>
+    <p class="note">Add a passkey to sign in next time with your device's fingerprint, face, or screen lock.</p>
+    <button id="passkey-add" type="button">Add a passkey</button>
+    <button id="passkey-skip" class="secondary" type="button">Not now</button>
+  </div>
+  <p id="msg" class="msg" role="status" aria-live="polite"></p>
+  <a href="/">← Back to FarmWise</a>
+</main>
+<script>
+(function(){
+  "use strict";
+  var A=window.hatchable&&window.hatchable.auth;
+  var $=function(id){return document.getElementById(id);};
+  var form=$("form"),emailEl=$("email"),codeEl=$("code"),emailRow=$("email-row"),codeRow=$("code-row");
+  var submit=$("submit"),back=$("back"),msg=$("msg"),passkey=$("passkey"),step="email",hasPasskey=false;
+  var declinedKey="farmwise.passkey_offer_declined";
+  function say(value,error){msg.textContent=value||"";msg.className="msg"+(error?" err":"");}
+  function nextUrl(){
+    var raw=new URLSearchParams(location.search).get("next")||"/";
+    if(raw.charAt(0)!=="/"||raw.indexOf("//")===0)return "/";
+    var parsed=new URL(raw,location.origin);
+    return parsed.origin===location.origin?parsed.pathname+parsed.search+parsed.hash:"/";
+  }
+  function done(){location.replace(nextUrl());}
+  function wasDeclined(){try{return localStorage.getItem(declinedKey)==="1";}catch(_){return false;}}
+  function decline(){try{localStorage.setItem(declinedKey,"1");}catch(_){}}
+  function finish(){
+    if(!hasPasskey&&A.supportsPasskeys&&A.supportsPasskeys()&&A.registerPasskey&&!wasDeclined()){
+      form.hidden=true;$("title").textContent="You're signed in";$("subtitle").textContent="";
+      passkey.hidden=false;return;
+    }
+    done();
+  }
+  if(!A){say("Secure sign-in is unavailable. Refresh this page and try again.",true);submit.disabled=true;return;}
+  var backLink=document.querySelector('a[href="/"]');
+  var previewToken=new URLSearchParams(location.search).get("_preview");
+  if(backLink&&previewToken)backLink.href="/?_preview="+encodeURIComponent(previewToken);
+  A.getSession().then(function(s){if(s&&s.user)done();}).catch(function(){});
+  if(A.attachPasskeyAutofill){
+    try{A.attachPasskeyAutofill(emailEl).then(function(r){if(r&&r.user)done();}).catch(function(){});}catch(_){}
+  }
+  $("passkey-add").addEventListener("click",function(){
+    $("passkey-add").disabled=true;$("passkey-skip").disabled=true;
+    A.registerPasskey({name:"FarmWise passkey"}).then(function(result){if(!result)decline();done();}).catch(function(err){
+      $("passkey-add").disabled=false;$("passkey-skip").disabled=false;say(err&&err.message||"Could not save the passkey. You can continue without one.",true);
+    });
+  });
+  $("passkey-skip").addEventListener("click",function(){decline();done();});
+  back.addEventListener("click",function(){
+    step="email";emailRow.hidden=false;codeRow.hidden=true;back.hidden=true;submit.textContent="Continue";$("subtitle").textContent="Use an email code to sign in or create your account. No password needed.";say("");emailEl.focus();
+  });
+  form.addEventListener("submit",function(event){
+    event.preventDefault();submit.disabled=true;say("");
+    var email=(emailEl.value||"").trim();
+    if(step==="email"){
+      if(!email){submit.disabled=false;say("Enter your email address.",true);return;}
+      A.startLogin({email:email}).then(function(result){
+        hasPasskey=!!(result&&result.has_passkey);
+        if(hasPasskey&&A.supportsPasskeys&&A.supportsPasskeys()){
+          return A.signInWithPasskey({email:email}).then(function(doneResult){if(doneResult&&doneResult.user){done();return null;}return "code";}).catch(function(){return "code";});
+        }
+        return "code";
+      }).then(function(next){
+        if(next!=="code")return;
+        step="code";emailRow.hidden=true;codeRow.hidden=false;back.hidden=false;submit.textContent="Verify code";
+        $("subtitle").textContent="Enter the code sent to "+email+".";say("Check your email for the sign-in code.");codeEl.focus();
+      }).catch(function(err){say(err&&err.status===429?"Too many attempts. Try again in a moment.":(err&&err.message||"Could not send a code. Check the email address and try again."),true);})
+      .then(function(){submit.disabled=false;});
+      return;
+    }
+    A.verifyCode({email:email,code:(codeEl.value||"").trim()}).then(function(result){
+      if(result&&result.user){finish();return;}
+      say("That code did not work. Try again.",true);
+    }).catch(function(err){say(err&&err.message||"That code did not work. Try again.",true);})
+    .then(function(){submit.disabled=false;});
+  });
+  emailEl.focus();
+})();
+</script>
+</body>
+</html>

@@ -5,3 +5,7 @@ required = false
 [[secret]]
 name = "DATA_GOV_IN_API_KEY"
 required = false
+
+[auth]
+enabled = true
+providers = ["email"]
