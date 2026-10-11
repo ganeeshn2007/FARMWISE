@@ -16,7 +16,7 @@ export default async function (_req, res) {
       database: "FarmWise PostgreSQL",
       cropKnowledge: { total: Object.values(cropCounts).reduce((a,b)=>a+b,0), verified: cropCounts.verified || 0, needsReview: cropCounts.needs_review || 0, reviewed: cropCounts.reviewed || 0 },
       diseaseReferences: { total: Object.values(diseaseCounts).reduce((a,b)=>a+b,0), verified: diseaseCounts.verified || 0, needsReview: diseaseCounts.needs_review || 0, reviewed: diseaseCounts.reviewed || 0 },
-      policy: "Only records explicitly marked verified are eligible for recommendations. An empty result is reported honestly."
+      policy: "The database contains AI-generated preliminary drafts marked needs_review and no verified records yet. Drafts may appear in recommendation results with provisional labels; they are not validated agronomic advice. Verify against local agricultural extension guidance before acting."
     });
   } catch (_) {
     return res.status(500).json({ available: false, error: "database_query_failed" });
