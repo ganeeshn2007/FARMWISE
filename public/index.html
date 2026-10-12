@@ -651,6 +651,7 @@ body{
     <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
       <span id="mktTime" class="note">AGMARKNET last-week report · latest reported price per market, not a live quote</span>
       <button id="mktRefreshBtn" class="btn btn-primary btn-sm">↺ Refresh</button>
+      <button id="mktLoadMoreBtn" class="btn btn-ghost btn-sm" style="display:none;">Load More Markets</button>
       <button id="mktAiBtn" class="btn btn-gold btn-sm">Market data summary</button>
       <button id="mktExportCsvBtn" class="btn btn-ghost btn-sm">📥 Export official data CSV</button>
     </div>
@@ -2860,47 +2861,69 @@ renderPests(PESTS);
       return "<tr><td><b>"+product+"</b></td><td>"+state+"</td><td>"+market+(row.district ? "<br><span class=\"note\">"+escapeHtml(row.district)+"</span>" : "")+"</td><td><b>"+money(row.price)+"</b><br><span class=\"note\">"+unit+"</span></td><td>"+escapeHtml(row.arrivalDate||"Date unavailable")+"</td></tr>";
     }).join("");
   };
-  window.fetchLiveMarket = async function(){
-    var button=$("mktRefreshBtn");
+  window.fetchLiveMarket = async function(options){
+    options=options||{};
+    var append=options.append===true;
+    if(!append)window.marketQueryPage=0;
+    else window.marketQueryPage=(Number(window.marketQueryPage)||0)+1;
+    var page=Number(window.marketQueryPage)||0;
+    var priorRows=append?marketRows.slice():[];
+    var button=$("mktRefreshBtn"),moreButton=$("mktLoadMoreBtn");
     if(button)button.disabled=true;
-    statusText("marketStatus","Requesting the official AGMARKNET last-week price report…");
+    if(moreButton)moreButton.disabled=true;
+    statusText("marketStatus",append?"Loading the next AGMARKNET market batch…":"Requesting the official AGMARKNET last-week price report…");
     setFarmwiseSourceState("market","loading");
     $("mktTime").textContent="Loading latest reported market prices";
     var query=new URLSearchParams();
     if($("mktState").value)query.set("state",$("mktState").value);
     if($("mktDistrict").value.trim())query.set("district",$("mktDistrict").value.trim());
     if($("mktCommodity").value.trim())query.set("commodity",$("mktCommodity").value.trim());
+    query.set("page",String(page));
     var marketFilterKey=JSON.stringify({state:$("mktState").value||"",district:$("mktDistrict").value.trim(),commodity:$("mktCommodity").value.trim()});
     try{
       var response=await fetch("/api/market/prices?"+query.toString(),{headers:{"Accept":"application/json"}});
       var data=await response.json();
       if(!response.ok || !data.available)throw new Error(data.message||"Market data is unavailable.");
-      marketRows=(data.records||[]).map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
+      var incomingRows=(data.records||[]).map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
+      if(append){
+        var existingKeys=new Set(priorRows.map(function(row){return [row.state,row.market,row.commodity].join("|").toLowerCase();}));
+        marketRows=priorRows.concat(incomingRows.filter(function(row){var key=[row.state,row.market,row.commodity].join("|").toLowerCase();if(existingKeys.has(key))return false;existingKeys.add(key);return true;}));
+      }else marketRows=incomingRows;
       window.marketRecords=marketRows;
       window.mktSimulated=marketRows;
-      try{localStorage.setItem("farmwise.market.cache.v2",JSON.stringify({filterKey:marketFilterKey,records:data.records||[],source:data.source||"AGMARKNET 2.0",fetchedAt:data.fetchedAt||new Date().toISOString()}));}catch(_){}
+      try{localStorage.setItem("farmwise.market.cache.v2",JSON.stringify({filterKey:marketFilterKey,records:marketRows,source:data.source||"AGMARKNET 2.0",fetchedAt:data.fetchedAt||new Date().toISOString(),hasMore:!!data.hasMore,page:page,totalMarketPages:data.totalMarketPages||null}));}catch(_){}
       window.renderMarket();
       setFarmwiseSourceState("market",marketRows.length?"ready":"empty",marketRows.length);
-      statusText("marketStatus",(data.message||data.sourceNote)+" "+marketRows.length+" priced market row(s) returned. Checked "+localTime(data.fetchedAt)+".");
+      statusText("marketStatus",(data.message||data.sourceNote)+" Showing "+marketRows.length+" priced market row(s) after checking "+(data.candidateMarketsChecked||0)+" markets for this batch. Checked "+localTime(data.fetchedAt)+".");
       $("mktTime").textContent=data.source+" · checked "+localTime(data.fetchedAt)+(data.latestReportDate?" · latest report "+data.latestReportDate:"");
+      if(moreButton){moreButton.style.display=data.hasMore?"inline-flex":"none";moreButton.textContent=data.hasMore?"Load More Markets ("+(page+1)+"/"+(data.totalMarketPages||"…")+")":"Load More Markets";}
     }catch(error){
       var cached=null;
       try{cached=JSON.parse(localStorage.getItem("farmwise.market.cache.v2")||"null");}catch(_){}
       if(cached&&cached.filterKey===marketFilterKey&&Array.isArray(cached.records)&&cached.records.length){
         marketRows=cached.records.map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
         window.marketRecords=marketRows;window.mktSimulated=marketRows;window.renderMarket();
+        if(Number.isFinite(Number(cached.page)))window.marketQueryPage=Number(cached.page);
         setFarmwiseSourceState("market","stale",marketRows.length);
         var when=cached.fetchedAt?localTime(cached.fetchedAt):"an unknown time";
-        statusText("marketStatus","Live price lookup failed: "+error.message+" Showing cached official records last retrieved at "+when+". These records are STALE, not current prices.",true);
-        $("mktTime").textContent="STALE · last official retrieval "+when;
+        statusText("marketStatus","AGMARKNET could not refresh: "+error.message+" Showing previously retrieved official records from "+when+". Treat them as stale and check each report date.",true);
+        $("mktTime").textContent="STALE · last successful retrieval "+when;
+        if(moreButton)moreButton.style.display=cached.hasMore?"inline-flex":"none";
+      }else if(append&&priorRows.length){
+        marketRows=priorRows;window.marketRecords=marketRows;window.mktSimulated=marketRows;window.renderMarket();
+        window.marketQueryPage=Math.max(0,page-1);
+        setFarmwiseSourceState("market","ready",marketRows.length);
+        statusText("Could not load the next market batch: "+error.message+" Already loaded official rows are still shown. Try Load More Markets again shortly.",true);
+        if(moreButton)moreButton.style.display="inline-flex";
       }else{
         marketRows=[];window.marketRecords=marketRows;window.mktSimulated=[];
         window.renderMarket();
-        setFarmwiseSourceState("market",/api key|setup|required/i.test(error.message)?"key":"error");
-        statusText("marketStatus",error.message+" No sample or simulated prices have been substituted.",true);
+        setFarmwiseSourceState("market","error");
+        statusText(error.message+" No sample or simulated prices have been substituted.",true);
         $("mktTime").textContent="No official records loaded";
+        if(moreButton)moreButton.style.display="none";
       }
-    }finally{if(button)button.disabled=false;}
+    }finally{if(button)button.disabled=false;if(moreButton)moreButton.disabled=false;}
   };
 
   var exportMarket = function(){
@@ -3039,6 +3062,7 @@ renderPests(PESTS);
   },true);
 
   $("mktRefreshBtn").addEventListener("click",function(event){event.stopImmediatePropagation();window.fetchLiveMarket();},true);
+  $("mktLoadMoreBtn").addEventListener("click",function(event){event.stopImmediatePropagation();window.fetchLiveMarket({append:true});},true);
   $("mktFilter").addEventListener("change",function(){window.renderMarket();});
   $("mktState").addEventListener("change",function(){window.fetchLiveMarket();});
   $("mktDistrict").addEventListener("change",function(){window.fetchLiveMarket();});

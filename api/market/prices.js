@@ -172,66 +172,71 @@ export default async function (req, res) {
       });
     }
 
-    // Query a bounded number of official market histories. The endpoint returns
-    // the last week's dated price columns for each market; no captcha/key is used
-    // by this public report. "NR" values are ignored, never interpreted as zero.
-    const candidateBudget = wantedDistrict ? 20 : (state ? 40 : 32);
-    // A spaced sample gives an all-India request coverage across different states;
-    // local/state searches use the full initial market order for the selected place.
-    if (!state && !wantedDistrict && candidates.length > candidateBudget) {
-      const allMarkets = candidates;
-      const sampled = [];
-      const step = (allMarkets.length - 1) / (candidateBudget - 1);
-      for (let i = 0; i < candidateBudget; i++) sampled.push(allMarkets[Math.round(i * step)]);
-      candidates = sampled;
-    }
-    const batchSize = 3;
-    const records = [];
-    let attempted = 0;
-    let requestFailures = 0;
-    for (let start = 0; start < Math.min(candidates.length, candidateBudget) && records.length < 20; start += batchSize) {
-      const batch = candidates.slice(start, Math.min(start + batchSize, candidateBudget));
-      const settled = await Promise.all(batch.map(async market => {
-        try {
-          const endpoint = "/prices-and-arrivals/market-price/lastweek?marketId=" +
-            encodeURIComponent(String(market.market_id)) + "&stateId=" +
-            encodeURIComponent(String(market.state_id)) + "&commodityId=" +
-            encodeURIComponent(String(commodity.cmdt_id)) + "&includeExcel=false";
-          const payload = await apiJson(endpoint, 10000);
-          if (!payload || payload.success !== true || !Array.isArray(payload.data)) {
-            requestFailures++;
-            console.warn("AGMARKNET market history had no usable response", String(market.market_name || market.market_id));
-            return [];
-          }
-          const out = [];
-          for (const row of payload.data) {
-            const latest = latestReported(row, payload.columns);
-            if (!latest) continue;
-            const marketMeta = marketRows.find(item => Number(item.id) === Number(market.market_id));
-            const districtMeta = marketMeta ? districtRows.find(item => Number(item.id) === Number(marketMeta.district_id)) : null;
-            out.push({
-              state: market.state_name || (state && state.state_name) || "",
-              district: districtMeta ? districtMeta.district_name : "",
-              market: market.market_name || "",
-              commodity: commodity.cmdt_name,
-              variety: row.variety && row.variety !== "Unknown" ? row.variety : "",
-              grade: "",
-              arrivalDate: latest.date,
-              price: latest.price,
-              unit: row.unitOfPrice && row.unitOfPrice !== "NR" ? row.unitOfPrice : "Rs./Quintal",
-              source: "AGMARKNET 2.0",
-              sourceDate: latest.date
-            });
-          }
-          return out;
-        } catch (error) {
-          requestFailures++;
-          console.warn("AGMARKNET market history skipped", String(market.market_name || market.market_id), String(error.message || error).slice(0, 160));
-          return [];
+    // Query only one small page of market histories per user action. AGMARKNET
+    // rate-limits bursts, so requests are deliberately sequential. The user can
+    // load the next page without forcing dozens of upstream calls in one request.
+    // "NR" values are ignored, never interpreted as zero.
+    const perPage = 10;
+    const rawPage = Number(query.page || 0);
+    const page = Number.isFinite(rawPage) ? Math.max(0, Math.min(250, Math.floor(rawPage))) : 0;
+    let marketsToFetch = [];
+    let hasMore = false;
+    let totalMarketPages = 0;
+    if (!state && !wantedDistrict) {
+      // Interleave the nationwide market list across states on every page.
+      const stride = Math.ceil(candidates.length / perPage);
+      totalMarketPages = stride;
+      if (page < stride) {
+        for (let lane = 0; lane < perPage; lane++) {
+          const index = lane * stride + page;
+          if (index < candidates.length) marketsToFetch.push(candidates[index]);
         }
-      }));
-      attempted += batch.length;
-      for (const arr of settled) for (const record of arr) records.push(record);
+      }
+      hasMore = page + 1 < stride;
+    } else {
+      const start = page * perPage;
+      marketsToFetch = candidates.slice(start, start + perPage);
+      totalMarketPages = Math.ceil(candidates.length / perPage);
+      hasMore = start + marketsToFetch.length < candidates.length;
+    }
+    const records = [];
+    const attempted = marketsToFetch.length;
+    let requestFailures = 0;
+    for (const market of marketsToFetch) {
+      try {
+        const endpoint = "/prices-and-arrivals/market-price/lastweek?marketId=" +
+          encodeURIComponent(String(market.market_id)) + "&stateId=" +
+          encodeURIComponent(String(market.state_id)) + "&commodityId=" +
+          encodeURIComponent(String(commodity.cmdt_id)) + "&includeExcel=false";
+        const payload = await apiJson(endpoint, 10000);
+        if (!payload || payload.success !== true || !Array.isArray(payload.data)) {
+          requestFailures++;
+          console.warn("AGMARKNET market history had no usable response", String(market.market_name || market.market_id));
+          continue;
+        }
+        for (const row of payload.data) {
+          const latest = latestReported(row, payload.columns);
+          if (!latest) continue;
+          const marketMeta = marketRows.find(item => Number(item.id) === Number(market.market_id));
+          const districtMeta = marketMeta ? districtRows.find(item => Number(item.id) === Number(marketMeta.district_id)) : null;
+          records.push({
+            state: market.state_name || (state && state.state_name) || "",
+            district: districtMeta ? districtMeta.district_name : "",
+            market: market.market_name || "",
+            commodity: commodity.cmdt_name,
+            variety: row.variety && row.variety !== "Unknown" ? row.variety : "",
+            grade: "",
+            arrivalDate: latest.date,
+            price: latest.price,
+            unit: row.unitOfPrice && row.unitOfPrice !== "NR" ? row.unitOfPrice : "Rs./Quintal",
+            source: "AGMARKNET 2.0",
+            sourceDate: latest.date
+          });
+        }
+      } catch (error) {
+        requestFailures++;
+        console.warn("AGMARKNET market history skipped", String(market.market_name || market.market_id), String(error.message || error).slice(0, 160));
+      }
     }
 
     records.sort((a, b) => b.arrivalDate.localeCompare(a.arrivalDate) ||
@@ -259,6 +264,10 @@ export default async function (req, res) {
       records: limitedRecords,
       total: limitedRecords.length,
       candidateMarketsChecked: attempted,
+      totalMarketsAvailable: candidates.length,
+      totalMarketPages,
+      page,
+      hasMore,
       failedRequests: requestFailures,
       partialData: requestFailures > 0,
       latestReportDate: latestDate || null,
