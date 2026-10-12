@@ -52,11 +52,16 @@ function latestReported(row, columns) {
   }
   return null;
 }
-async function apiJson(path, timeout = 10000) {
+async function apiJson(path, timeout = 10000, attempt = 0) {
+  const retryableMetadata = path === "/daily-price-arrival/filters" || path.startsWith("/list-comm/");
   let response;
   try {
     response = await fetch(BASE + path, { headers: HEADERS, timeout_ms: timeout });
   } catch (_) {
+    if (retryableMetadata && attempt < 1) {
+      await new Promise(resolve => setTimeout(resolve, 450));
+      return apiJson(path, timeout, attempt + 1);
+    }
     throw new Error("Could not connect to the official AGMARKNET v2 service. Please retry shortly.");
   }
   const text = await response.text();
@@ -64,10 +69,18 @@ async function apiJson(path, timeout = 10000) {
   let data;
   try { data = JSON.parse(text); }
   catch (_) {
+    if (!response.ok && response.status >= 500 && retryableMetadata && attempt < 1) {
+      await new Promise(resolve => setTimeout(resolve, 450));
+      return apiJson(path, timeout, attempt + 1);
+    }
     console.warn("AGMARKNET returned a non-JSON response", JSON.stringify({status:response.status,contentType,preview:text.slice(0,160).replace(/\\s+/g," ")}));
     throw new Error("AGMARKNET returned a non-JSON response (HTTP " + response.status + ").");
   }
   if (!response.ok) {
+    if (response.status >= 500 && retryableMetadata && attempt < 1) {
+      await new Promise(resolve => setTimeout(resolve, 450));
+      return apiJson(path, timeout, attempt + 1);
+    }
     const detail = String(data.detail || data.message || "Official market service request failed").slice(0, 180);
     throw new Error("AGMARKNET v2 returned HTTP " + response.status + ": " + detail);
   }
@@ -104,7 +117,9 @@ export default async function (req, res) {
     const districtRows = Array.isArray(filterData.district_data) ? filterData.district_data : [];
     const marketRows = Array.isArray(filterData.market_data) ? filterData.market_data : [];
 
-    let commodity = commodities.find(row => norm(row.cmdt_name) === wantedCommodity);
+    // Exact official spellings always win; aliases are only a fallback for user-friendly variants.
+    let commodity = commodities.find(row => norm(row.cmdt_name) === wantedRaw);
+    if (!commodity && wantedCommodity !== wantedRaw) commodity = commodities.find(row => norm(row.cmdt_name) === wantedCommodity);
     if (!commodity) commodity = commodities.find(row => norm(row.cmdt_name).startsWith(wantedCommodity));
     if (!commodity && wantedCommodity.length >= 3) commodity = commodities.find(row => norm(row.cmdt_name).includes(wantedCommodity));
     if (!commodity) {
