@@ -55,8 +55,12 @@ function candidatePriority(row, region, season, soilType) {
   }
 
   if (GLOBAL_STAPLES.has(name)) score += 4;
-  if ((wantedSeason.includes("kharif") || wantedSeason.includes("monsoon") || wantedSeason.includes("rain")) && WARM_RAINY_CROPS.has(name)) score += 5;
-  if ((wantedSeason.includes("rabi") || wantedSeason.includes("winter")) && COOL_DRY_CROPS.has(name)) score += 5;
+  const wantsWarmWet = wantedSeason.includes("kharif") || wantedSeason.includes("monsoon") || wantedSeason.includes("rain");
+  const wantsCoolDry = wantedSeason.includes("rabi") || wantedSeason.includes("winter");
+  if (wantsWarmWet && WARM_RAINY_CROPS.has(name)) score += 5;
+  if (wantsCoolDry && COOL_DRY_CROPS.has(name)) score += 5;
+  if (wantsWarmWet && COOL_DRY_CROPS.has(name) && !WARM_RAINY_CROPS.has(name)) score -= 7;
+  if (wantsCoolDry && WARM_RAINY_CROPS.has(name) && !COOL_DRY_CROPS.has(name)) score -= 4;
 
   const soil = lower(soilType), cropSoil = lower(row.soil_type);
   if (soil && cropSoil) {
@@ -83,7 +87,7 @@ export default async function (req, res) {
     return res.status(400).json({ available:false, error:"incomplete_npk", message:"Provide all three N, P and K values, or omit all three." });
   }
 
-  const conditions = ["verified_status IN ('verified','reviewed','needs_review')", "lower(trim(crop_name)) <> 'all crops'"];
+  const conditions = ["verified_status IN ('verified','reviewed','needs_review')", "lower(trim(crop_name)) <> 'all crops'", "position(',' in crop_name) = 0"];
   const params = [];
   function add(condition, value) {
     params.push(value);
