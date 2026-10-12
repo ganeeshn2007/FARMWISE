@@ -14,6 +14,58 @@ function text(value, max = 120) {
 }
 function lower(value) { return String(value || "").trim().toLowerCase(); }
 
+const GLOBAL_STAPLES = new Set([
+  "rice","wheat","maize","corn","potato","tomato","cassava","soybean","soya","sorghum",
+  "pearl millet","millet","barley","cotton","groundnut","peanut","chickpea","lentil",
+  "onion","sugarcane","banana","cucumber","cabbage","pea","oats","rye","sunflower",
+  "canola","carrot","common bean","cowpea","sweet potato","yam","plantain"
+]);
+const WARM_RAINY_CROPS = new Set([
+  "rice","maize","corn","sorghum","pearl millet","millet","groundnut","peanut","soybean",
+  "cotton","sugarcane","okra","tomato","cowpea","cassava","sweet potato"
+]);
+const COOL_DRY_CROPS = new Set([
+  "wheat","chickpea","lentil","mustard","barley","potato","onion","pea","oats","garlic",
+  "cumin","fenugreek","canola","rapeseed"
+]);
+function candidatePriority(row, region, season, soilType) {
+  const name = lower(row.crop_name);
+  const rowRegion = lower(row.region);
+  const wantedRegion = lower(region);
+  const rowSeason = lower(row.season);
+  const wantedSeason = lower(season);
+  let score = row.verified_status === "verified" ? 100 : row.verified_status === "reviewed" ? 50 : 0;
+
+  if (row.source_url) score += 2;
+  if (wantedRegion && rowRegion) {
+    if (rowRegion === wantedRegion) score += 12;
+    else if (!wantedRegion.includes("global") && wantedRegion.includes(rowRegion)) score += 8;
+    else if (rowRegion.startsWith("global") || rowRegion.startsWith("worldwide") || ["general","all regions"].includes(rowRegion)) score += 3;
+  } else if (rowRegion.startsWith("global") || rowRegion === "general") {
+    score += 2;
+  }
+
+  if (wantedSeason && rowSeason) {
+    const wantsWarmWet = wantedSeason.includes("kharif") || wantedSeason.includes("monsoon") || wantedSeason.includes("rain");
+    const wantsCoolDry = wantedSeason.includes("rabi") || wantedSeason.includes("winter");
+    if (rowSeason.includes("general") || rowSeason.includes("varies") || rowSeason.includes("year-round") || rowSeason.includes("year round")) score += 2;
+    else if (rowSeason.includes(wantedSeason)) score += 7;
+    else if (wantsWarmWet && (rowSeason.includes("kharif") || rowSeason.includes("rain") || rowSeason.includes("monsoon") || rowSeason.includes("warm season") || rowSeason.includes("summer") || rowSeason.includes("tropical"))) score += 5;
+    else if (wantsCoolDry && (rowSeason.includes("rabi") || rowSeason.includes("winter") || rowSeason.includes("cool season") || rowSeason.includes("spring") || rowSeason.includes("temperate"))) score += 5;
+  }
+
+  if (GLOBAL_STAPLES.has(name)) score += 4;
+  if ((wantedSeason.includes("kharif") || wantedSeason.includes("monsoon") || wantedSeason.includes("rain")) && WARM_RAINY_CROPS.has(name)) score += 5;
+  if ((wantedSeason.includes("rabi") || wantedSeason.includes("winter")) && COOL_DRY_CROPS.has(name)) score += 5;
+
+  const soil = lower(soilType), cropSoil = lower(row.soil_type);
+  if (soil && cropSoil) {
+    const tokens = ["red","laterite","black","cotton","alluvial","sandy","sand","clay","loam","silt","well-drained"];
+    for (const token of tokens) if (soil.includes(token) && cropSoil.includes(token)) score += 2;
+  }
+  return score;
+}
+
 export default async function (req, res) {
   const input = req.method === "POST" ? (req.body || {}) : (req.query || {});
   const n = num(input.nitrogen), p = num(input.phosphorus), k = num(input.potassium);
@@ -40,7 +92,11 @@ export default async function (req, res) {
 
   // Global draft records are useful as preliminary candidates even when a farmer
   // enters a village. Keep records for other specific regions out of the results.
-  if (region) add("(region IS NULL OR lower(trim(region)) LIKE 'global%' OR lower(trim(region)) LIKE 'worldwide%' OR lower(trim(region)) IN ('general','all regions') OR lower(trim(region)) = lower(trim(?)))", region);
+  if (region) {
+    params.push(region);
+    const regionParam = "$" + params.length;
+    conditions.push("(region IS NULL OR lower(trim(region)) LIKE 'global%' OR lower(trim(region)) LIKE 'worldwide%' OR lower(trim(region)) IN ('general','all regions') OR lower(trim(region)) = lower(trim(" + regionParam + ")) OR lower(trim(" + regionParam + ")) LIKE '%' || lower(trim(region)) || '%')");
+  }
   if (season) {
     const s = lower(season);
     let seasonPredicate = "(season IS NULL OR lower(trim(season)) IN ('general','varies','global','year-round') OR lower(season) LIKE '%varies%' OR lower(season) LIKE '%year-round%'";
@@ -78,7 +134,7 @@ export default async function (req, res) {
     add("(potassium_max_mg_kg IS NULL OR potassium_max_mg_kg >= ?)", k);
   }
 
-  const sql = "SELECT * FROM (SELECT DISTINCT ON (lower(trim(crop_name))) id,crop_name,region,season,soil_type,ph_min,ph_max,nitrogen_min_mg_kg,nitrogen_max_mg_kg,phosphorus_min_mg_kg,phosphorus_max_mg_kg,potassium_min_mg_kg,potassium_max_mg_kg,moisture_min_pct,moisture_max_pct,guidance,source_name,source_url,source_published_at,verified_status,notes FROM crop_knowledge WHERE " + conditions.join(" AND ") + " ORDER BY lower(trim(crop_name)), CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, updated_at DESC, id DESC) AS unique_crops ORDER BY CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, crop_name LIMIT 50";
+  const sql = "SELECT DISTINCT ON (lower(trim(crop_name))) id,crop_name,region,season,soil_type,ph_min,ph_max,nitrogen_min_mg_kg,nitrogen_max_mg_kg,phosphorus_min_mg_kg,phosphorus_max_mg_kg,potassium_min_mg_kg,potassium_max_mg_kg,moisture_min_pct,moisture_max_pct,guidance,source_name,source_url,source_published_at,verified_status,notes FROM crop_knowledge WHERE " + conditions.join(" AND ") + " ORDER BY lower(trim(crop_name)), CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, updated_at DESC, id DESC";
 
   try {
     const result = await db.query(sql, params);
@@ -89,7 +145,11 @@ export default async function (req, res) {
       {key:"pH", label:"pH", value:ph, min:"ph_min", max:"ph_max"},
       {key:"moisture", label:"moisture", value:moisture, min:"moisture_min_pct", max:"moisture_max_pct"}
     ].filter(d => d.value !== null);
-    const recommendations = result.rows.map(row => {
+    const rankedRows = result.rows.slice().sort((a,b) => {
+      const score = candidatePriority(b, region, season, soilType) - candidatePriority(a, region, season, soilType);
+      return score || lower(a.crop_name).localeCompare(lower(b.crop_name));
+    }).slice(0, 50);
+    const recommendations = rankedRows.map(row => {
       const missing = entered.filter(d => row[d.min] === null || row[d.min] === undefined || row[d.max] === null || row[d.max] === undefined).map(d => d.label);
       const allNumericRangesPresent = entered.length > 0 && missing.length === 0;
       return {
@@ -112,13 +172,14 @@ export default async function (req, res) {
       input:{nitrogen:n,phosphorus:p,potassium:k,ph,moisture,region,season,soilType},
       count:recommendations.length,
       recommendations,
+      orderingNote: "Candidates are ordered using broad region/season keywords and common-crop context only. This is not a validated agronomic suitability score or proof the crop will grow well on this farm.",
       assessment: !recommendations.length ? "no_context_candidates" :
         !entered.length ? "context_only" :
         anyFullyEvaluable ? "numeric_ranges_available_for_some_candidates" : "numeric_soil_fit_unavailable",
       message: !recommendations.length
         ? "No crop guidance records match the supplied region/season/soil context. No recommendation was invented."
         : !entered.length
-          ? "These are database candidates based on available context only, not a measured soil-fit ranking."
+          ? "These are database candidates based on region/season context only, ordered by broad context keywords. They are not a measured soil-fit ranking or a verified planting recommendation."
           : anyFullyEvaluable
             ? "Candidates are retrieved from PostgreSQL. Any record with missing numeric thresholds is provisional and cannot be claimed to match every measured soil value."
             : "PostgreSQL returned preliminary crop guidance, but the database lacks numeric NPK/pH/moisture thresholds for these records. This is not a measured soil-fit recommendation. Do not infer suitability from this list; add source-backed crop-specific thresholds."

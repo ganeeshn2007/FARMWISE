@@ -504,42 +504,43 @@ body{
       <button id="clearManualBtn" class="btn btn-ghost btn-sm">✕ Clear</button>
     </div>
   </div>
-  <p id="sensorCloudSetupStatus" class="note" style="margin:0 0 14px;color:var(--muted);" aria-live="polite">Checking ESP32 cloud-ingestion setup…</p>
+  <p id="sensorCloudSetupStatus" class="note" style="margin:0 0 6px;color:var(--muted);" aria-live="polite">Checking ESP32 cloud-ingestion setup…</p>
+  <p class="note" style="margin:0 0 14px;">The displayed NPK bands are generic screening references in mg/kg—not universal crop targets. Soil-test method, crop and local guidance affect interpretation.</p>
   <div class="sensor-4" style="grid-template-columns:repeat(3,1fr);">
     <div class="sensor-card N">
       <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gN" d="M10 60 A50 50 0 0 1 100 60" stroke="#16a34a" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gNTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
       <div class="s-lbl">🌱 Nitrogen (N)</div>
       <div class="s-bar"><div class="s-fill" id="bN" style="width:0%"></div></div>
       <div class="s-status" id="stN">—</div>
-      <div class="note" style="margin-top:4px;font-size:.69rem;">Optimal: 80–150 mg/kg</div>
+      <div class="note" style="margin-top:4px;font-size:.69rem;">Provisional dashboard band: 80–150*</div>
     </div>
     <div class="sensor-card P">
       <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gP" d="M10 60 A50 50 0 0 1 100 60" stroke="#d97706" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gPTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
       <div class="s-lbl">⚡ Phosphorus (P)</div>
       <div class="s-bar"><div class="s-fill" id="bP" style="width:0%"></div></div>
       <div class="s-status" id="stP">—</div>
-      <div class="note" style="margin-top:4px;font-size:.69rem;">Optimal: 25–50 mg/kg</div>
+      <div class="note" style="margin-top:4px;font-size:.69rem;">Provisional dashboard band: 25–50*</div>
     </div>
     <div class="sensor-card K">
       <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gK" d="M10 60 A50 50 0 0 1 100 60" stroke="#7c3aed" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gKTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
       <div class="s-lbl">💎 Potassium (K)</div>
       <div class="s-bar"><div class="s-fill" id="bK" style="width:0%"></div></div>
       <div class="s-status" id="stK">—</div>
-      <div class="note" style="margin-top:4px;font-size:.69rem;">Optimal: 120–250 mg/kg</div>
+      <div class="note" style="margin-top:4px;font-size:.69rem;">Provisional dashboard band: 120–250*</div>
     </div>
     <div style="display:none;">
       <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gS" d="M10 60 A50 50 0 0 1 100 60" stroke="#ca8a04" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gSTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
       <div class="s-lbl">🔶 Sulfur (S)</div>
       <div class="s-bar"><div class="s-fill" id="bS" style="width:0%"></div></div>
       <div class="s-status" id="stS">—</div>
-      <div class="note" style="margin-top:4px;font-size:.69rem;">Optimal: 10–30 mg/kg</div>
+      <div class="note" style="margin-top:4px;font-size:.69rem;">Provisional dashboard band: 10–30*</div>
     </div>
   </div>
   <div class="sp-lg"></div>
   <div class="g2" style="gap:15px;">
     <div class="score-card">
       <div class="score-num" id="soilScore">--</div>
-      <div class="score-lbl">Soil Health Score / 100</div>
+      <div class="score-lbl">Dashboard screening index / 100</div>
       <div class="prog"><div class="prog-fill" id="soilBar" style="width:0%"></div></div>
       <p class="note" id="soilNote" style="margin-top:7px;">Connect the live NPK sensor to analyse soil.</p>
     </div>
@@ -777,28 +778,28 @@ function generateAdvisory(d){
   // Soil-based advice
   if(d){
     var nSt=nStatus(d.N,REF.N),pSt=nStatus(d.P,REF.P),kSt=nStatus(d.K,REF.K);
-    if(nSt==='low')  items.push({title:'🌱 Nitrogen Boost Needed',detail:'Soil N is low ('+d.N+' mg/kg). Apply Urea @ 120–150 kg/ha or Ammonium Sulphate @ 200 kg/ha before next sowing cycle. Split into 2 doses for better absorption.',src:'Built-in'});
-    if(nSt==='high') items.push({title:'⚠️ Excess Nitrogen Alert',detail:'High N ('+d.N+' mg/kg) can cause lodging and increase pest pressure. Reduce urea dosage. Increase plant spacing to improve air circulation.',src:'Built-in'});
-    if(pSt==='low')  items.push({title:'⚡ Phosphorus Deficiency',detail:'P level ('+d.P+' mg/kg) is below optimal. Apply DAP @ 100 kg/ha or SSP @ 250 kg/ha at sowing. P deficiency delays root development and flowering.',src:'Built-in'});
-    if(kSt==='low')  items.push({title:'💎 Potassium Deficiency',detail:'K level ('+d.K+' mg/kg) is low. Apply MOP @ 80–100 kg/ha. Potassium strengthens stems and improves drought resistance in crops.',src:'Built-in'});
-    if(kSt==='high') items.push({title:'💎 High Potassium',detail:'Excess K ('+d.K+' mg/kg) may lock out Calcium and Magnesium uptake. Skip MOP this season. Monitor micro-nutrient levels.',src:'Built-in'});
-    if(d._score>=80) items.push({title:'🌟 Excellent Soil Health',detail:'Soil score '+d._score+'/100 — nutrients are well-balanced. Focus on organic matter maintenance. Apply FYM @ 5 t/ha to sustain microbial activity.',src:'Built-in'});
-    else if(d._score>=60) items.push({title:'✅ Good Soil Health',detail:'Soil score '+d._score+'/100 — minor adjustments recommended. Maintain compost addition and rotate legume crops to naturally boost nitrogen.',src:'Built-in'});
-    else if(d._score>0) items.push({title:'⚠️ Soil Needs Attention',detail:'Soil score '+d._score+'/100 — significant nutrient imbalance. Get a certified lab test. Apply balanced NPK fertilizer and organic compost immediately.',src:'Built-in'});
+    if(nSt==='low')  items.push({title:'🌱 Nitrogen below the dashboard band',detail:'Measured N is '+d.N+' mg/kg. This is a provisional screening band, not a crop-specific laboratory interpretation. Confirm the soil-test method, crop and growth stage with a qualified local soil-testing service before changing fertilizer.',src:'Provisional screening'});
+    if(nSt==='high') items.push({title:'⚠️ Nitrogen above the dashboard band',detail:'Measured N is '+d.N+' mg/kg. Do not change fertilizer solely from this generic band; verify the lab method and crop-specific requirement before reducing or adding nutrients.',src:'Provisional screening'});
+    if(pSt==='low')  items.push({title:'⚡ Phosphorus below the dashboard band',detail:'Measured P is '+d.P+' mg/kg. This does not confirm a deficiency by itself because extraction method, soil pH and crop requirements matter. Request a crop-specific interpretation before applying phosphate fertilizer.',src:'Provisional screening'});
+    if(kSt==='low')  items.push({title:'💎 Potassium below the dashboard band',detail:'Measured K is '+d.K+' mg/kg. Confirm the soil-test method, crop and growth stage with a local soil-testing service before selecting a potassium fertilizer or application rate.',src:'Provisional screening'});
+    if(kSt==='high') items.push({title:'💎 Potassium above the dashboard band',detail:'Measured K is '+d.K+' mg/kg. This broad band cannot establish toxicity or nutrient antagonism by itself. Check the laboratory report and crop-specific guidance before changing inputs.',src:'Provisional screening'});
+    if(d._score>=80) items.push({title:'🌟 Dashboard screening index is high',detail:'Index '+d._score+'/100 is calculated from generic dashboard bands. It is not a certified soil-health score or proof that all nutrients are balanced. Use a soil laboratory report for nutrient decisions.',src:'Provisional screening'});
+    else if(d._score>=60) items.push({title:'✅ Dashboard screening index is moderate',detail:'Index '+d._score+'/100 is an illustrative comparison against generic bands. Match management to the actual crop, soil type, lab method and locally calibrated recommendations.',src:'Provisional screening'});
+    else if(d._score>0) items.push({title:'⚠️ Soil readings need interpretation',detail:'Index '+d._score+'/100 is not a confirmed diagnosis of nutrient imbalance. Obtain a compatible soil test and local crop-specific advice before applying fertilizer.',src:'Provisional screening'});
   }
   // Weather-based advice
   if(wx){
     if(wx.temp>36) items.push({title:'🌡 Heat Stress Warning',detail:'Temperature '+Math.round(wx.temp)+'°C — critical heat stress zone. Irrigate crops early morning before 7am. Mulch soil surface. Choose Sorghum or Millet for resilience.',src:'Weather'});
     else if(wx.temp>30) items.push({title:'☀️ High Temperature Advisory',detail:'Temp '+Math.round(wx.temp)+'°C — warm conditions. Water crops in the evening. Watch for spider mite and aphid outbreaks in hot dry conditions.',src:'Weather'});
-    if(wx.hum>80&&wx.temp>24) items.push({title:'🍄 Fungal Disease Risk High',detail:'Humidity '+wx.hum+'% with temp '+Math.round(wx.temp)+'°C creates ideal fungal conditions. Apply preventive Mancozeb 75WP @ 2.5g/L spray. Ensure good canopy airflow.',src:'Weather'});
+    if(wx.hum>80&&wx.temp>24) items.push({title:'🍄 Conditions may favor some plant diseases',detail:'Humidity '+wx.hum+'% and temperature '+Math.round(wx.temp)+'°C can increase risk for some diseases, depending on crop and pathogen. Scout plants, improve airflow where practical, and confirm diagnosis with local extension advice before choosing a treatment.',src:'Weather model'});
     if(wx.wind>30) items.push({title:'💨 High Wind Alert',detail:'Wind speed '+Math.round(wx.wind)+' km/h — avoid pesticide spraying today to prevent drift. Stake tall crops. Check for lodging in cereal crops.',src:'Weather'});
     if(wx.rainSum>20) items.push({title:'🌧 Heavy Rain Advisory',detail:'Expected rainfall '+wx.rainSum+' mm. Check field drainage, ensure water does not stagnate near roots. Delay fertilizer application by 3–4 days after heavy rain.',src:'Weather'});
   }
   // General fallback tips
   var generalTips=[
     {title:'📅 Seasonal Crop Planning',detail:'Match crop choice to current season. Kharif crops (Rice, Maize, Cotton, Soybean) should be sown by mid-June. Rabi crops (Wheat, Mustard, Chickpea) by mid-October.',src:'Advisory'},
-    {title:'🌿 Organic Matter Boost',detail:'Add Farm Yard Manure (FYM) @ 5–8 tonnes/ha before sowing to improve water retention and microbial activity. Compost also slowly releases balanced micro-nutrients.',src:'Advisory'},
-    {title:'🔄 Crop Rotation Tip',detail:'Rotate cereal crops (Wheat/Rice) with legumes (Chickpea/Soybean) to naturally replenish nitrogen. Legumes fix 50–100 kg N/ha per season, reducing fertilizer cost.',src:'Advisory'},
+    {title:'🌿 Organic Matter Management',detail:'Organic matter can improve soil structure, but amendment type and rate should follow the crop, soil test, material quality and local extension guidance.',src:'General guidance'},
+    {title:'🔄 Crop Rotation Tip',detail:'Where suitable, rotate cereals with locally adapted legumes to diversify production and support soil health. Nitrogen contribution varies with species, nodulation, residue management and conditions.',src:'General guidance'},
     {title:'💧 Efficient Irrigation',detail:'Use drip or sprinkler irrigation to save 30–50% water vs flood irrigation. Schedule irrigation at early morning or evening to minimise evaporation losses.',src:'Advisory'},
     {title:'🛡 Integrated Pest Management',detail:'Use yellow sticky traps, pheromone traps, and Trichogramma releases before chemical spraying. IPM reduces pesticide cost by 40% while maintaining crop health.',src:'Advisory'},
   ];
@@ -889,7 +890,7 @@ function askAssistant(q_text){
       if(nStatus(soilData.K,REF.K)==='low')resp+='• 💎 Potassium LOW ('+soilData.K+' mg/kg): Apply MOP @ 80–100 kg/ha\n';
       else if(nStatus(soilData.K,REF.K)==='high')resp+='• 💎 Potassium HIGH ('+soilData.K+' mg/kg): Skip MOP this season\n';
       else resp+='• 💎 Potassium OPTIMAL ('+soilData.K+' mg/kg) ✅\n';
-      resp+='\n💡 Soil Health Score: '+soilData._score+'/100';
+      resp+='\n💡 Dashboard screening index: '+soilData._score+'/100 (generic bands only, not a lab soil-health score).';
     } else {
       resp+='1. NITROGEN (N): Urea @ 120–200 kg/ha in 3 splits. Critical for vegetative growth and green leaf area.\n';
       resp+='2. PHOSPHORUS (P): DAP @ 100 kg/ha or SSP @ 250 kg/ha at sowing. Improves root development.\n';
@@ -1438,28 +1439,28 @@ function scoreCrop(c,d){
 
 function getFertAdvice(d){
   var a=[];
-  if(nStatus(d.N,REF.N)==='low') a.push({t:'Nitrogen Deficiency',d:'Apply Urea @ 120–150 kg/ha or Ammonium Sulphate @ 200 kg/ha before sowing.'});
-  if(nStatus(d.N,REF.N)==='high')a.push({t:'Excess Nitrogen',d:'Reduce urea. Split dosing prevents leaching and toxicity.'});
-  if(nStatus(d.P,REF.P)==='low') a.push({t:'Phosphorus Deficiency',d:'Apply DAP @ 100 kg/ha or SSP @ 250 kg/ha before sowing.'});
-  if(nStatus(d.P,REF.P)==='high')a.push({t:'High Phosphorus',d:'Skip P fertilizer this season to prevent micro-nutrient lock-out.'});
-  if(nStatus(d.K,REF.K)==='low') a.push({t:'Potassium Deficiency',d:'Apply MOP @ 80–100 kg/ha for strong root and fruit development.'});
-  if(nStatus(d.K,REF.K)==='high')a.push({t:'Excess Potassium',d:'Skip K this season. Monitor next crop cycle.'});
-  if(!a.length)a.push({t:'All Nutrients Optimal ✅',d:'Maintain current schedule. Add organic compost to sustain balance.'});
+  if(nStatus(d.N,REF.N)!=='optimal')a.push({t:'Nitrogen screening flag',d:'The dashboard band flagged N at '+d.N+' mg/kg. This generic band is not a crop-specific lab interpretation; confirm soil-test method, crop and growth stage before changing nitrogen inputs.'});
+  if(nStatus(d.P,REF.P)!=='optimal')a.push({t:'Phosphorus screening flag',d:'The dashboard band flagged P at '+d.P+' mg/kg. Soil pH and laboratory extraction method affect interpretation. Ask a local soil-testing service for crop-specific guidance before adding phosphate fertilizer.'});
+  if(nStatus(d.K,REF.K)!=='optimal')a.push({t:'Potassium screening flag',d:'The dashboard band flagged K at '+d.K+' mg/kg. Confirm the laboratory result and crop requirements before selecting a potassium source or rate.'});
+  if(!a.length)a.push({t:'No alert from the generic dashboard bands',d:'This is not proof that all nutrients are sufficient. Use a calibrated soil test and crop-specific local recommendations to plan fertilizer inputs.'});
   return a;
 }
 
 q('recBtn').addEventListener('click',async function(){
-  if(!soilData){toast('⚠️','No current sensor/soil-test values are available.');return;}
+  var hasMeasuredSoil=!!soilData;
   q('recLoading').style.display='block';q('cropGrid').innerHTML='';q('fertDiv').style.display='none';
-  q('recStatus').textContent='Querying FarmWise PostgreSQL crop guidance…';
+  q('recStatus').textContent=hasMeasuredSoil?'Querying crop guidance with measured soil values…':'Finding context-only candidates from farm region and season…';
   try{
     var profile={};try{profile=JSON.parse(localStorage.getItem(farmProfileStorageKey())||'{}');}catch(_){profile={};}
-    var params=new URLSearchParams({nitrogen:String(soilData.N),phosphorus:String(soilData.P),potassium:String(soilData.K)});
+    var params=new URLSearchParams();
+    if(hasMeasuredSoil){
+      params.set('nitrogen',String(soilData.N));params.set('phosphorus',String(soilData.P));params.set('potassium',String(soilData.K));
+      if(soilData.pH!==null&&soilData.pH!==undefined)params.set('ph',String(soilData.pH));
+      if(soilData.moisture!==null&&soilData.moisture!==undefined)params.set('moisture',String(soilData.moisture));
+    }
     if(profile.farmVillage)params.set('region',profile.farmVillage);
     if(profile.farmSeason)params.set('season',profile.farmSeason);
     if(profile.farmSoilType)params.set('soilType',profile.farmSoilType);
-    if(soilData.pH!==null&&soilData.pH!==undefined)params.set('ph',String(soilData.pH));
-    if(soilData.moisture!==null&&soilData.moisture!==undefined)params.set('moisture',String(soilData.moisture));
     var response=await fetch('/api/crops/recommendations?'+params.toString(),{headers:{'accept':'application/json'}});
     var result=await response.json();
     q('recLoading').style.display='none';
@@ -1499,13 +1500,13 @@ function generatePDF(d){
   doc.setTextColor(17,82,41);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text('SAMPLE DETAILS',mg+5,y+7);
   doc.setFont('helvetica','normal');doc.setTextColor(60,80,65);
   doc.text('Test Date: '+d.timestamp,mg+5,y+14);doc.text('pH: '+(d.pH==null?'Not measured':d.pH),mg+5,y+20);
-  doc.text('Moisture: '+(d.moisture==null?'Not measured':d.moisture+'%'),W/2,y+14);doc.text('NPK reference fit: '+d._score+'/100',W/2,y+20);
+  doc.text('Moisture: '+(d.moisture==null?'Not measured':d.moisture+'%'),W/2,y+14);doc.text('Dashboard screening index: '+d._score+'/100',W/2,y+20);
   y+=32;
   doc.setTextColor(17,82,41);doc.setFontSize(11);doc.setFont('helvetica','bold');doc.text('NUTRIENT ANALYSIS',mg,y);y+=7;
   doc.setFillColor(26,122,56);doc.rect(mg,y,W-mg*2,9,'F');
   doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
   var c0=mg+2,c1=mg+48,c2=mg+90,c3=mg+126,c4=mg+152;
-  doc.text('Nutrient',c0,y+6);doc.text('Value (mg/kg)',c1,y+6);doc.text('Optimal Range',c2,y+6);doc.text('Status',c3,y+6);doc.text('%Max',c4,y+6);
+  doc.text('Nutrient',c0,y+6);doc.text('Value (mg/kg)',c1,y+6);doc.text('Dashboard Band*',c2,y+6);doc.text('Status',c3,y+6);doc.text('%Max',c4,y+6);
   y+=9;
   [{nm:'Nitrogen (N)',v:d.N,r:REF.N,col:[22,163,74]},{nm:'Phosphorus (P)',v:d.P,r:REF.P,col:[217,119,6]},{nm:'Potassium (K)',v:d.K,r:REF.K,col:[124,58,237]}].forEach(function(n,i){
     var st=nStatus(n.v,n.r),bg=i%2===0?[248,252,248]:[255,255,255];
@@ -1525,7 +1526,7 @@ function generatePDF(d){
     var xOff=i%2===0?mg:mg+(W-mg*2)/2+2;if(i%2===0&&i>0)y+=22;var bw=(W-mg*2)/2-2;
     doc.setFillColor(i===0?228:248,i===0?244:252,i===0?231:248);doc.roundedRect(xOff,y,bw,20,3,3,'F');
     if(i===0){doc.setFillColor(26,122,56);doc.roundedRect(xOff,y,bw,4,2,2,'F');}
-    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(17,82,41);doc.text(c.name+' — '+c.score+'%',xOff+4,y+11);
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(17,82,41);doc.text(c.name+' — context candidate',xOff+4,y+11);
     doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(60,80,65);doc.text(doc.splitTextToSize(c.d,bw-8)[0],xOff+4,y+17);
   });
   y+=30;
@@ -1539,7 +1540,7 @@ function generatePDF(d){
   });
   doc.setFillColor(26,122,56);doc.rect(0,280,W,17,'F');
   doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont('helvetica','normal');
-  doc.text('FARMWISE Smart Farm Platform  |  Built-In AI — No API Key Required',W/2,290,{align:'center'});
+  doc.text('FARMWISE Smart Farm Platform  |  Generic screening; not a laboratory assessment',W/2,290,{align:'center'});
   doc.text('Advisory purposes only. Consult local agronomists for definitive recommendations.',W/2,295,{align:'center'});
   doc.save('FarmWise_SoilReport_'+new Date().toISOString().slice(0,10)+'.pdf');
   toast('📄','PDF downloaded!');
