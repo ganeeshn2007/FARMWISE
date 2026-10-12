@@ -382,14 +382,14 @@ body{
     <p id="loginStatus" class="note" style="margin-bottom:10px;" aria-live="polite">Checking account…</p>
     <a id="loginBtn" class="btn btn-primary" style="width:100%;text-align:center;" href="/login?next=%2F">Sign in / Create account →</a>
     <button id="signOutBtn" class="btn btn-ghost" type="button" style="width:100%;display:none;">Sign out</button>
-    <p id="workspaceDeviceConfig" class="note" style="display:none;margin-top:10px;">ESP32 account ID: <code id="workspaceUserId"></code> · include this as <code>userId</code> in device readings.</p>
+    <p id="workspaceDeviceConfig" class="note" style="display:none;margin-top:10px;">ESP32 account ID: <code id="workspaceUserId"></code> · include this as <code>userId</code> in device readings. Do not send the device token in the URL.</p>
   </div>
   <p id="profileSyncNote" class="note">Your farm profile stays in this browser until you sign in and save it to your account.</p>
   <div class="workspace-source-list">
     <div class="ct">Live data connections</div>
     <div class="workspace-source-row"><span>🌦 Weather</span><strong id="weatherSourceStatus">Choose a farm town to load the forecast</strong></div>
     <div class="workspace-source-row"><span>📡 Soil nutrients</span><strong id="sensorSourceStatus">Connect an ESP32 or enter measured N-P-K values</strong></div>
-    <div class="workspace-source-row"><span>💹 Mandi prices</span><strong id="marketSourceStatus">Needs an official data.gov.in key</strong></div>
+    <div class="workspace-source-row"><span>💹 Mandi prices</span><strong id="marketSourceStatus">Checking official market connection</strong></div>
   </div>
 </div>
 
@@ -504,6 +504,7 @@ body{
       <button id="clearManualBtn" class="btn btn-ghost btn-sm">✕ Clear</button>
     </div>
   </div>
+  <p id="sensorCloudSetupStatus" class="note" style="margin:0 0 14px;color:var(--muted);" aria-live="polite">Checking ESP32 cloud-ingestion setup…</p>
   <div class="sensor-4" style="grid-template-columns:repeat(3,1fr);">
     <div class="sensor-card N">
       <div class="gauge-wrap"><svg class="gauge-svg" width="110" height="66" viewBox="0 0 110 66"><path class="gauge-track" d="M10 60 A50 50 0 0 1 100 60"/><path class="gauge-fill" id="gN" d="M10 60 A50 50 0 0 1 100 60" stroke="#16a34a" stroke-dasharray="157" stroke-dashoffset="157"/><text class="gauge-txt" id="gNTxt" x="55" y="52">--</text><text class="gauge-sub" x="55" y="63">mg/kg</text></svg></div>
@@ -638,7 +639,7 @@ body{
 <!-- ADVISORY -->
 <div id="advisory" class="card s12" style="scroll-margin-top:130px;">
   <div class="ch"><div class="ct"><div class="ico">💡</div>Farm Advisory</div><button id="refAdvBtn" class="btn btn-ghost btn-sm">↺ Refresh</button></div>
-  <div class="chips" style="margin-bottom:13px;"><div class="chip">🌱 Rule-based crop notes</div><div class="chip">📦 General storage reference</div><div class="chip">📈 Official price lookup</div><div class="chip">No AI provider connected</div></div>
+  <div class="chips" style="margin-bottom:13px;"><div class="chip">🌱 Rule-based crop notes</div><div class="chip">📦 General storage reference</div><div class="chip">📈 Official price lookup</div><div class="chip">🤖 Gemini AI · local database fallback</div></div>
   <div class="pl" id="advList"></div>
 </div>
 
@@ -668,7 +669,7 @@ body{
     <div><label class="field-lbl">District (optional)</label><input id="mktDistrict" class="inp" maxlength="80" placeholder="e.g. Guntur"/></div>
     <div><label class="field-lbl">Commodity (optional)</label><input id="mktCommodity" class="inp" maxlength="80" placeholder="e.g. Tomato"/></div>
   </div>
-  <p id="marketStatus" class="note" style="margin:0 0 12px;line-height:1.55;" aria-live="polite">Official daily mandi prices need a data.gov.in API key in Hatchable project setup.</p>
+  <p id="marketStatus" class="note" style="margin:0 0 6px;line-height:1.55;" aria-live="polite">Connecting to official daily mandi prices…</p><p class="note" style="margin:0 0 12px;"><a href="https://www.data.gov.in/resource/current-daily-price-various-commodities-various-markets-mandi" target="_blank" rel="noopener noreferrer">Open the official data.gov.in mandi-price dataset ↗</a></p>
   <div style="overflow-x:auto;">
     <table class="hist-table">
       <thead><tr><th>Commodity</th><th>State · District · Market</th><th>Min ₹/qtl</th><th>Modal ₹/qtl</th><th>Max ₹/qtl · Arrival date</th></tr></thead>
@@ -2104,23 +2105,23 @@ var mktSimulated=[];
    PEST LIBRARY
 ═══════════════════════════════════════════════════════════════ */
 var PESTS=[
-  {em:'🦟',name:'Brown Planthopper',crop:'Rice',sev:'hi',sym:'Yellow patches, honeydew sticky coating, lodging.',fix:'Buprofezin 25SC @ 1ml/L. Maintain 5 cm water depth.'},
-  {em:'🐛',name:'Stem Borer',crop:'Rice',sev:'hi',sym:'Dead hearts; white ears at grain filling.',fix:'Trichogramma 1,25,000/ha. Chlorpyrifos 20EC in severe cases.'},
-  {em:'🦠',name:'Blast Disease',crop:'Rice',sev:'hi',sym:'Diamond-shaped grey lesions on leaves and neck.',fix:'Tricyclazole 75WP @ 0.6g/L. Reduce nitrogen, drain field.'},
-  {em:'🐝',name:'Aphids',crop:'Wheat',sev:'md',sym:'Curling yellowing leaves, sticky honeydew, stunted growth.',fix:'Imidacloprid 17.8SL @ 0.3ml/L or Dimethoate 30EC.'},
-  {em:'🦠',name:'Yellow Rust',crop:'Wheat',sev:'hi',sym:'Yellow-orange powdery pustules in stripes on leaves.',fix:'Propiconazole 25EC @ 1ml/L at first sign. Use resistant varieties.'},
-  {em:'🦠',name:'Powdery Mildew',crop:'Wheat',sev:'md',sym:'White powdery patches on upper leaf surface.',fix:'Sulphur 80WP @ 3g/L or Hexaconazole 5EC @ 1ml/L.'},
-  {em:'🐛',name:'Fall Armyworm',crop:'Maize',sev:'hi',sym:'Ragged leaf feeding; sawdust-like frass in whorl.',fix:'Emamectin Benzoate 5SG @ 0.4g/L. Early morning spray into whorl.'},
-  {em:'🦠',name:'Northern Leaf Blight',crop:'Maize',sev:'md',sym:'Cigar-shaped grey-green lesions 2.5–15 cm on leaves.',fix:'Mancozeb 75WP @ 2.5g/L. Remove infected debris.'},
-  {em:'🐛',name:'Bollworm',crop:'Cotton',sev:'hi',sym:'Holes in bolls; larvae feeding inside; frass.',fix:'Chlorantraniliprole 18.5SC @ 0.4ml/L. Use Bt cotton varieties.'},
-  {em:'🦟',name:'Whitefly',crop:'Cotton',sev:'md',sym:'Yellowing leaves; silver sheen on leaf underside.',fix:'Spiromesifen 22.9SC @ 1ml/L. Avoid Pyrethroids.'},
-  {em:'🐛',name:'Helicoverpa',crop:'Cotton',sev:'hi',sym:'Feeding on squares and bolls; yellow frass.',fix:'Pheromone traps @ 5/ha. Profenofos 50EC @ 2ml/L.'},
-  {em:'🦠',name:'Early Blight',crop:'Tomato',sev:'md',sym:'Brown concentric ring lesions with yellow halo.',fix:'Mancozeb 75WP @ 2.5g/L every 7 days. Remove lower leaves.'},
-  {em:'🦠',name:'Late Blight',crop:'Tomato',sev:'hi',sym:'Water-soaked dark lesions; white mould in humid weather.',fix:'Metalaxyl-M 8%+Mancozeb 64% @ 2.5g/L immediately.'},
-  {em:'🐛',name:'Tuber Moth',crop:'Potato',sev:'hi',sym:'Mines in leaves and tubers; larvae inside tubers.',fix:'Deep planting 8–10 cm. Spinosad 45SC @ 0.3ml/L.'},
-  {em:'🦠',name:'Late Blight',crop:'Potato',sev:'hi',sym:'Brown water-soaked lesions on leaves; tuber rot.',fix:'Cymoxanil+Mancozeb @ 2.5g/L every 5–7 days.'},
-  {em:'🐛',name:'Pod Borer',crop:'Soybean',sev:'md',sym:'Holes in pods; seeds eaten; frass on pods.',fix:'Indoxacarb 14.5SC @ 1ml/L at 50% flowering.'},
-  {em:'🦠',name:'Rust',crop:'Soybean',sev:'md',sym:'Yellow-brown pustules on lower leaf surface.',fix:'Tebuconazole 25.9EC @ 1ml/L at first sign.'},
+  {em:'🦟',name:'Brown Planthopper',crop:'Rice',sev:'hi',sym:'Yellow patches, honeydew sticky coating, lodging.',fix:'Scout rice tillers and conserve natural predators. Avoid excess nitrogen and keep water management appropriate for the crop stage. Confirm local action thresholds with agricultural extension support.'},
+  {em:'🐛',name:'Stem Borer',crop:'Rice',sev:'hi',sym:'Dead hearts; white ears at grain filling.',fix:'Check for dead hearts and damaged stems; remove affected tillers where practical, monitor moth activity, and use locally recommended integrated pest management when thresholds are reached.'},
+  {em:'🦠',name:'Blast Disease',crop:'Rice',sev:'hi',sym:'Diamond-shaped grey lesions on leaves and neck.',fix:'Use locally recommended resistant varieties, avoid excessive nitrogen, and monitor lesions. Confirm the diagnosis and local management options with agricultural extension guidance.'},
+  {em:'🐝',name:'Aphids',crop:'Wheat',sev:'md',sym:'Curling yellowing leaves, sticky honeydew, stunted growth.',fix:'Check leaf undersides and conserve ladybirds and other natural enemies. For severe infestations, confirm the pest and local registered control options with agricultural extension support.'},
+  {em:'🦠',name:'Yellow Rust',crop:'Wheat',sev:'hi',sym:'Yellow-orange powdery pustules in stripes on leaves.',fix:'Inspect for yellow-orange pustules and confirm the disease. Use locally adapted resistant varieties and seek timely regional extension guidance if symptoms spread.'},
+  {em:'🦠',name:'Powdery Mildew',crop:'Wheat',sev:'md',sym:'White powdery patches on upper leaf surface.',fix:'Improve airflow and avoid excessive canopy density where appropriate. Monitor new growth and ask local extension staff to confirm the disease before selecting a treatment.'},
+  {em:'🐛',name:'Fall Armyworm',crop:'Maize',sev:'hi',sym:'Ragged leaf feeding; sawdust-like frass in whorl.',fix:'Inspect maize whorls regularly, remove small larvae by hand where feasible, and use locally recommended integrated pest management and action thresholds.'},
+  {em:'🦠',name:'Northern Leaf Blight',crop:'Maize',sev:'md',sym:'Cigar-shaped grey-green lesions 2.5–15 cm on leaves.',fix:'Use tolerant hybrids where available, rotate crops, manage infected residue appropriately, and maintain airflow. Confirm locally appropriate controls if disease pressure is high.'},
+  {em:'🐛',name:'Bollworm',crop:'Cotton',sev:'hi',sym:'Holes in bolls; larvae feeding inside; frass.',fix:'Scout squares, flowers and bolls; monitor pest activity, conserve beneficial insects, and follow locally recommended action thresholds.'},
+  {em:'🦟',name:'Whitefly',crop:'Cotton',sev:'md',sym:'Yellowing leaves; silver sheen on leaf underside.',fix:'Monitor leaf undersides and conserve beneficial insects. Avoid unnecessary broad-spectrum sprays and consult local extension advice before choosing any registered control.'},
+  {em:'🐛',name:'Helicoverpa',crop:'Cotton',sev:'hi',sym:'Feeding on squares and bolls; yellow frass.',fix:'Inspect flowers and bolls regularly, use pheromone monitoring where locally recommended, and confirm action thresholds with local extension support.'},
+  {em:'🦠',name:'Early Blight',crop:'Tomato',sev:'md',sym:'Brown concentric ring lesions with yellow halo.',fix:'Remove heavily affected lower leaves when practical, avoid wetting foliage late in the day, rotate crops, and improve airflow. Confirm disease identity before treatment.'},
+  {em:'🦠',name:'Late Blight',crop:'Tomato',sev:'hi',sym:'Water-soaked dark lesions; white mould in humid weather.',fix:'Treat suspected late blight as urgent: avoid moving wet infected material, improve airflow, and contact local agricultural extension services promptly for confirmed, locally registered options.'},
+  {em:'🐛',name:'Tuber Moth',crop:'Potato',sev:'hi',sym:'Mines in leaves and tubers; larvae inside tubers.',fix:'Maintain field and store sanitation, keep tubers adequately covered with soil during growth, remove damaged tubers, and monitor stored produce for moth activity.'},
+  {em:'🦠',name:'Late Blight',crop:'Potato',sev:'hi',sym:'Brown water-soaked lesions on leaves; tuber rot.',fix:'Remove heavily affected material where safe, avoid overhead irrigation where practical, improve airflow, and seek prompt local extension advice to confirm late blight and appropriate control.'},
+  {em:'🐛',name:'Pod Borer',crop:'Soybean',sev:'md',sym:'Holes in pods; seeds eaten; frass on pods.',fix:'Scout pods regularly, use locally adapted varieties and crop rotation where suitable, and confirm action thresholds with local extension support.'},
+  {em:'🦠',name:'Rust',crop:'Soybean',sev:'md',sym:'Yellow-brown pustules on lower leaf surface.',fix:'Use resistant varieties when available, monitor lower leaf surfaces for pustules, rotate crops where appropriate, and confirm disease and local management guidance.'},
 ];
 
 function renderPests(list){
@@ -2476,7 +2477,7 @@ renderPests(PESTS);
     if(LANGS[code])Object.keys(FARMWISE_LIVE_I18N[code]).forEach(function(key){LANGS[code][key]=FARMWISE_LIVE_I18N[code][key];});
   });
   var FARMWISE_SOURCE_I18N={
-    en:{wp:"Add a farm town to load live weather",wl:"Loading live forecast…",wr:"Live forecast loaded",we:"Weather source unavailable",sn:"ESP32 reading needed",sy:"ESP32 connected",mk:"Needs an official data.gov.in API key",ml:"Connecting to official daily prices…",my:"Official daily prices loaded",me:"No matching official prices",mx:"Market source unavailable",rain:"Rain",et0:"ET₀",fc:"Model · high/low · rain · ET₀"},
+    en:{wp:"Add a farm town to load live weather",wl:"Loading live forecast…",wr:"Live forecast loaded",we:"Weather source unavailable",sn:"ESP32 reading needed",sy:"ESP32 connected",mk:"Official market source not yet checked",ml:"Connecting to official daily prices…",my:"Official daily prices loaded",me:"No matching official prices",mx:"Market source unavailable",rain:"Rain",et0:"ET₀",fc:"Model · high/low · rain · ET₀"},
     hi:{wp:"लाइव मौसम के लिए खेत का शहर चुनें",wl:"लाइव पूर्वानुमान लोड हो रहा है…",wr:"लाइव पूर्वानुमान उपलब्ध",we:"मौसम स्रोत उपलब्ध नहीं",sn:"ESP32 रीडिंग की आवश्यकता",sy:"ESP32 जुड़ा है",mk:"दैनिक कीमतों के लिए data.gov.in API कुंजी चाहिए",ml:"आधिकारिक दैनिक कीमतें लोड हो रही हैं…",my:"आधिकारिक दैनिक कीमतें लोड हुईं",me:"कोई मेल खाती आधिकारिक कीमतें नहीं",mx:"बाजार स्रोत उपलब्ध नहीं",rain:"वर्षा",et0:"ET₀",fc:"मॉडल · अधिकतम/न्यूनतम · वर्षा · ET₀"},
     ta:{wp:"நேரடி வானிலைக்கு பண்ணை ஊரைத் தேர்ந்தெடுக்கவும்",wl:"நேரடி முன்னறிவிப்பு ஏற்றப்படுகிறது…",wr:"நேரடி முன்னறிவிப்பு கிடைக்கிறது",we:"வானிலைத் தரவு கிடைக்கவில்லை",sn:"ESP32 அளவீடு தேவை",sy:"ESP32 இணைக்கப்பட்டது",mk:"தினசரி விலைகளுக்கு data.gov.in API key தேவை",ml:"அதிகாரப்பூர்வ தினசரி விலைகள் ஏற்றப்படுகின்றன…",my:"அதிகாரப்பூர்வ தினசரி விலைகள் ஏற்றப்பட்டன",me:"பொருந்தும் அதிகாரப்பூர்வ விலைகள் இல்லை",mx:"சந்தைத் தரவு கிடைக்கவில்லை",rain:"மழை",et0:"ET₀",fc:"மாதிரி · அதிகபட்சம்/குறைந்தபட்சம் · மழை · ET₀"},
     te:{wp:"లైవ్ వాతావరణం కోసం పొలం పట్టణాన్ని ఎంచుకోండి",wl:"లైవ్ సూచన లోడ్ అవుతోంది…",wr:"లైవ్ సూచన అందుబాటులో ఉంది",we:"వాతావరణ మూలం అందుబాటులో లేదు",sn:"ESP32 రీడింగ్ అవసరం",sy:"ESP32 కనెక్ట్ అయింది",mk:"రోజువారీ ధరలకు data.gov.in API కీ అవసరం",ml:"అధికారిక రోజువారీ ధరలు లోడ్ అవుతున్నాయి…",my:"అధికారిక రోజువారీ ధరలు లోడ్ అయ్యాయి",me:"సరిపోలిన అధికారిక ధరలు లేవు",mx:"మార్కెట్ మూలం అందుబాటులో లేదు",rain:"వర్షం",et0:"ET₀",fc:"మోడల్ · గరిష్ఠం/కనిష్ఠం · వర్షం · ET₀"},
@@ -2494,7 +2495,7 @@ renderPests(PESTS);
     var weather=$("weatherSourceStatus"),sensor=$("sensorSourceStatus"),market=$("marketSourceStatus"),caption=$("wxForecastCaption");
     if(weather)weather.textContent=farmwiseSourceState.weather==="loading"?text.wl:farmwiseSourceState.weather==="ready"?text.wr+(farmwiseSourceState.place?" · "+farmwiseSourceState.place:""):farmwiseSourceState.weather==="error"?text.we:text.wp;
     if(sensor)sensor.textContent=window.farmwiseSensorOnline?text.sy:text.sn;
-    if(market)market.textContent=farmwiseSourceState.market==="loading"?text.ml:farmwiseSourceState.market==="ready"?text.my+(farmwiseSourceState.marketCount?" · "+farmwiseSourceState.marketCount:""):farmwiseSourceState.market==="empty"?text.me:farmwiseSourceState.market==="error"?text.mx:text.mk;
+    if(market)market.textContent=farmwiseSourceState.market==="loading"?text.ml:farmwiseSourceState.market==="ready"?text.my+(farmwiseSourceState.marketCount?" · "+farmwiseSourceState.marketCount:""):farmwiseSourceState.market==="empty"?text.me:farmwiseSourceState.market==="stale"?(currentLang==="en"?"Cached official records · not live":text.mx+" · stale"):farmwiseSourceState.market==="error"?text.mx:text.mk;
     if(caption)caption.textContent=text.fc;
   };
   var setFarmwiseSourceState=function(type,state,value){
@@ -2866,6 +2867,7 @@ renderPests(PESTS);
     if($("mktState").value)query.set("state",$("mktState").value);
     if($("mktDistrict").value.trim())query.set("district",$("mktDistrict").value.trim());
     if($("mktCommodity").value.trim())query.set("commodity",$("mktCommodity").value.trim());
+    var marketFilterKey=JSON.stringify({state:$("mktState").value||"",district:$("mktDistrict").value.trim(),commodity:$("mktCommodity").value.trim()});
     try{
       var response=await fetch("/api/market/prices?"+query.toString(),{headers:{"Accept":"application/json"}});
       var data=await response.json();
@@ -2873,16 +2875,28 @@ renderPests(PESTS);
       marketRows=(data.records||[]).map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
       window.marketRecords=marketRows;
       window.mktSimulated=marketRows;
+      try{localStorage.setItem("farmwise.market.cache.v1",JSON.stringify({filterKey:marketFilterKey,records:data.records||[],source:data.source||"AGMARKNET · data.gov.in",fetchedAt:data.fetchedAt||new Date().toISOString()}));}catch(_){}
       window.renderMarket();
       setFarmwiseSourceState("market",marketRows.length?"ready":"empty",marketRows.length);
       statusText("marketStatus",data.sourceNote+" "+marketRows.length+" record(s) returned. Retrieved "+localTime(data.fetchedAt)+".");
       $("mktTime").textContent=data.source+" · "+localTime(data.fetchedAt);
     }catch(error){
-      marketRows=[];window.marketRecords=marketRows;window.mktSimulated=[];
-      window.renderMarket();
-      setFarmwiseSourceState("market",/api key|setup|required/i.test(error.message)?"key":"error");
-      statusText("marketStatus",error.message,true);
-      $("mktTime").textContent="No official records loaded";
+      var cached=null;
+      try{cached=JSON.parse(localStorage.getItem("farmwise.market.cache.v1")||"null");}catch(_){}
+      if(cached&&cached.filterKey===marketFilterKey&&Array.isArray(cached.records)&&cached.records.length){
+        marketRows=cached.records.map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
+        window.marketRecords=marketRows;window.mktSimulated=marketRows;window.renderMarket();
+        setFarmwiseSourceState("market","stale",marketRows.length);
+        var when=cached.fetchedAt?localTime(cached.fetchedAt):"an unknown time";
+        statusText("marketStatus","Live price lookup failed: "+error.message+" Showing cached official records last retrieved at "+when+". These records are STALE, not current prices.",true);
+        $("mktTime").textContent="STALE · last official retrieval "+when;
+      }else{
+        marketRows=[];window.marketRecords=marketRows;window.mktSimulated=[];
+        window.renderMarket();
+        setFarmwiseSourceState("market",/api key|setup|required/i.test(error.message)?"key":"error");
+        statusText("marketStatus",error.message+" No sample or simulated prices have been substituted.",true);
+        $("mktTime").textContent="No official records loaded";
+      }
     }finally{if(button)button.disabled=false;}
   };
 
@@ -2894,6 +2908,22 @@ renderPests(PESTS);
     var link=document.createElement("a"),url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
     link.href=url;link.download="FarmWise_AGMARKNET_"+new Date().toISOString().slice(0,10)+".csv";link.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
   };
+
+  var refreshSensorCloudSetup = async function(){
+    var status=$("sensorCloudSetupStatus");
+    if(!status)return;
+    try{
+      var response=await fetch("/api/sensor/status",{headers:{"Accept":"application/json"}});
+      var data=await response.json();
+      if(!response.ok||!data.available)throw new Error("setup status unavailable");
+      status.textContent=data.message||"ESP32 cloud-ingestion status loaded.";
+      status.style.color=data.cloudIngestConfigured?"var(--muted)":"var(--warn)";
+    }catch(_){
+      status.textContent="Could not check ESP32 cloud-ingestion setup. USB serial and manual readings remain available locally.";
+      status.style.color="var(--muted)";
+    }
+  };
+  window.refreshSensorCloudSetup=refreshSensorCloudSetup;
 
   var refreshSensorFromServer = async function(){
     try{
@@ -3063,6 +3093,7 @@ renderPests(PESTS);
   window.setLanguage(localStorage.getItem("farmwise.language") || "en");
   if(typeof window.loadFarmWiseLive==="function")return;
   window.loadFarmWiseLive=true;
+  refreshSensorCloudSetup();
   Promise.resolve(window.updateFarmwiseAccount()).then(function(user){
     window.loadWeather();
     if(user)refreshSensorFromServer();else setSensorConnectionState(false,"Sign in to view account sensor readings");

@@ -53,7 +53,30 @@ export default async function (req, res) {
     return res.status(502).json({ error: "market_provider_unavailable", message: "The official market-data service could not be reached." });
   }
   if (!upstream.ok) {
-    return res.status(502).json({ error: "market_provider_error", upstreamStatus: upstream.status, message: upstream.status === 401 || upstream.status === 403 ? "The data.gov.in service denied access. Verify the API key in private Setup and confirm it is enabled for this dataset." : upstream.status === 400 ? "The data.gov.in service rejected the query parameters." : "The official market-data service returned HTTP " + upstream.status + "." });
+    let upstreamDetail = "";
+    try { upstreamDetail = (await upstream.text()).slice(0, 700); } catch (_) {}
+    // The Hatchable egress proxy can itself return 502 before data.gov.in is reached.
+    // Never label that as bad credentials or provide fabricated/sample prices.
+    if (upstream.status === 502 && /proxy_error|HTTP Tunneling|Request was cancelled/i.test(upstreamDetail)) {
+      console.error("FarmWise market egress failed", JSON.stringify({status:upstream.status,detail:upstreamDetail.slice(0,240)}));
+      return res.status(502).json({
+        available:false,
+        error:"market_network_proxy_unavailable",
+        upstreamStatus:502,
+        message:"FarmWise could not reach the official data.gov.in market service through its outbound network connection. No price records were loaded. Retry later or open the official dataset page."
+      });
+    }
+    console.error("FarmWise official market provider returned an error", JSON.stringify({status:upstream.status,detail:upstreamDetail.slice(0,200)}));
+    return res.status(502).json({
+      available:false,
+      error:"market_provider_error",
+      upstreamStatus:upstream.status,
+      message:upstream.status === 401 || upstream.status === 403
+        ? "The data.gov.in service denied access. Verify the API key in private Hatchable Setup and confirm it is enabled for this dataset."
+        : upstream.status === 400
+          ? "The data.gov.in service rejected the query parameters."
+          : "The official market-data service returned HTTP " + upstream.status + ". No substitute or simulated prices were shown."
+    });
   }
 
   let data;
