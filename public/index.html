@@ -2809,7 +2809,7 @@ renderPests(PESTS);
       return soilAnswers.join(" ");
     }
     if(/market|price|mandi|sell|crop price/.test(lower)){
-      if(!marketRows.length)return "Official market prices are not connected. Add a data.gov.in API key in Hatchable project setup, then load the Market section. Its data is reported daily, not as a real-time exchange quote.";
+      if(!marketRows.length)return "No official market price rows are currently loaded. Select a crop from the AGMARKNET official list and refresh; if the provider is temporarily unavailable, try again later. Reported prices are dated mandi observations, not real-time exchange quotes.";
       return "The Market section currently shows "+marketRows.length+" official records from "+(marketRows[0].arrivalDate||"the dates provided by AGMARKNET")+". These daily records are historical observations and are not a price forecast.";
     }
     if(/voice|speak|language/.test(lower))return "Choose a language at the top. Use Speak question for browser speech recognition and Read answer to hear the response; your browser may ask for microphone permission when you start voice input.";
@@ -2862,10 +2862,16 @@ renderPests(PESTS);
           list.appendChild(option);
         });
       }
-      if(info)info.textContent=data.count+" official crops / commodities available · type to search";
+      if(info)info.textContent=data.stale
+        ?data.count+" cached official crops / commodities · source temporarily unavailable"
+        :data.count+" official crops / commodities available · type to search";
       if(!picker.value.trim()){
-        statusText("marketStatus","Official AGMARKNET list loaded: "+data.count+" crops / commodities. Choose or type any supported crop above, then press Enter or select a suggested name. All India is the default region; prices load for the chosen crop.");
-        $("mktTime").textContent="AGMARKNET · All India · choose a crop";
+        statusText("marketStatus",data.stale
+          ?data.message
+          :"Official AGMARKNET list loaded: "+data.count+" crops / commodities. Choose or type any supported crop above, then press Enter or select a suggested name. All India is the default region; prices load for the chosen crop.");
+        $("mktTime").textContent=data.stale
+          ?"STALE · cached official crop list · "+localTime(data.cacheSavedAt||data.fetchedAt)
+          :"AGMARKNET · All India · choose a crop";
         window.renderMarket();
       }else{
         statusText("marketStatus","Loaded "+data.count+" official crop / commodity names. Fetching the selected commodity…");
@@ -2942,8 +2948,16 @@ renderPests(PESTS);
       try{localStorage.setItem("farmwise.market.cache.v2",JSON.stringify({filterKey:marketFilterKey,records:marketRows,source:data.source||"AGMARKNET 2.0",fetchedAt:data.fetchedAt||new Date().toISOString(),hasMore:!!data.hasMore,page:page,totalMarketPages:data.totalMarketPages||null}));}catch(_){}
       window.renderMarket();
       setFarmwiseSourceState("market",marketRows.length?"ready":"empty",marketRows.length);
-      var nationwideScope=!$("mktState").value&&!$("mktDistrict").value.trim();var batchStatus=" Showing "+marketRows.length+" priced market row(s) after checking "+(data.candidateMarketsChecked||0)+" markets for this batch. Checked "+localTime(data.fetchedAt)+".";if(nationwideScope)batchStatus+=" All India progress: page "+(page+1)+" of "+(data.totalMarketPages||"multiple")+"; "+Number(data.totalMarketsAvailable||0).toLocaleString("en-IN")+" commodity-market listings are available nationwide. Select Load More Markets to continue across States / UTs.";statusText("marketStatus",(data.message||data.sourceNote)+batchStatus);
-      $("mktTime").textContent=data.source+" · checked "+localTime(data.fetchedAt)+(data.latestReportDate?" · latest report "+data.latestReportDate:"");
+      var nationwideScope=!$("mktState").value&&!$("mktDistrict").value.trim();
+      if(data.stale){
+        statusText("marketStatus",data.message+" Showing "+marketRows.length+" cached official price row(s); review the report dates before relying on them.",true);
+        $("mktTime").textContent="STALE · cached "+localTime(data.cacheSavedAt||data.fetchedAt)+(data.latestReportDate?" · latest report "+data.latestReportDate:"");
+      }else{
+        var batchStatus=" Showing "+marketRows.length+" priced market row(s) after checking "+(data.candidateMarketsChecked||0)+" markets for this batch. Checked "+localTime(data.fetchedAt)+".";
+        if(nationwideScope)batchStatus+=" All India progress: page "+(page+1)+" of "+(data.totalMarketPages||"multiple")+"; "+Number(data.totalMarketsAvailable||0).toLocaleString("en-IN")+" commodity-market listings are available nationwide. Select Load More Markets to continue across States / UTs.";
+        statusText("marketStatus",(data.message||data.sourceNote)+batchStatus);
+        $("mktTime").textContent=data.source+" · checked "+localTime(data.fetchedAt)+(data.latestReportDate?" · latest report "+data.latestReportDate:"");
+      }
       if(moreButton){moreButton.style.display=data.hasMore?"inline-flex":"none";moreButton.textContent=data.hasMore?"Load More Markets ("+(page+1)+"/"+(data.totalMarketPages||"…")+")":"Load More Markets";}
     }catch(error){
       var cached=null;

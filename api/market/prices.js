@@ -1,3 +1,5 @@
+import { db } from "hatchable";
+
 export const access = "public";
 export const methods = ["GET"];
 
@@ -91,6 +93,36 @@ function noDataMessage(commodity, state, district) {
   return "AGMARKNET returned no numeric reported prices in its last-week feed for " + commodity +
     (where ? " in " + where : "") + ". The source marks missing observations as NR; FarmWise does not convert them to zero.";
 }
+async function readPriceCache(cacheKey) {
+  try {
+    const result = await db.query("SELECT payload, updated_at FROM market_data_cache WHERE cache_key=$1 LIMIT 1", [cacheKey]);
+    if (!result.rows.length) return null;
+    return { payload: result.rows[0].payload, updatedAt: result.rows[0].updated_at };
+  } catch (_) {
+    return null;
+  }
+}
+async function savePriceCache(cacheKey, payload) {
+  try {
+    await db.query(
+      "INSERT INTO market_data_cache (cache_key,payload,updated_at) VALUES ($1,$2::jsonb,now()) ON CONFLICT (cache_key) DO UPDATE SET payload=EXCLUDED.payload,updated_at=now()",
+      [cacheKey, JSON.stringify(payload)]
+    );
+  } catch (error) {
+    console.warn("FarmWise price cache write failed", String(error && error.message || error).slice(0, 120));
+  }
+}
+function markCachedPriceStale(cached) {
+  const savedAt = cached.updatedAt ? new Date(cached.updatedAt).toISOString() : null;
+  const payload = cached.payload && typeof cached.payload === "object" ? cached.payload : {};
+  return {
+    ...payload,
+    stale: true,
+    cacheSavedAt: savedAt,
+    message: "AGMARKNET is temporarily unavailable. Showing the last successfully fetched official report, saved " +
+      (savedAt || "at an unknown time") + ". Check each row's report date before relying on it; these are not live quotes."
+  };
+}
 export default async function (req, res) {
   const query = req.query || {};
   const stateInput = String(query.state || "").trim().slice(0, 100);
@@ -108,6 +140,9 @@ export default async function (req, res) {
   const wantedDistrict = norm(districtInput);
   const wantedRaw = norm(requestedCommodity);
   const wantedCommodity = ALIASES[wantedRaw] || wantedRaw;
+  const rawPage = Number(query.page || 0);
+  const page = Number.isFinite(rawPage) ? Math.max(0, Math.min(250, Math.floor(rawPage))) : 0;
+  const cacheKey = "agmarknet:prices:v1:" + [norm(stateInput), norm(districtInput), wantedRaw, String(page)].join("|");
 
   try {
     const filterPayload = await apiJson("/daily-price-arrival/filters");
@@ -199,8 +234,6 @@ export default async function (req, res) {
     // load the next page without forcing dozens of upstream calls in one request.
     // "NR" values are ignored, never interpreted as zero.
     const perPage = 10;
-    const rawPage = Number(query.page || 0);
-    const page = Number.isFinite(rawPage) ? Math.max(0, Math.min(250, Math.floor(rawPage))) : 0;
     let marketsToFetch = [];
     let hasMore = false;
     let totalMarketPages = 0;
@@ -265,6 +298,8 @@ export default async function (req, res) {
       a.state.localeCompare(b.state) || a.market.localeCompare(b.market));
     const limitedRecords = records.slice(0, 20);
     if (!limitedRecords.length && requestFailures > 0) {
+      const cached = await readPriceCache(cacheKey);
+      if (cached) return res.json(markCachedPriceStale(cached));
       return res.status(502).json({
         available:false,
         error:"agmarknet_upstream_unavailable",
@@ -278,7 +313,7 @@ export default async function (req, res) {
     const latestDate = limitedRecords.reduce((latest, row) => row.arrivalDate > latest ? row.arrivalDate : latest, "");
     let sourceNote = "Official AGMARKNET 2.0 market-wise prices, drawn from its last-week report. Each row shows the latest numeric report available for that market; the date can differ across markets. Values are per quintal where the source reports Rs./Quintal, not live intraday quotes. 'NR' means no report.";
     if (requestFailures > 0) sourceNote += " Some market requests failed; only markets with a successful official response are shown.";
-    return res.json({
+    const responseBody = {
       available: true,
       source: "AGMARKNET 2.0",
       sourceUrl: "https://agmarknet.gov.in/home",
@@ -292,13 +327,19 @@ export default async function (req, res) {
       hasMore,
       failedRequests: requestFailures,
       partialData: requestFailures > 0,
+      stale: false,
       latestReportDate: latestDate || null,
       filters: { state: state ? state.state_name : null, district: districtInput || null, commodity: commodity.cmdt_name },
       fetchedAt: new Date().toISOString(),
       message: limitedRecords.length ? sourceNote : noDataMessage(commodity.cmdt_name, state ? state.state_name : null, districtInput || null)
-    });
+    };
+    // Only cache complete upstream batches. Never replace a good cache with a partial result.
+    if (requestFailures === 0) await savePriceCache(cacheKey, responseBody);
+    return res.json(responseBody);
   } catch (error) {
     console.error("FarmWise AGMARKNET v2 request failed", String(error && error.message || error).slice(0, 240));
+    const cached = await readPriceCache(cacheKey);
+    if (cached) return res.json(markCachedPriceStale(cached));
     return res.status(502).json({
       available: false,
       error: "agmarknet_unavailable",
