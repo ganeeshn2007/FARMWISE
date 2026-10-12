@@ -25,7 +25,7 @@ export default async function(req, res) {
   const prompt = `Create a conservative agricultural knowledge pack for these crops: ${crops.join(", ")}. Region context: ${region}. Season context: ${season || "not specified"}.
 Return JSON only with this shape:
 {"cropRecords":[{"crop_name":"","region":"","season":"","soil_type":null,"ph_min":null,"ph_max":null,"nitrogen_min_mg_kg":null,"nitrogen_max_mg_kg":null,"phosphorus_min_mg_kg":null,"phosphorus_max_mg_kg":null,"potassium_min_mg_kg":null,"potassium_max_mg_kg":null,"moisture_min_pct":null,"moisture_max_pct":null,"guidance":""}],"diseaseRecords":[{"crop_name":"","disease_name":"","symptoms":"","treatment_guidance":""}]}
-Create one crop record for each requested crop and up to 3 common diseases per crop when reasonably known. Never fabricate numeric soil/NPK/moisture ranges; use null for every number unless you can confidently state a broadly established range, and still do not invent fertilizer or pesticide dosage. Keep management advice general and integrated: sanitation, monitoring, irrigation/drainage where relevant, resistant varieties, and local extension support. State uncertainty in guidance. No fake citations, source names, or URLs. These are AI-generated preliminary drafts, not verified agronomic recommendations.`;
+Create one crop record for each requested crop and up to 3 common diseases per crop when reasonably known. IMPORTANT: every crop_name must exactly match one requested crop string, with no botanical names or parentheses appended. Never fabricate numeric soil/NPK/moisture ranges; use null for every number unless you can confidently state a broadly established range, and still do not invent fertilizer or pesticide dosage. For each disease provide distinguishing symptoms, conservative management steps, prevention, and uncertainty in the treatment_guidance field; avoid pesticide rates and claims of cure. Keep management advice general and integrated: sanitation, monitoring, irrigation/drainage where relevant, resistant varieties, and local extension support. State uncertainty in guidance. No fake citations, source names, or URLs. These are AI-generated preliminary drafts, not verified agronomic recommendations.`;
 
   try {
     const generated = await ai.generateText({ model: "gemini-flash", prompt, purpose: "farmwise-batch-knowledge-generation", maxSteps: 1 });
@@ -35,9 +35,10 @@ Create one crop record for each requested crop and up to 3 common diseases per c
     const saved = { crops: [], diseases: [] };
     const skipped = [];
     for (const d of cropRecords.slice(0, crops.length)) {
-      const crop = clean(d.crop_name, 120);
+      const modelCrop = clean(d.crop_name, 120);
+      const crop = crops.find(c => modelCrop && (modelCrop.toLowerCase() === c.toLowerCase() || modelCrop.toLowerCase().startsWith(c.toLowerCase() + " ("))) || modelCrop;
       const guidance = clean(d.guidance, 3000);
-      if (!crop || !guidance || !crops.some(c => c.toLowerCase() === crop.toLowerCase())) { skipped.push({kind:"crop", crop, reason:"invalid_or_unrequested"}); continue; }
+      if (!crop || !guidance || !crops.some(c => c.toLowerCase() === crop.toLowerCase())) { skipped.push({kind:"crop", crop:modelCrop, reason:"invalid_or_unrequested"}); continue; }
       const existing = await db.query("SELECT id FROM crop_knowledge WHERE lower(crop_name)=lower($1) AND lower(coalesce(region,''))=lower($2) AND lower(coalesce(season,''))=lower($3) LIMIT 1", [crop, clean(d.region || region,100), clean(d.season || season,60)]);
       if (existing.rows.length) { skipped.push({kind:"crop", crop, reason:"duplicate", id:existing.rows[0].id}); continue; }
       const keys = ["ph_min","ph_max","nitrogen_min_mg_kg","nitrogen_max_mg_kg","phosphorus_min_mg_kg","phosphorus_max_mg_kg","potassium_min_mg_kg","potassium_max_mg_kg","moisture_min_pct","moisture_max_pct"];
@@ -47,8 +48,9 @@ Create one crop record for each requested crop and up to 3 common diseases per c
       saved.crops.push(q.rows[0]);
     }
     for (const d of diseaseRecords.slice(0, crops.length * 3)) {
-      const crop = clean(d.crop_name,120), disease = clean(d.disease_name,160);
-      if (!crop || !disease || !clean(d.symptoms,20) || !clean(d.treatment_guidance,20) || !crops.some(c => c.toLowerCase() === crop.toLowerCase())) { skipped.push({kind:"disease",crop,disease,reason:"invalid_or_unrequested"}); continue; }
+      const modelCrop = clean(d.crop_name,120), disease = clean(d.disease_name,160);
+      const crop = crops.find(c => modelCrop && (modelCrop.toLowerCase() === c.toLowerCase() || modelCrop.toLowerCase().startsWith(c.toLowerCase() + " ("))) || modelCrop;
+      if (!crop || !disease || !clean(d.symptoms,20) || !clean(d.treatment_guidance,20) || !crops.some(c => c.toLowerCase() === crop.toLowerCase())) { skipped.push({kind:"disease",crop:modelCrop,disease,reason:"invalid_or_unrequested"}); continue; }
       const existing = await db.query("SELECT id FROM disease_references WHERE lower(crop_name)=lower($1) AND lower(disease_name)=lower($2) LIMIT 1",[crop,disease]);
       if (existing.rows.length) { skipped.push({kind:"disease",crop,disease,reason:"duplicate",id:existing.rows[0].id}); continue; }
       const q = await db.query("INSERT INTO disease_references (crop_name,disease_name,symptoms,treatment_guidance,source_name,source_url,verified_status,notes) VALUES ($1,$2,$3,$4,$5,NULL,'needs_review',$6) RETURNING id,crop_name,disease_name,verified_status", [crop,disease,clean(d.symptoms,2000),clean(d.treatment_guidance,3000),"AI-generated preliminary draft","Generated by FarmWise AI; no external source was supplied; confirm diagnosis and local management before use."]);
