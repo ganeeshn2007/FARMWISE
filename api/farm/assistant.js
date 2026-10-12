@@ -136,11 +136,54 @@ Return a useful answer, normally 2–6 short paragraphs or a short numbered list
       note:"AI-generated guidance; database notes may be provisional and local agricultural review may be necessary."
     });
   } catch (error) {
-    console.error("FarmWise assistant provider failed", String(error).slice(0,200));
-    return res.status(502).json({
-      available:false,
-      error:"assistant_provider_unavailable",
-      message:"The FarmWise AI assistant could not reach its configured provider. You can retry, or use the local data helper."
+    const errorText = String(error?.message || error);
+    const quotaLimited = /429|quota|resource_exhausted|rate.?limit/i.test(errorText);
+    console.error("FarmWise assistant provider failed", errorText.slice(0,220));
+
+    // Preserve a useful, honest answer when Google quota or availability is temporary:
+    // show matching database records, never mark them as verified or invent advice.
+    const parts = [];
+    if (cropNotes.length) {
+      parts.push("Matching crop notes from the FarmWise database:");
+      for (const crop of cropNotes.slice(0,4)) {
+        parts.push(
+          "Crop: " + crop.crop +
+          (crop.region ? "\\nRegion: " + crop.region : "") +
+          (crop.season ? "\\nSeason: " + crop.season : "") +
+          "\\nRecord status: " + (crop.status || "needs_review") +
+          "\\nGuidance: " + (crop.guidance || "No guidance stored") +
+          "\\nNumeric NPK thresholds: " + (crop.npkThresholdsAvailable ? "some values stored; check units and source" : "not recorded") +
+          "\\nSource: " + (crop.sourceName || "No source supplied") +
+          (crop.sourceUrl ? " (" + crop.sourceUrl + ")" : "")
+        );
+      }
+    }
+    if (diseaseNotes.length) {
+      parts.push("Matching disease reference notes:");
+      for (const disease of diseaseNotes.slice(0,5)) {
+        parts.push(
+          disease.crop + " — " + disease.disease + " [" + (disease.status || "needs_review") + "]" +
+          "\\nSymptoms recorded: " + (disease.symptoms || "No symptom notes stored") +
+          "\\nManagement note: " + (disease.management || "No management note stored") +
+          "\\nSource: " + (disease.sourceName || "No source supplied") +
+          (disease.sourceUrl ? " (" + disease.sourceUrl + ")" : "")
+        );
+      }
+    }
+    const preface = quotaLimited
+      ? "Google Gemini's current quota or rate limit prevented a generated answer. I'm showing matching FarmWise database notes instead."
+      : "Google Gemini did not return an answer. I'm showing matching FarmWise database notes instead.";
+    const answer = preface + (parts.length
+      ? "\\n\\n" + parts.join("\\n\\n") + "\\n\\nThese records are provisional and marked for review; they are not verified agronomic advice."
+      : "\\n\\nNo matching crop or disease notes were found in the local database, so FarmWise has not invented a substitute recommendation. Please try again later or ask about a named crop and region.");
+    return res.json({
+      available:true,
+      answer,
+      provider:"FarmWise PostgreSQL fallback",
+      fallback:true,
+      quotaLimited,
+      knowledgeContext:{cropNotes:cropNotes.length,diseaseReferences:diseaseNotes.length,matchedCrops},
+      note:"Local database records may be AI-generated drafts and are not verified agronomic guidance."
     });
   }
 }

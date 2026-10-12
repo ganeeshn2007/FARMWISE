@@ -2056,6 +2056,13 @@ async function requestFarmWiseAssistantAnswer(){
     })});
     var data={};try{data=await response.json();}catch(_){}
     if(!response.ok||!data.available||!data.answer)throw new Error(data.message||'The AI assistant did not return an answer.');
+    if(data.fallback){
+      resp.textContent=data.answer+'\n\n'+(data.note||'Local database records may be provisional.');
+      if(q('globalAiStatusText'))q('globalAiStatusText').textContent=data.quotaLimited?'Gemini quota limited · local notes':'Gemini unavailable · local notes';
+      if(q('assistantAiStatusText'))q('assistantAiStatusText').textContent='Local database fallback · '+((data.knowledgeContext&&data.knowledgeContext.cropNotes)||0)+' crop notes';
+      statusText('assistantVoiceStatus',data.quotaLimited?'Google Gemini quota is temporarily limited; showing local FarmWise records marked for review.':'Google Gemini is unavailable; showing matching local records marked for review.');
+      return;
+    }
     resp.textContent=data.answer+'\n\n'+(data.note||'AI-generated guidance; confirm locally before acting.');
     if(q('globalAiStatusText'))q('globalAiStatusText').textContent='Gemini AI connected';
     if(q('assistantAiStatusText'))q('assistantAiStatusText').textContent='Gemini connected · '+((data.knowledgeContext&&data.knowledgeContext.cropNotes)||0)+' crop notes';
