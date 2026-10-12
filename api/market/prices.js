@@ -1,106 +1,241 @@
-import { config } from "hatchable";
-
 export const access = "public";
 export const methods = ["GET"];
 
-function safeNumber(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
+const BASE = "https://api.agmarknet.gov.in/v1";
+const HEADERS = {
+  "Accept": "application/json, text/plain, */*",
+  "Origin": "https://agmarknet.gov.in",
+  "Referer": "https://agmarknet.gov.in/",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+};
+
+const ALIASES = {
+  "tomatoes": "tomato",
+  "onions": "onion",
+  "potatoes": "potato",
+  "corn": "maize",
+  "paddy": "rice",
+  "wheat grain": "wheat",
+  "groundnuts": "groundnut",
+  "peanuts": "groundnut",
+  "soyabean": "soybean",
+  "soya bean": "soybean"
+};
+const STATE_ALIASES = {
+  "kerala": "keralam",
+  "chhattisgarh": "chattisgarh",
+  "chattisgarh": "chattisgarh",
+  "andaman and nicobar islands": "andaman and nicobar",
+  "delhi": "nct of delhi",
+  "puducherry": "pondicherry"
+};
+
+function norm(value) {
+  return String(value || "").toLowerCase().trim()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ").trim();
 }
-
-function cleanFilter(value, name) {
-  if (value === undefined || value === null || value === "") return null;
-  const text = String(value).trim();
-  if (text.length > 100) throw new Error(name + " must be 100 characters or fewer.");
-  return text;
+function numberOrNull(value) {
+  if (value === null || value === undefined || value === "" || String(value).trim().toUpperCase() === "NR") return null;
+  const parsed = Number(String(value).replace(/,/g, "").trim());
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
-
-export default async function (req, res) {
-  // Let Hatchable surface its secure Setup prompt if the required secret has not been saved yet.
-  const apiKey = await config.get("DATA_GOV_IN_API_KEY");
-  if (typeof apiKey !== "string" || !apiKey.trim()) {
-    return res.status(503).json({
-      error: "setup_required",
-      message: "Official market prices need a data.gov.in API key. Add DATA_GOV_IN_API_KEY in the project's private Hatchable Setup."
-    });
+function latestReported(row, columns) {
+  const dates = (Array.isArray(columns) ? columns : [])
+    .map(col => col && col.key)
+    .filter(key => /^\d{4}-\d{2}-\d{2}$/.test(String(key || "")))
+    .sort((a, b) => b.localeCompare(a));
+  for (const date of dates) {
+    const price = numberOrNull(row[date]);
+    if (price !== null) return { date, price };
   }
-
-  let state, district, commodity;
+  return null;
+}
+async function apiJson(path, timeout = 10000) {
+  let response;
   try {
-    const query = req.query || {};
-    state = cleanFilter(query.state, "State");
-    district = cleanFilter(query.district, "District");
-    commodity = cleanFilter(query.commodity, "Commodity");
-  } catch (error) {
-    return res.status(400).json({ error: "invalid_filter", message: error.message });
-  }
-
-  const url = new URL("https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070");
-  url.searchParams.set("api-key", apiKey.trim());
-  url.searchParams.set("format", "json");
-  url.searchParams.set("limit", "100");
-  url.searchParams.set("offset", "0");
-  url.searchParams.set("fields", "state,district,market,commodity,variety,grade,arrival_date,min_price,max_price,modal_price");
-  url.searchParams.set("sort[arrival_date]", "desc");
-  if (state) url.searchParams.set("filters[state.keyword]", state);
-  if (district) url.searchParams.set("filters[district]", district);
-  if (commodity) url.searchParams.set("filters[commodity]", commodity);
-
-  let upstream;
-  try {
-    upstream = await fetch(url.toString(), { timeout_ms: 10000 });
+    response = await fetch(BASE + path, { headers: HEADERS, timeout_ms: timeout });
   } catch (_) {
-    return res.status(502).json({ error: "market_provider_unavailable", message: "The official market-data service could not be reached." });
+    throw new Error("Could not connect to the official AGMARKNET v2 service. Please retry shortly.");
   }
-  if (!upstream.ok) {
-    let upstreamDetail = "";
-    try { upstreamDetail = (await upstream.text()).slice(0, 700); } catch (_) {}
-    // The Hatchable egress proxy can itself return 502 before data.gov.in is reached.
-    // Never label that as bad credentials or provide fabricated/sample prices.
-    if (upstream.status === 502 && /proxy_error|HTTP Tunneling|Request was cancelled/i.test(upstreamDetail)) {
-      console.error("FarmWise market egress failed", JSON.stringify({status:upstream.status,detail:upstreamDetail.slice(0,240)}));
-      return res.status(502).json({
-        available:false,
-        error:"market_network_proxy_unavailable",
-        upstreamStatus:502,
-        message:"FarmWise could not reach the official data.gov.in market service through its outbound network connection. No price records were loaded. Retry later or open the official dataset page."
+  const text = await response.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch (_) { throw new Error("The official AGMARKNET service returned an unreadable response."); }
+  if (!response.ok) {
+    const detail = String(data.detail || data.message || "Official market service request failed").slice(0, 180);
+    throw new Error("AGMARKNET v2 returned HTTP " + response.status + ": " + detail);
+  }
+  return data;
+}
+function noDataMessage(commodity, state, district) {
+  const where = [district, state].filter(Boolean).join(", ");
+  return "AGMARKNET returned no numeric reported prices in its last-week feed for " + commodity +
+    (where ? " in " + where : "") + ". The source marks missing observations as NR; FarmWise does not convert them to zero.";
+}
+export default async function (req, res) {
+  const query = req.query || {};
+  const stateInput = String(query.state || "").trim().slice(0, 100);
+  const districtInput = String(query.district || "").trim().slice(0, 100);
+  const requestedCommodity = String(query.commodity || "Tomato").trim().slice(0, 100) || "Tomato";
+  const normalizedState = norm(stateInput);
+  const wantedState = STATE_ALIASES[normalizedState] || normalizedState;
+  const wantedDistrict = norm(districtInput);
+  const wantedRaw = norm(requestedCommodity);
+  const wantedCommodity = ALIASES[wantedRaw] || wantedRaw;
+
+  try {
+    const filterPayload = await apiJson("/daily-price-arrival/filters");
+    const filterData = filterPayload && filterPayload.data ? filterPayload.data : {};
+    const commodities = Array.isArray(filterData.cmdt_data) ? filterData.cmdt_data : [];
+    const stateRows = Array.isArray(filterData.state_data) ? filterData.state_data : [];
+    const districtRows = Array.isArray(filterData.district_data) ? filterData.district_data : [];
+    const marketRows = Array.isArray(filterData.market_data) ? filterData.market_data : [];
+
+    let commodity = commodities.find(row => norm(row.cmdt_name) === wantedCommodity);
+    if (!commodity) commodity = commodities.find(row => norm(row.cmdt_name).startsWith(wantedCommodity));
+    if (!commodity && wantedCommodity.length >= 3) commodity = commodities.find(row => norm(row.cmdt_name).includes(wantedCommodity));
+    if (!commodity) {
+      return res.status(400).json({
+        available: false,
+        error: "commodity_not_found",
+        message: "No exact or close commodity name was found in the official AGMARKNET list for '" + requestedCommodity + "'. Try a common name such as Tomato, Onion, Potato, Rice, Wheat or Maize.",
+        suggestions: ["Tomato", "Onion", "Potato", "Rice", "Wheat", "Maize"]
       });
     }
-    console.error("FarmWise official market provider returned an error", JSON.stringify({status:upstream.status,detail:upstreamDetail.slice(0,200)}));
+
+    let state = null;
+    if (wantedState) {
+      state = stateRows.find(row => norm(row.state_name) === wantedState);
+      if (!state) state = stateRows.find(row => norm(row.state_name).includes(wantedState) || wantedState.includes(norm(row.state_name)));
+      if (!state) {
+        return res.status(400).json({
+          available: false, error: "state_not_found",
+          message: "No official state name matched '" + stateInput + "'. Choose a state name from the list."
+        });
+      }
+    }
+
+    let districtId = null;
+    let matchedDistrictName = districtInput;
+    if (wantedDistrict) {
+      let matchingDistricts = districtRows.filter(row => (!state || Number(row.state_id) === Number(state.state_id)));
+      let district = matchingDistricts.find(row => norm(row.district_name) === wantedDistrict);
+      if (!district) district = matchingDistricts.find(row => norm(row.district_name).includes(wantedDistrict));
+      if (district) {
+        districtId = Number(district.id);
+        matchedDistrictName = district.district_name;
+      }
+    }
+
+    const commodityMarketsPayload = await apiJson("/list-comm/" + encodeURIComponent(String(commodity.cmdt_id)));
+    let candidates = Array.isArray(commodityMarketsPayload.data) ? commodityMarketsPayload.data : [];
+    candidates = candidates.filter(row => row && row.market_id != null && row.state_id != null);
+    if (state) candidates = candidates.filter(row => Number(row.state_id) === Number(state.state_id));
+    if (districtId !== null) {
+      candidates = candidates.filter(row => {
+        const marketMeta = marketRows.find(market => Number(market.id) === Number(row.market_id));
+        return marketMeta && Number(marketMeta.district_id) === districtId;
+      });
+    } else if (wantedDistrict) {
+      candidates = candidates.filter(row => norm(row.market_name).includes(wantedDistrict));
+    }
+    const seenMarkets = new Set();
+    candidates = candidates.filter(row => {
+      const key = String(row.market_id) + "|" + String(row.state_id);
+      if (seenMarkets.has(key)) return false;
+      seenMarkets.add(key);
+      return true;
+    });
+    candidates.sort((a, b) => norm(a.market_name).localeCompare(norm(b.market_name)));
+
+    if (!candidates.length) {
+      const message = wantedDistrict
+        ? "No " + commodity.cmdt_name + " market is listed for " + matchedDistrictName + (state ? ", " + state.state_name : "") + " in the official AGMARKNET filters. Try clearing the market/district filter."
+        : "No markets are currently listed for " + commodity.cmdt_name + (state ? " in " + state.state_name : "") + " by the official AGMARKNET source.";
+      return res.json({
+        available: true, source: "AGMARKNET 2.0",
+        sourceNote: message, records: [], total: 0,
+        fetchedAt: new Date().toISOString(),
+        filters: { state: state ? state.state_name : null, district: districtInput || null, commodity: commodity.cmdt_name },
+        message
+      });
+    }
+
+    // Query a bounded number of official market histories. The endpoint returns
+    // the last week's dated price columns for each market; no captcha/key is used
+    // by this public report. "NR" values are ignored, never interpreted as zero.
+    const candidateBudget = wantedDistrict ? 20 : (state ? 30 : 30);
+    const batchSize = 8;
+    const records = [];
+    let attempted = 0;
+    for (let start = 0; start < Math.min(candidates.length, candidateBudget) && records.length < 20; start += batchSize) {
+      const batch = candidates.slice(start, Math.min(start + batchSize, candidateBudget));
+      const settled = await Promise.all(batch.map(async market => {
+        try {
+          const endpoint = "/prices-and-arrivals/market-price/lastweek?marketId=" +
+            encodeURIComponent(String(market.market_id)) + "&stateId=" +
+            encodeURIComponent(String(market.state_id)) + "&commodityId=" +
+            encodeURIComponent(String(commodity.cmdt_id)) + "&includeExcel=false";
+          const payload = await apiJson(endpoint, 10000);
+          if (!payload || payload.success !== true || !Array.isArray(payload.data)) return [];
+          const out = [];
+          for (const row of payload.data) {
+            const latest = latestReported(row, payload.columns);
+            if (!latest) continue;
+            const marketMeta = marketRows.find(item => Number(item.id) === Number(market.market_id));
+            const districtMeta = marketMeta ? districtRows.find(item => Number(item.id) === Number(marketMeta.district_id)) : null;
+            out.push({
+              state: market.state_name || (state && state.state_name) || "",
+              district: districtMeta ? districtMeta.district_name : "",
+              market: market.market_name || "",
+              commodity: commodity.cmdt_name,
+              variety: row.variety && row.variety !== "Unknown" ? row.variety : "",
+              grade: "",
+              arrivalDate: latest.date,
+              price: latest.price,
+              unit: row.unitOfPrice && row.unitOfPrice !== "NR" ? row.unitOfPrice : "Rs./Quintal",
+              source: "AGMARKNET 2.0",
+              sourceDate: latest.date
+            });
+          }
+          return out;
+        } catch (error) {
+          console.warn("AGMARKNET market history skipped", String(market.market_name || market.market_id), String(error.message || error).slice(0, 160));
+          return [];
+        }
+      }));
+      attempted += batch.length;
+      for (const arr of settled) for (const record of arr) records.push(record);
+    }
+
+    records.sort((a, b) => b.arrivalDate.localeCompare(a.arrivalDate) ||
+      a.state.localeCompare(b.state) || a.market.localeCompare(b.market));
+    const limitedRecords = records.slice(0, 20);
+    const latestDate = limitedRecords.reduce((latest, row) => row.arrivalDate > latest ? row.arrivalDate : latest, "");
+    const sourceNote = "Official AGMARKNET 2.0 market-wise prices, drawn from its last-week report. Each row shows the latest numeric report available for that market; the date can differ across markets. Values are per quintal where the source reports Rs./Quintal, not live intraday quotes. 'NR' means no report.";
+    return res.json({
+      available: true,
+      source: "AGMARKNET 2.0",
+      sourceUrl: "https://agmarknet.gov.in/home",
+      sourceNote,
+      records: limitedRecords,
+      total: limitedRecords.length,
+      candidateMarketsChecked: attempted,
+      latestReportDate: latestDate || null,
+      filters: { state: state ? state.state_name : null, district: districtInput || null, commodity: commodity.cmdt_name },
+      fetchedAt: new Date().toISOString(),
+      message: limitedRecords.length ? sourceNote : noDataMessage(commodity.cmdt_name, state ? state.state_name : null, districtInput || null)
+    });
+  } catch (error) {
+    console.error("FarmWise AGMARKNET v2 request failed", String(error && error.message || error).slice(0, 240));
     return res.status(502).json({
-      available:false,
-      error:"market_provider_error",
-      upstreamStatus:upstream.status,
-      message:upstream.status === 401 || upstream.status === 403
-        ? "The data.gov.in service denied access. Verify the API key in private Hatchable Setup and confirm it is enabled for this dataset."
-        : upstream.status === 400
-          ? "The data.gov.in service rejected the query parameters."
-          : "The official market-data service returned HTTP " + upstream.status + ". No substitute or simulated prices were shown."
+      available: false,
+      error: "agmarknet_unavailable",
+      message: String(error && error.message || "Official AGMARKNET price data is temporarily unavailable.").slice(0, 500),
+      source: "AGMARKNET 2.0",
+      sourceUrl: "https://agmarknet.gov.in/home"
     });
   }
-
-  let data;
-  try { data = await upstream.json(); } catch (_) {
-    return res.status(502).json({ error: "invalid_market_response", message: "The official market-data service returned an unreadable response." });
-  }
-  const records = (Array.isArray(data.records) ? data.records : []).map(row => ({
-    state: row.state || "",
-    district: row.district || "",
-    market: row.market || "",
-    commodity: row.commodity || "",
-    variety: row.variety || "",
-    grade: row.grade || "",
-    arrivalDate: row.arrival_date || "",
-    minPrice: safeNumber(row.min_price),
-    modalPrice: safeNumber(row.modal_price),
-    maxPrice: safeNumber(row.max_price)
-  }));
-  return res.json({
-    available: true,
-    source: "AGMARKNET · data.gov.in",
-    sourceNote: "Official daily mandi reports; values are not a real-time exchange quote.",
-    records,
-    fetchedAt: new Date().toISOString(),
-    total: Number.isFinite(Number(data.total)) ? Number(data.total) : records.length
-  });
 }

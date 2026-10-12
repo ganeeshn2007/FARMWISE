@@ -649,7 +649,7 @@ body{
   <div class="ch">
     <div class="ct"><div class="ico">💹</div>Commodity Market Prices</div>
     <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
-      <span id="mktTime" class="note">Official daily mandi report — not a real-time exchange</span>
+      <span id="mktTime" class="note">AGMARKNET last-week report · latest reported price per market, not a live quote</span>
       <button id="mktRefreshBtn" class="btn btn-primary btn-sm">↺ Refresh</button>
       <button id="mktAiBtn" class="btn btn-gold btn-sm">Market data summary</button>
       <button id="mktExportCsvBtn" class="btn btn-ghost btn-sm">📥 Export official data CSV</button>
@@ -664,16 +664,16 @@ body{
     </div>
     <div><label class="field-lbl">State (optional)</label>
       <select id="mktState" class="inp" style="appearance:none;cursor:pointer;">
-        <option value="">All available states</option><option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option><option>Telangana</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option>
+        <option value="">All States / UTs</option><option>Andaman and Nicobar Islands</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chandigarh</option><option>Chhattisgarh</option><option>Dadra and Nagar Haveli</option><option>Daman and Diu</option><option>Delhi</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jammu and Kashmir</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Lakshadweep</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Puducherry</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option>
       </select>
     </div>
-    <div><label class="field-lbl">District (optional)</label><input id="mktDistrict" class="inp" maxlength="80" placeholder="e.g. Guntur"/></div>
-    <div><label class="field-lbl">Commodity (optional)</label><input id="mktCommodity" class="inp" maxlength="80" placeholder="e.g. Tomato"/></div>
+    <div><label class="field-lbl">District or Market (optional)</label><input id="mktDistrict" class="inp" maxlength="80" placeholder="e.g. Kolar or Bengaluru"/></div>
+    <div><label class="field-lbl">Commodity</label><input id="mktCommodity" class="inp" maxlength="80" value="Tomato" placeholder="e.g. Onion, Rice or Wheat"/></div>
   </div>
-  <p id="marketStatus" class="note" style="margin:0 0 6px;line-height:1.55;" aria-live="polite">Connecting to official daily mandi prices…</p><p class="note" style="margin:0 0 12px;"><a href="https://www.data.gov.in/resource/current-daily-price-various-commodities-various-markets-mandi" target="_blank" rel="noopener noreferrer">Open the official data.gov.in mandi-price dataset ↗</a></p>
+  <p id="marketStatus" class="note" style="margin:0 0 6px;line-height:1.55;" aria-live="polite">Connecting to official AGMARKNET market prices…</p><p class="note" style="margin:0 0 12px;"><a href="https://agmarknet.gov.in/home" target="_blank" rel="noopener noreferrer">Open official AGMARKNET price reports ↗</a> · <a href="https://www.data.gov.in/resource/current-daily-price-various-commodities-various-markets-mandi" target="_blank" rel="noopener noreferrer">data.gov.in daily mandi dataset ↗</a></p>
   <div style="overflow-x:auto;">
     <table class="hist-table">
-      <thead><tr><th>Commodity</th><th>State · District · Market</th><th>Min ₹/qtl</th><th>Modal ₹/qtl</th><th>Max ₹/qtl · Arrival date</th></tr></thead>
+      <thead><tr><th>Commodity / Variety</th><th>State</th><th>Market</th><th>Latest reported price</th><th>Report date</th></tr></thead>
       <tbody id="mktBody"></tbody>
     </table>
   </div>
@@ -2478,7 +2478,7 @@ renderPests(PESTS);
     if(LANGS[code])Object.keys(FARMWISE_LIVE_I18N[code]).forEach(function(key){LANGS[code][key]=FARMWISE_LIVE_I18N[code][key];});
   });
   var FARMWISE_SOURCE_I18N={
-    en:{wp:"Add a farm town to load live weather",wl:"Loading live forecast…",wr:"Live forecast loaded",we:"Weather source unavailable",sn:"ESP32 reading needed",sy:"ESP32 connected",mk:"Official market source not yet checked",ml:"Connecting to official daily prices…",my:"Official daily prices loaded",me:"No matching official prices",mx:"Market source unavailable",rain:"Rain",et0:"ET₀",fc:"Model · high/low · rain · ET₀"},
+    en:{wp:"Add a farm town to load live weather",wl:"Loading live forecast…",wr:"Live forecast loaded",we:"Weather source unavailable",sn:"ESP32 reading needed",sy:"ESP32 connected",mk:"Official market source not yet checked",ml:"Connecting to AGMARKNET market prices…",my:"Official market prices loaded",me:"No matching reported prices",mx:"AGMARKNET market source unavailable",rain:"Rain",et0:"ET₀",fc:"Model · high/low · rain · ET₀"},
     hi:{wp:"लाइव मौसम के लिए खेत का शहर चुनें",wl:"लाइव पूर्वानुमान लोड हो रहा है…",wr:"लाइव पूर्वानुमान उपलब्ध",we:"मौसम स्रोत उपलब्ध नहीं",sn:"ESP32 रीडिंग की आवश्यकता",sy:"ESP32 जुड़ा है",mk:"दैनिक कीमतों के लिए data.gov.in API कुंजी चाहिए",ml:"आधिकारिक दैनिक कीमतें लोड हो रही हैं…",my:"आधिकारिक दैनिक कीमतें लोड हुईं",me:"कोई मेल खाती आधिकारिक कीमतें नहीं",mx:"बाजार स्रोत उपलब्ध नहीं",rain:"वर्षा",et0:"ET₀",fc:"मॉडल · अधिकतम/न्यूनतम · वर्षा · ET₀"},
     ta:{wp:"நேரடி வானிலைக்கு பண்ணை ஊரைத் தேர்ந்தெடுக்கவும்",wl:"நேரடி முன்னறிவிப்பு ஏற்றப்படுகிறது…",wr:"நேரடி முன்னறிவிப்பு கிடைக்கிறது",we:"வானிலைத் தரவு கிடைக்கவில்லை",sn:"ESP32 அளவீடு தேவை",sy:"ESP32 இணைக்கப்பட்டது",mk:"தினசரி விலைகளுக்கு data.gov.in API key தேவை",ml:"அதிகாரப்பூர்வ தினசரி விலைகள் ஏற்றப்படுகின்றன…",my:"அதிகாரப்பூர்வ தினசரி விலைகள் ஏற்றப்பட்டன",me:"பொருந்தும் அதிகாரப்பூர்வ விலைகள் இல்லை",mx:"சந்தைத் தரவு கிடைக்கவில்லை",rain:"மழை",et0:"ET₀",fc:"மாதிரி · அதிகபட்சம்/குறைந்தபட்சம் · மழை · ET₀"},
     te:{wp:"లైవ్ వాతావరణం కోసం పొలం పట్టణాన్ని ఎంచుకోండి",wl:"లైవ్ సూచన లోడ్ అవుతోంది…",wr:"లైవ్ సూచన అందుబాటులో ఉంది",we:"వాతావరణ మూలం అందుబాటులో లేదు",sn:"ESP32 రీడింగ్ అవసరం",sy:"ESP32 కనెక్ట్ అయింది",mk:"రోజువారీ ధరలకు data.gov.in API కీ అవసరం",ml:"అధికారిక రోజువారీ ధరలు లోడ్ అవుతున్నాయి…",my:"అధికారిక రోజువారీ ధరలు లోడ్ అయ్యాయి",me:"సరిపోలిన అధికారిక ధరలు లేవు",mx:"మార్కెట్ మూలం అందుబాటులో లేదు",rain:"వర్షం",et0:"ET₀",fc:"మోడల్ · గరిష్ఠం/కనిష్ఠం · వర్షం · ET₀"},
@@ -2490,7 +2490,7 @@ renderPests(PESTS);
     pa:{wp:"ਲਾਈਵ ਮੌਸਮ ਲਈ ਖੇਤ ਦਾ ਸ਼ਹਿਰ ਚੁਣੋ",wl:"ਲਾਈਵ ਪੇਸ਼ਗੋਈ ਲੋਡ ਹੋ ਰਹੀ ਹੈ…",wr:"ਲਾਈਵ ਪੇਸ਼ਗੋਈ ਉਪਲਬਧ ਹੈ",we:"ਮੌਸਮ ਸਰੋਤ ਉਪਲਬਧ ਨਹੀਂ",sn:"ESP32 ਰੀਡਿੰਗ ਦੀ ਲੋੜ",sy:"ESP32 ਜੁੜਿਆ ਹੈ",mk:"ਰੋਜ਼ਾਨਾ ਕੀਮਤਾਂ ਲਈ data.gov.in API key ਚਾਹੀਦੀ ਹੈ",ml:"ਅਧਿਕਾਰਤ ਰੋਜ਼ਾਨਾ ਕੀਮਤਾਂ ਲੋਡ ਹੋ ਰਹੀਆਂ ਹਨ…",my:"ਅਧਿਕਾਰਤ ਰੋਜ਼ਾਨਾ ਕੀਮਤਾਂ ਲੋਡ ਹੋ ਗਈਆਂ",me:"ਕੋਈ ਮਿਲਦੀਆਂ ਅਧਿਕਾਰਤ ਕੀਮਤਾਂ ਨਹੀਂ",mx:"ਮੰਡੀ ਸਰੋਤ ਉਪਲਬਧ ਨਹੀਂ",rain:"ਮੀਂਹ",et0:"ET₀",fc:"ਮਾਡਲ · ਵੱਧ/ਘੱਟ · ਮੀਂਹ · ET₀"},
     or:{wp:"ଲାଇଭ୍ ପାଣିପାଗ ପାଇଁ ଚାଷ ଗାଁ ବାଛନ୍ତୁ",wl:"ଲାଇଭ୍ ପୂର୍ବାନୁମାନ ଲୋଡ୍ ହେଉଛି…",wr:"ଲାଇଭ୍ ପୂର୍ବାନୁମାନ ଉପଲବ୍ଧ",we:"ପାଣିପାଗ ଉତ୍ସ ଉପଲବ୍ଧ ନାହିଁ",sn:"ESP32 ରିଡିଂ ଆବଶ୍ୟକ",sy:"ESP32 ସଂଯୁକ୍ତ",mk:"ଦୈନିକ ଦର ପାଇଁ data.gov.in API key ଆବଶ୍ୟକ",ml:"ଅଧିକୃତ ଦୈନିକ ଦର ଲୋଡ୍ ହେଉଛି…",my:"ଅଧିକୃତ ଦୈନିକ ଦର ଲୋଡ୍ ହେଲା",me:"ମେଳ ଖାଉଥିବା ଅଧିକୃତ ଦର ନାହିଁ",mx:"ବଜାର ଉତ୍ସ ଉପଲବ୍ଧ ନାହିଁ",rain:"ବର୍ଷା",et0:"ET₀",fc:"ମଡେଲ୍ · ସର୍ବାଧିକ/ସର୍ବନିମ୍ନ · ବର୍ଷା · ET₀"}
   };
-  var farmwiseSourceState={weather:"pending",place:"",sensor:!!window.farmwiseSensorOnline,market:"key",marketCount:0};
+  var farmwiseSourceState={weather:"pending",place:"",sensor:!!window.farmwiseSensorOnline,market:"pending",marketCount:0};
   var renderSourceLabels=function(){
     var text=FARMWISE_SOURCE_I18N[currentLang]||FARMWISE_SOURCE_I18N.en;
     var weather=$("weatherSourceStatus"),sensor=$("sensorSourceStatus"),market=$("marketSourceStatus"),caption=$("wxForecastCaption");
@@ -2848,22 +2848,24 @@ renderPests(PESTS);
     var body=$("mktBody"), filter=$("mktFilter") ? $("mktFilter").value : "all";
     var rows=marketRows.filter(function(row){return filter==="all" || row.category===filter;});
     if(!rows.length){
-      body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">No official records to show. Load data after connecting the market source.</td></tr>';
+      body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">No reported prices match these filters in AGMARKNET’s last-week report. Try another commodity, state or market.</td></tr>';
       return;
     }
-    var money=function(value){return value==null ? "—" : "₹"+Number(value).toLocaleString("en-IN");};
+    var money=function(value){return value==null || !Number.isFinite(Number(value)) ? "—" : "₹"+Number(value).toLocaleString("en-IN");};
     body.innerHTML=rows.map(function(row){
-      var where=[row.state,row.district,row.market].filter(Boolean).map(escapeHtml).join(" · ") || "—";
+      var state=escapeHtml(row.state||"—");
+      var market=escapeHtml(row.market||"—");
       var product=escapeHtml(row.commodity)+(row.variety ? "<br><span class=\"note\">"+escapeHtml(row.variety)+"</span>" : "");
-      return "<tr><td><b>"+product+"</b></td><td>"+where+"</td><td>"+money(row.minPrice)+"</td><td><b>"+money(row.modalPrice)+"</b></td><td>"+money(row.maxPrice)+"<br><span class=\"note\">"+escapeHtml(row.arrivalDate||"Date unavailable")+"</span></td></tr>";
+      var unit=escapeHtml(row.unit||"Rs./Quintal");
+      return "<tr><td><b>"+product+"</b></td><td>"+state+"</td><td>"+market+(row.district ? "<br><span class=\"note\">"+escapeHtml(row.district)+"</span>" : "")+"</td><td><b>"+money(row.price)+"</b><br><span class=\"note\">"+unit+"</span></td><td>"+escapeHtml(row.arrivalDate||"Date unavailable")+"</td></tr>";
     }).join("");
   };
   window.fetchLiveMarket = async function(){
     var button=$("mktRefreshBtn");
     if(button)button.disabled=true;
-    statusText("marketStatus","Requesting official AGMARKNET daily records…");
+    statusText("marketStatus","Requesting the official AGMARKNET last-week price report…");
     setFarmwiseSourceState("market","loading");
-    $("mktTime").textContent="Connecting to official daily data";
+    $("mktTime").textContent="Loading latest reported market prices";
     var query=new URLSearchParams();
     if($("mktState").value)query.set("state",$("mktState").value);
     if($("mktDistrict").value.trim())query.set("district",$("mktDistrict").value.trim());
@@ -2876,14 +2878,14 @@ renderPests(PESTS);
       marketRows=(data.records||[]).map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
       window.marketRecords=marketRows;
       window.mktSimulated=marketRows;
-      try{localStorage.setItem("farmwise.market.cache.v1",JSON.stringify({filterKey:marketFilterKey,records:data.records||[],source:data.source||"AGMARKNET · data.gov.in",fetchedAt:data.fetchedAt||new Date().toISOString()}));}catch(_){}
+      try{localStorage.setItem("farmwise.market.cache.v2",JSON.stringify({filterKey:marketFilterKey,records:data.records||[],source:data.source||"AGMARKNET 2.0",fetchedAt:data.fetchedAt||new Date().toISOString()}));}catch(_){}
       window.renderMarket();
       setFarmwiseSourceState("market",marketRows.length?"ready":"empty",marketRows.length);
-      statusText("marketStatus",data.sourceNote+" "+marketRows.length+" record(s) returned. Retrieved "+localTime(data.fetchedAt)+".");
-      $("mktTime").textContent=data.source+" · "+localTime(data.fetchedAt);
+      statusText("marketStatus",(data.message||data.sourceNote)+" "+marketRows.length+" priced market row(s) returned. Checked "+localTime(data.fetchedAt)+".");
+      $("mktTime").textContent=data.source+" · checked "+localTime(data.fetchedAt)+(data.latestReportDate?" · latest report "+data.latestReportDate:"");
     }catch(error){
       var cached=null;
-      try{cached=JSON.parse(localStorage.getItem("farmwise.market.cache.v1")||"null");}catch(_){}
+      try{cached=JSON.parse(localStorage.getItem("farmwise.market.cache.v2")||"null");}catch(_){}
       if(cached&&cached.filterKey===marketFilterKey&&Array.isArray(cached.records)&&cached.records.length){
         marketRows=cached.records.map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
         window.marketRecords=marketRows;window.mktSimulated=marketRows;window.renderMarket();
@@ -2903,8 +2905,8 @@ renderPests(PESTS);
 
   var exportMarket = function(){
     if(!marketRows.length){statusText("marketStatus","No official rows are loaded to export.",true);return;}
-    var csvRows=[["State","District","Market","Commodity","Variety","Grade","Arrival date","Min ₹/qtl","Modal ₹/qtl","Max ₹/qtl"]];
-    marketRows.forEach(function(row){csvRows.push([row.state,row.district,row.market,row.commodity,row.variety,row.grade,row.arrivalDate,row.minPrice,row.modalPrice,row.maxPrice]);});
+    var csvRows=[["State","District","Market","Commodity","Variety","Reported price","Unit","Source report date","Source"]];
+    marketRows.forEach(function(row){csvRows.push([row.state,row.district,row.market,row.commodity,row.variety,row.price,row.unit,row.arrivalDate,row.source||"AGMARKNET 2.0"]);});
     var csv=csvRows.map(function(row){return row.map(function(value){return '"'+String(value==null?"":value).replace(/"/g,'""')+'"';}).join(",");}).join("\r\n");
     var link=document.createElement("a"),url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
     link.href=url;link.download="FarmWise_AGMARKNET_"+new Date().toISOString().slice(0,10)+".csv";link.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
@@ -3044,7 +3046,7 @@ renderPests(PESTS);
   $("mktAiBtn").addEventListener("click",function(event){
     event.stopImmediatePropagation();
     $("mktAiBox").style.display="block";
-    $("mktAiText").textContent=marketRows.length ? "Data summary only: "+marketRows.length+" official daily records are loaded. Check each arrival date and market before using the values. This is not an AI forecast or sell/hold recommendation." : "No official market records are loaded. Connect the data.gov.in key and load the Market section first.";
+    $("mktAiText").textContent=marketRows.length ? "Data summary only: "+marketRows.length+" official AGMARKNET market prices are loaded. Reported prices may be from different dates; check each market’s date and source unit before comparing. Values are not intraday quotes, and this is not an AI forecast or a sell/hold recommendation." : "No reported prices are loaded for these filters. Try another commodity, state or market, then refresh the official AGMARKNET report.";
   },true);
   $("mktExportCsvBtn").addEventListener("click",function(event){event.stopImmediatePropagation();exportMarket();},true);
 
