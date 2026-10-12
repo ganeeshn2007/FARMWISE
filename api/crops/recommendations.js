@@ -78,7 +78,7 @@ export default async function (req, res) {
     add("(potassium_max_mg_kg IS NULL OR potassium_max_mg_kg >= ?)", k);
   }
 
-  const sql = "SELECT id,crop_name,region,season,soil_type,ph_min,ph_max,nitrogen_min_mg_kg,nitrogen_max_mg_kg,phosphorus_min_mg_kg,phosphorus_max_mg_kg,potassium_min_mg_kg,potassium_max_mg_kg,moisture_min_pct,moisture_max_pct,guidance,source_name,source_url,source_published_at,verified_status,notes FROM crop_knowledge WHERE " + conditions.join(" AND ") + " ORDER BY CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, crop_name LIMIT 50";
+  const sql = "SELECT * FROM (SELECT DISTINCT ON (lower(trim(crop_name))) id,crop_name,region,season,soil_type,ph_min,ph_max,nitrogen_min_mg_kg,nitrogen_max_mg_kg,phosphorus_min_mg_kg,phosphorus_max_mg_kg,potassium_min_mg_kg,potassium_max_mg_kg,moisture_min_pct,moisture_max_pct,guidance,source_name,source_url,source_published_at,verified_status,notes FROM crop_knowledge WHERE " + conditions.join(" AND ") + " ORDER BY lower(trim(crop_name)), CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, updated_at DESC, id DESC) AS unique_crops ORDER BY CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, crop_name LIMIT 50";
 
   try {
     const result = await db.query(sql, params);
