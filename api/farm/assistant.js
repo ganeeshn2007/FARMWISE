@@ -119,18 +119,46 @@ Rules:
 Return a useful answer, normally 2–6 short paragraphs or a short numbered list.`;
 
   try {
-    const generated = await ai.generateText({
-      model: "gemini-flash",
-      prompt,
+    const generationBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 1400,
+        thinkingConfig: { thinkingLevel: "low" }
+      }
+    };
+    let response = await ai.fetch({
+      provider: "google",
+      path: "/v1beta/models/gemini-3.5-flash-lite:generateContent",
+      body: generationBody,
       purpose: "farmwise-farmer-assistant",
-      maxSteps: 1
+      timeoutMs: 25000
     });
-    const answer = clean(generated?.text, 7000);
+    // One alternate model attempt only for transient service load. Do not retry 429 quota errors.
+    if (response.status === 503) {
+      console.warn("FarmWise assistant Flash-Lite busy; trying one alternate Flash route.");
+      response = await ai.fetch({
+        provider: "google",
+        path: "/v1beta/models/gemini-3.5-flash:generateContent",
+        body: generationBody,
+        purpose: "farmwise-farmer-assistant-fallback",
+        timeoutMs: 25000
+      });
+    }
+    if (!response.ok) {
+      let detail = "";
+      try {
+        const failure = await response.json();
+        detail = String(failure?.error?.message || failure?.message || "");
+      } catch (_) {}
+      throw new Error("Google returned " + response.status + (detail ? ": " + detail.slice(0,240) : ""));
+    }
+    const generated = await response.json();
+    const answer = clean((generated.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("\\n"), 7000);
     if (!answer) throw new Error("empty_model_answer");
     return res.json({
       available:true,
       answer,
-      provider:"Google Gemini",
+      provider:"Google Gemini Flash-Lite",
       knowledgeContext:{cropNotes:cropNotes.length,diseaseReferences:diseaseNotes.length,matchedCrops},
       fetchedAt:new Date().toISOString(),
       note:"AI-generated guidance; database notes may be provisional and local agricultural review may be necessary."
