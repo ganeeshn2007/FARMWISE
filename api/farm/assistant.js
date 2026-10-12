@@ -53,7 +53,7 @@ export default async function(req, res) {
     if (matchedCrops.length) {
       const p = matchedCrops;
       const rows = await db.query(
-        "SELECT * FROM (SELECT DISTINCT ON (lower(trim(crop_name))) crop_name,region,season,soil_type,ph_min,ph_max,nitrogen_min_mg_kg,nitrogen_max_mg_kg,phosphorus_min_mg_kg,phosphorus_max_mg_kg,potassium_min_mg_kg,potassium_max_mg_kg,moisture_min_pct,moisture_max_pct,guidance,source_name,source_url,verified_status,notes FROM crop_knowledge WHERE lower(trim(crop_name)) IN (" + placeholders(p) + ") ORDER BY lower(trim(crop_name)), CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, updated_at DESC, id DESC) crop_unique",
+        "SELECT * FROM (SELECT DISTINCT ON (lower(trim(crop_name))) id,updated_at,crop_name,region,season,soil_type,ph_min,ph_max,nitrogen_min_mg_kg,nitrogen_max_mg_kg,phosphorus_min_mg_kg,phosphorus_max_mg_kg,potassium_min_mg_kg,potassium_max_mg_kg,moisture_min_pct,moisture_max_pct,guidance,source_name,source_url,verified_status,notes FROM crop_knowledge WHERE lower(trim(crop_name)) IN (" + placeholders(p) + ") ORDER BY lower(trim(crop_name)), CASE verified_status WHEN 'verified' THEN 0 WHEN 'reviewed' THEN 1 ELSE 2 END, updated_at DESC, id DESC) crop_unique",
         p
       );
       cropNotes = (rows.rows || []).map(row => ({
