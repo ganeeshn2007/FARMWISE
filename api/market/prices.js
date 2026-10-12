@@ -82,7 +82,14 @@ export default async function (req, res) {
   const query = req.query || {};
   const stateInput = String(query.state || "").trim().slice(0, 100);
   const districtInput = String(query.district || "").trim().slice(0, 100);
-  const requestedCommodity = String(query.commodity || "Tomato").trim().slice(0, 100) || "Tomato";
+  const requestedCommodity = String(query.commodity || "").trim().slice(0, 100);
+  if (!requestedCommodity) {
+    return res.status(400).json({
+      available: false,
+      error: "commodity_required",
+      message: "Choose a crop or commodity from the official AGMARKNET list at /api/market/commodities. No default crop is assumed."
+    });
+  }
   const normalizedState = norm(stateInput);
   const wantedState = STATE_ALIASES[normalizedState] || normalizedState;
   const wantedDistrict = norm(districtInput);
@@ -104,7 +111,7 @@ export default async function (req, res) {
       return res.status(400).json({
         available: false,
         error: "commodity_not_found",
-        message: "No exact or close commodity name was found in the official AGMARKNET list for '" + requestedCommodity + "'. Try a common name such as Tomato, Onion, Potato, Rice, Wheat or Maize.",
+        message: "No exact or close commodity name was found in the official AGMARKNET list for '" + requestedCommodity + "'. Search the full official list at /api/market/commodities and use a listed name.",
         suggestions: ["Tomato", "Onion", "Potato", "Rice", "Wheat", "Maize"]
       });
     }

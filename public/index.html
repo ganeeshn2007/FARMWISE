@@ -669,9 +669,9 @@ body{
       </select>
     </div>
     <div><label class="field-lbl">District or Market (optional)</label><input id="mktDistrict" class="inp" maxlength="80" placeholder="e.g. Kolar or Bengaluru"/></div>
-    <div><label class="field-lbl">Commodity</label><input id="mktCommodity" class="inp" maxlength="80" value="Tomato" placeholder="e.g. Onion, Rice or Wheat"/></div>
+    <div><label class="field-lbl">Crop / commodity (official list)</label><input id="mktCommodity" class="inp" list="mktCommodityOptions" maxlength="100" autocomplete="off" placeholder="Search all crops: Tomato, Onion, Wheat…"/><datalist id="mktCommodityOptions"></datalist><p id="mktCommodityCount" class="note" style="margin:5px 0 0;">Loading official national crop list…</p></div>
   </div>
-  <p class="note" id="marketCoverageNote" style="margin:0 0 8px;line-height:1.5;">Default scope: All India. Prices are loaded in small batches across markets in different States / UTs to avoid overloading the official source. Select “Load More Markets” to continue through the nationwide market list.</p><p id="marketStatus" class="note" style="margin:0 0 6px;line-height:1.55;" aria-live="polite">Connecting to official AGMARKNET market prices…</p><p class="note" style="margin:0 0 12px;"><a href="https://agmarknet.gov.in/home" target="_blank" rel="noopener noreferrer">Open official AGMARKNET price reports ↗</a> · <a href="https://www.data.gov.in/resource/current-daily-price-various-commodities-various-markets-mandi" target="_blank" rel="noopener noreferrer">data.gov.in daily mandi dataset ↗</a></p>
+  <p class="note" id="marketCoverageNote" style="margin:0 0 8px;line-height:1.5;">All India is the default region. The crop picker loads every commodity name currently listed by official AGMARKNET. Choose any one crop/commodity to load its reported prices across India; use Load More Markets to continue through nationwide markets. Official source limits mean different crops are queried one at a time.</p><p id="marketStatus" class="note" style="margin:0 0 6px;line-height:1.55;" aria-live="polite">Connecting to official AGMARKNET market prices…</p><p class="note" style="margin:0 0 12px;"><a href="https://agmarknet.gov.in/home" target="_blank" rel="noopener noreferrer">Open official AGMARKNET price reports ↗</a> · <a href="https://www.data.gov.in/resource/current-daily-price-various-commodities-various-markets-mandi" target="_blank" rel="noopener noreferrer">data.gov.in daily mandi dataset ↗</a></p>
   <div style="overflow-x:auto;">
     <table class="hist-table">
       <thead><tr><th>Commodity / Variety</th><th>State</th><th>Market</th><th>Latest reported price</th><th>Report date</th></tr></thead>
@@ -2845,11 +2845,49 @@ renderPests(PESTS);
   };
   window.marketRecords = marketRows;
   window.mktSimulated = [];
+  window.marketCommodityOptions = [];
+  window.loadMarketCommodityOptions = async function(){
+    var info=$("mktCommodityCount"), picker=$("mktCommodity"), list=$("mktCommodityOptions");
+    if(info)info.textContent="Loading official national crop list…";
+    try{
+      var response=await fetch("/api/market/commodities",{headers:{"Accept":"application/json"}});
+      var data=await response.json();
+      if(!response.ok||!data.available||!Array.isArray(data.commodities))throw new Error(data.message||"Official commodity list unavailable.");
+      window.marketCommodityOptions=data.commodities;
+      if(list){
+        list.innerHTML="";
+        data.commodities.forEach(function(item){
+          var option=document.createElement("option");
+          option.value=item.name;
+          list.appendChild(option);
+        });
+      }
+      if(info)info.textContent=data.count+" official crops / commodities available · type to search";
+      if(!picker.value.trim()){
+        statusText("marketStatus","Official AGMARKNET list loaded: "+data.count+" crops / commodities. Choose or type any supported crop above, then press Enter or select a suggested name. All India is the default region; prices load for the chosen crop.");
+        $("mktTime").textContent="AGMARKNET · All India · choose a crop";
+        window.renderMarket();
+      }else{
+        statusText("marketStatus","Loaded "+data.count+" official crop / commodity names. Fetching the selected commodity…");
+        await window.fetchLiveMarket();
+      }
+      return data;
+    }catch(error){
+      if(info)info.textContent="Official crop list could not load; you can still type a commodity name.";
+      statusText("Official AGMARKNET crop list is temporarily unavailable. You can type a commodity name and press Enter to try its prices. "+error.message,true);
+      window.renderMarket();
+      return null;
+    }
+  };
   window.renderMarket = function(){
     var body=$("mktBody"), filter=$("mktFilter") ? $("mktFilter").value : "all";
     var rows=marketRows.filter(function(row){return filter==="all" || row.category===filter;});
     if(!rows.length){
-      body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">No reported prices match these filters in AGMARKNET’s last-week report. Try another commodity, state or market.</td></tr>';
+      var selectedCommodity=$("mktCommodity")?$("mktCommodity").value.trim():"";
+      var emptyMessage=selectedCommodity
+        ?"No numeric prices were reported for "+escapeHtml(selectedCommodity)+" under these filters in AGMARKNET’s last-week report. Try another crop, state or market."
+        :"Choose a crop or commodity from the full official list above to load its reported prices across India. The list is searchable—type a crop name such as Rice, Wheat, Maize, Onion, Potato, Cotton, pulses, spices or fruits.";
+      body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">'+emptyMessage+'</td></tr>';
       return;
     }
     var money=function(value){return value==null || !Number.isFinite(Number(value)) ? "—" : "₹"+Number(value).toLocaleString("en-IN");};
@@ -2864,6 +2902,15 @@ renderPests(PESTS);
   window.fetchLiveMarket = async function(options){
     options=options||{};
     var append=options.append===true;
+    if(!$("mktCommodity").value.trim()){
+      window.marketQueryPage=0;
+      marketRows=[];window.marketRecords=marketRows;window.mktSimulated=[];
+      window.renderMarket();setFarmwiseSourceState("market","empty");
+      statusText("marketStatus","Choose a crop or commodity from the complete official AGMARKNET list above. All India is selected by default; select a state or district only if you want to narrow the results.");
+      $("mktTime").textContent="AGMARKNET · All India · choose a crop";
+      var emptyMore=$("mktLoadMoreBtn");if(emptyMore)emptyMore.style.display="none";
+      return;
+    }
     if(!append)window.marketQueryPage=0;
     else window.marketQueryPage=(Number(window.marketQueryPage)||0)+1;
     var page=Number(window.marketQueryPage)||0;
@@ -3067,6 +3114,7 @@ renderPests(PESTS);
   $("mktFilter").addEventListener("change",function(){window.renderMarket();});
   $("mktState").addEventListener("change",function(){window.fetchLiveMarket();});
   $("mktDistrict").addEventListener("change",function(){window.fetchLiveMarket();});
+  $("mktCommodity").addEventListener("change",function(){window.fetchLiveMarket();});
   $("mktCommodity").addEventListener("keydown",function(event){if(event.key==="Enter"){event.preventDefault();window.fetchLiveMarket();}});
   $("mktAiBtn").addEventListener("click",function(event){
     event.stopImmediatePropagation();
@@ -3126,10 +3174,10 @@ renderPests(PESTS);
     window.loadWeather();
     if(user)refreshSensorFromServer();else setSensorConnectionState(false,"Sign in to view account sensor readings");
   }).catch(function(){window.loadWeather();setSensorConnectionState(false,"Account status is unavailable.");});
-  window.fetchLiveMarket();
-  // Refresh the official daily mandi feed every 15 minutes while the tab is visible.
+  window.loadMarketCommodityOptions();
+  // Refresh the selected official mandi feed every 15 minutes while the tab is visible.
   // The source publishes daily observations; this refreshes retrieval, not market trading ticks.
-  window.setInterval(function(){if(!document.hidden)window.fetchLiveMarket();},900000);
+  window.setInterval(function(){if(!document.hidden&&$("mktCommodity").value.trim())window.fetchLiveMarket();},900000);
   window.setInterval(refreshSensorFromServer,30000);
   weatherTimer=window.setInterval(function(){window.loadWeather();},900000);
   window.renderMarket();
