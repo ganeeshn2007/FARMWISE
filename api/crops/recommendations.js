@@ -28,8 +28,26 @@ const COOL_DRY_CROPS = new Set([
   "wheat","chickpea","lentil","mustard","barley","potato","onion","pea","oats","garlic",
   "cumin","fenugreek","canola","rapeseed"
 ]);
+const CROP_NAME_ALIASES = {
+  "peanut":"groundnut", "peanuts":"groundnut",
+  "corn":"maize",
+  "paddy":"rice",
+  "brinjal":"eggplant", "aubergine":"eggplant",
+  "soya bean":"soybean", "soyabean":"soybean", "soya":"soybean",
+  "ragi":"finger millet",
+  "bajra":"pearl millet",
+  "jowar":"sorghum",
+  "chana":"chickpea", "bengal gram":"chickpea",
+  "moong":"mung bean", "green gram":"mung bean",
+  "urad":"black gram", "urad bean":"black gram",
+  "kangkong":"water spinach"
+};
+function canonicalCropKey(value) {
+  const name = lower(value).replace(/\s*\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+  return CROP_NAME_ALIASES[name] || name;
+}
 function candidatePriority(row, region, season, soilType) {
-  const name = lower(row.crop_name);
+  const name = canonicalCropKey(row.crop_name);
   const rowRegion = lower(row.region);
   const wantedRegion = lower(region);
   const rowSeason = lower(row.season);
@@ -149,10 +167,19 @@ export default async function (req, res) {
       {key:"pH", label:"pH", value:ph, min:"ph_min", max:"ph_max"},
       {key:"moisture", label:"moisture", value:moisture, min:"moisture_min_pct", max:"moisture_max_pct"}
     ].filter(d => d.value !== null);
-    const rankedRows = result.rows.slice().sort((a,b) => {
+    const sortedRows = result.rows.slice().sort((a,b) => {
       const score = candidatePriority(b, region, season, soilType) - candidatePriority(a, region, season, soilType);
       return score || lower(a.crop_name).localeCompare(lower(b.crop_name));
-    }).slice(0, 50);
+    });
+    const rankedRows = [];
+    const seenCropKeys = new Set();
+    for (const row of sortedRows) {
+      const cropKey = canonicalCropKey(row.crop_name);
+      if (!cropKey || seenCropKeys.has(cropKey)) continue;
+      seenCropKeys.add(cropKey);
+      rankedRows.push(row);
+      if (rankedRows.length >= 30) break;
+    }
     const recommendations = rankedRows.map(row => {
       const missing = entered.filter(d => row[d.min] === null || row[d.min] === undefined || row[d.max] === null || row[d.max] === undefined).map(d => d.label);
       const allNumericRangesPresent = entered.length > 0 && missing.length === 0;

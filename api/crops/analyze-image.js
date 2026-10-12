@@ -26,20 +26,33 @@ Return ONLY valid JSON with this exact shape:
 {"isAgriculturalImage":true,"crop":"best identification or Unknown","imageQuality":"good|limited|poor","observations":["visible evidence only"],"candidates":[{"name":"candidate disease/pest or Healthy/abiotic stress/uncertain","likelihood":"high|moderate|low","relativeScore":0,"why":"visible evidence and uncertainty","management":["practical management step"],"prevention":["prevention step"]}],"nextStep":"safe practical next step","needsExpertReview":true}
 Include 1 to 4 plausible differential candidates depending on the image; do not pad the list. If the photo is not clearly a crop/plant, set isAgriculturalImage=false and candidates=[]. Do not invent symptoms that are not visible. relativeScore is only a relative model estimate, not a calibrated statistical probability; do not imply accuracy validation. For each candidate, provide 2 to 4 crop-relevant, lower-risk management steps and 1 to 3 prevention steps. Prioritize integrated pest management, sanitation, removing severely affected material when appropriate, drainage or irrigation adjustments only when supported by evidence, monitoring, and local extension review. Do not recommend pesticide names, dosages, or spray schedules. Do not promise a cure. Distinguish disease from nutrient deficiency, water stress, pest damage, and healthy appearance. If uncertain, label the advice conditional on confirming the diagnosis.`;
   try {
-    const r = await ai.fetch({
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType, data } }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        maxOutputTokens: 1800,
+        thinkingConfig: { thinkingLevel: "low" }
+      }
+    };
+    let r = await ai.fetch({
       provider: "google",
       path: "/v1beta/models/gemini-3.5-flash-lite:generateContent",
-      body: {
-        contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType, data } }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          maxOutputTokens: 1800,
-          thinkingConfig: { thinkingLevel: "low" }
-        }
-      },
+      body: requestBody,
       purpose: "farmwise-plant-photo-screening",
-      timeoutMs: 45000
+      timeoutMs: 35000
     });
+    // Flash-Lite is the default for speed. If Google reports transient high demand,
+    // make one attempt with the Flash alias; never loop/retry a quota-exhausted call.
+    if (r.status === 503) {
+      console.warn("FarmWise vision Flash-Lite busy; trying one alternate Flash route.");
+      r = await ai.fetch({
+        provider: "google",
+        path: "/v1beta/models/gemini-3.5-flash:generateContent",
+        body: requestBody,
+        purpose: "farmwise-plant-photo-screening-fallback",
+        timeoutMs: 35000
+      });
+    }
     if (!r.ok) {
       let detail = "";
       try {
