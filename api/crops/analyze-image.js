@@ -28,7 +28,7 @@ Include 1 to 4 plausible differential candidates depending on the image; do not 
   try {
     const r = await ai.fetch({
       provider: "google",
-      path: "/v1beta/models/gemini-3.6-flash:generateContent",
+      path: "/v1beta/models/gemini-3.5-flash-lite:generateContent",
       body: {
         contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType, data } }] }],
         generationConfig: {
@@ -48,7 +48,8 @@ Include 1 to 4 plausible differential candidates depending on the image; do not 
       } catch (_) {}
       if (r.status === 412) return res.status(412).json({available:false,error:"ai_setup_required",message:"Plant photo analysis needs the Google AI provider configured in Hatchable Setup."});
       console.error("FarmWise vision provider failed", JSON.stringify({status:r.status,detail:detail.slice(0,240)}));
-      if (r.status === 429) return res.status(503).json({available:false,error:"vision_provider_rate_limited",message:"The vision provider is temporarily rate-limited. Wait a little and try again; no diagnosis was produced."});
+      if (r.status === 429) return res.status(503).json({available:false,error:"vision_provider_rate_limited",message:"The vision provider quota is temporarily limited. Wait a little and try again; no diagnosis was produced."});
+      if (r.status === 503) return res.status(503).json({available:false,error:"vision_provider_busy",message:"Google vision is temporarily busy. Wait a few seconds and retry; no diagnosis was produced."});
       if (r.status === 404) return res.status(502).json({available:false,error:"vision_model_unavailable",message:"The configured vision model is unavailable. Contact the FarmWise maintainer; no diagnosis was produced."});
       return res.status(502).json({available:false,error:"vision_provider_unavailable",message:"The plant-photo analysis provider is unavailable. No diagnosis was produced."});
     }
