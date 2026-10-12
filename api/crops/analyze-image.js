@@ -28,7 +28,7 @@ Include a variable number of plausible differential candidates (1 to 10 dependin
   try {
     const r = await ai.fetch({
       provider: "google",
-      path: "/v1beta/models/gemini-2.5-flash:generateContent",
+      path: "/v1beta/models/gemini-3.8-flash:generateContent",
       body: { contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType, data } }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.1 } },
       purpose: "farmwise-plant-photo-screening",
       timeoutMs: 45000

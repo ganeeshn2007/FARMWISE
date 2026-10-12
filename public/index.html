@@ -330,7 +330,7 @@ body{
     </div>
   </div>
   <div class="nav-actions">
-    <div class="ai-badge"><span class="ai-dot"></span><span>AI provider not connected</span></div>
+    <div class="ai-badge"><span class="ai-dot"></span><span id="globalAiStatusText">Gemini AI configured</span></div>
     <span class="live-badge"><span class="pulse"></span><span>Source status</span></span>
     <button class="btn btn-ghost btn-sm" id="themeBtn">🌙 <span data-i18n="dark">Dark</span></button>
     <!-- Language Switcher -->
@@ -614,23 +614,23 @@ body{
 
 <!-- AI ASSISTANT -->
 <div id="ai" class="card s4" style="scroll-margin-top:130px;">
-  <div class="ch"><div class="ct"><div class="ico">🤖</div>Farm Assistant</div><div class="ai-badge" style="font-size:.7rem;padding:5px 11px;"><span class="ai-dot"></span>Local data helper · AI provider not connected</div></div>
+  <div class="ch"><div class="ct"><div class="ico">🤖</div>Farm Assistant</div><div class="ai-badge" style="font-size:.7rem;padding:5px 11px;"><span class="ai-dot"></span><span id="assistantAiStatusText">Gemini AI · farm and crop context</span></div></div>
   <textarea id="aistQ" class="txa" placeholder="Ask about the readings currently shown, weather, or how to use FarmWise."></textarea>
   <div class="sp"></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="aistBtn" class="btn btn-primary" type="button">Ask about my farm</button><button id="assistantMicBtn" class="btn btn-ghost" type="button">🎙 Speak question</button><button id="assistantSpeakBtn" class="btn btn-ghost" type="button">🔊 Read answer</button></div>
-  <p id="assistantVoiceStatus" class="note" style="margin:8px 0;line-height:1.5;">Voice input and speech use your browser. The assistant only summarizes connected values; generative AI is not connected.</p>
+  <p id="assistantVoiceStatus" class="note" style="margin:8px 0;line-height:1.5;">Ask questions in text or by voice. Answers can use available farm readings and matching database notes; unverified records are clearly treated as provisional.</p>
   <div class="sp"></div>
   <b style="font-size:.8rem;">Response</b>
   <div style="height:5px;"></div>
-  <div class="resp-box" id="aistResp" aria-live="polite">Ask about live farm values after a source is connected.</div>
+  <div class="resp-box" id="aistResp" aria-live="polite">Ask a question about a crop, plant disease, soil, irrigation, or weather.</div>
 </div>
 
 <!-- AI RESULTS -->
 <div id="results" class="card s4" style="scroll-margin-top:130px;">
   <div class="ch"><div class="ct"><div class="ico">📊</div>Analysis status</div></div>
   <div class="pl" id="aiResultsList">
-    <div class="pr"><div><b>Photo diagnosis</b><p>No crop-specific disease model is connected.</p></div><span class="tag">Not analyzed</span></div>
-    <div class="pr"><div><b>AI provider</b><p>Connect a validated agricultural model before enabling diagnosis.</p></div><span class="tag">Not connected</span></div>
+    <div class="pr"><div><b>Photo screening</b><p>Gemini vision can suggest possibilities, but it is not a validated crop-disease classifier.</p></div><span class="tag">Review required</span></div>
+    <div class="pr"><div><b>AI provider</b><p>Google Gemini is configured for text and plant-photo screening.</p></div><span class="tag">Gemini enabled</span></div>
     <div class="pr"><div><b>Next step</b><p>Ask a local agricultural extension service to review symptoms.</p></div><span class="tag">Human review</span></div>
   </div>
 </div>
@@ -2022,10 +2022,56 @@ q('dropZone').addEventListener('drop', function(e){
 /* ═══════════════════════════════════════════════════════════════
    AI ASSISTANT — Gemini + Local fallback
 ═══════════════════════════════════════════════════════════════ */
-q('aistBtn').addEventListener('click',function(){
-  var ques=q('aistQ').value.trim(),resp=q('aistResp');
-  resp.textContent=askAssistant(ques);
+async function requestFarmWiseAssistantAnswer(){
+  var ques=q('aistQ').value.trim(),resp=q('aistResp'),btn=q('aistBtn');
+  if(!ques){resp.textContent='Type a question about a crop, plant problem, soil, irrigation, or weather first.';return;}
+  var originalLabel=btn.textContent;
+  btn.disabled=true;btn.textContent='Thinking…';
+  resp.textContent='Checking available farm context and asking Gemini…';
   resp.style.color='var(--text)';
+  var farm={};
+  ['farmName','farmVillage','farmArea','farmSoilType','farmSeason','farmIrrigation'].forEach(function(id){
+    var el=q(id);if(el&&String(el.value||'').trim())farm[id]=String(el.value).trim().slice(0,160);
+  });
+  var soil=null;
+  try{
+    if(typeof soilData!=='undefined'&&soilData){
+      soil={N:soilData.N,P:soilData.P,K:soilData.K,pH:soilData.pH,moisture:soilData.moisture,score:soilData._score,source:soilData.source||soilData.deviceId||'unknown',timestamp:soilData.timestamp||null};
+    }
+  }catch(_){}
+  var weather=null;
+  try{
+    if(typeof wxData!=='undefined'&&wxData){
+      var city=q('wxCity');
+      weather={temperatureC:wxData.temp,humidityPercent:wxData.hum,wind:wxData.wind,rainForecastMm:wxData.rainSum,location:city?city.textContent:'',source:'FarmWise weather panel'};
+    }
+  }catch(_){}
+  var languages={en:'English',hi:'Hindi',ta:'Tamil',te:'Telugu',kn:'Kannada',ml:'Malayalam',bn:'Bengali',mr:'Marathi',gu:'Gujarati',pa:'Punjabi',or:'Odia'};
+  var lang='en';try{lang=currentLang||'en';}catch(_){}
+  try{
+    var response=await fetch('/api/farm/assistant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      question:ques,
+      language:languages[lang]||'English',
+      context:{farm:farm,soilReadings:soil,weather:weather}
+    })});
+    var data={};try{data=await response.json();}catch(_){}
+    if(!response.ok||!data.available||!data.answer)throw new Error(data.message||'The AI assistant did not return an answer.');
+    resp.textContent=data.answer+'\n\n'+(data.note||'AI-generated guidance; confirm locally before acting.');
+    if(q('globalAiStatusText'))q('globalAiStatusText').textContent='Gemini AI connected';
+    if(q('assistantAiStatusText'))q('assistantAiStatusText').textContent='Gemini connected · '+((data.knowledgeContext&&data.knowledgeContext.cropNotes)||0)+' crop notes';
+    statusText('assistantVoiceStatus','Answered by Google Gemini. Farm database notes may be provisional; verify local recommendations.');
+  }catch(error){
+    var message=error&&error.message?error.message:'AI service temporarily unavailable.';
+    resp.textContent='FarmWise could not get an AI answer right now. '+message+'\n\nPlease try again shortly. No diagnosis or recommendation was invented as a substitute.';
+    if(q('globalAiStatusText'))q('globalAiStatusText').textContent='Gemini AI temporarily unavailable';
+    if(q('assistantAiStatusText'))q('assistantAiStatusText').textContent='AI temporarily unavailable';
+    statusText('assistantVoiceStatus','The AI request failed. You can retry your question when the provider is available.',true);
+  }finally{
+    btn.disabled=false;btn.textContent=originalLabel;
+  }
+}
+q('aistBtn').addEventListener('click',function(){
+  window.farmWiseAssistantPromise=requestFarmWiseAssistantAnswer();
 });
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2978,7 +3024,10 @@ renderPests(PESTS);
       var transcript=event.results && event.results[0] && event.results[0][0] ? event.results[0][0].transcript : "";
       $("aistQ").value=transcript;
       $("aistBtn").click();
-      window.setTimeout(function(){$("assistantSpeakBtn").click();},100);
+      var pendingAnswer=window.farmWiseAssistantPromise;
+      if(pendingAnswer&&typeof pendingAnswer.then==="function"){
+        pendingAnswer.then(function(){window.setTimeout(function(){$("assistantSpeakBtn").click();},100);});
+      }
     };
     recognition.onend=function(){if($("assistantVoiceStatus").textContent==="Listening… speak your question now.")statusText("assistantVoiceStatus","Voice input ended.");};
   } else {
