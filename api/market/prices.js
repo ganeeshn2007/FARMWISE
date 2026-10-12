@@ -60,9 +60,13 @@ async function apiJson(path, timeout = 10000) {
     throw new Error("Could not connect to the official AGMARKNET v2 service. Please retry shortly.");
   }
   const text = await response.text();
+  const contentType = String(response.headers.get("content-type") || "");
   let data;
   try { data = JSON.parse(text); }
-  catch (_) { throw new Error("The official AGMARKNET service returned an unreadable response."); }
+  catch (_) {
+    console.warn("AGMARKNET returned a non-JSON response", JSON.stringify({status:response.status,contentType,preview:text.slice(0,160).replace(/\\s+/g," ")}));
+    throw new Error("AGMARKNET returned a non-JSON response (HTTP " + response.status + ").");
+  }
   if (!response.ok) {
     const detail = String(data.detail || data.message || "Official market service request failed").slice(0, 180);
     throw new Error("AGMARKNET v2 returned HTTP " + response.status + ": " + detail);
@@ -148,7 +152,12 @@ export default async function (req, res) {
       seenMarkets.add(key);
       return true;
     });
-    candidates.sort((a, b) => norm(a.market_name).localeCompare(norm(b.market_name)));
+    candidates.sort((a, b) => {
+      if (!state && !wantedDistrict) {
+        return norm(a.state_name).localeCompare(norm(b.state_name)) || norm(a.market_name).localeCompare(norm(b.market_name));
+      }
+      return norm(a.market_name).localeCompare(norm(b.market_name));
+    });
 
     if (!candidates.length) {
       const message = wantedDistrict
@@ -166,10 +175,20 @@ export default async function (req, res) {
     // Query a bounded number of official market histories. The endpoint returns
     // the last week's dated price columns for each market; no captcha/key is used
     // by this public report. "NR" values are ignored, never interpreted as zero.
-    const candidateBudget = wantedDistrict ? 20 : (state ? 30 : 30);
-    const batchSize = 8;
+    const candidateBudget = wantedDistrict ? 20 : (state ? 40 : 32);
+    // A spaced sample gives an all-India request coverage across different states;
+    // local/state searches use the full initial market order for the selected place.
+    if (!state && !wantedDistrict && candidates.length > candidateBudget) {
+      const allMarkets = candidates;
+      const sampled = [];
+      const step = (allMarkets.length - 1) / (candidateBudget - 1);
+      for (let i = 0; i < candidateBudget; i++) sampled.push(allMarkets[Math.round(i * step)]);
+      candidates = sampled;
+    }
+    const batchSize = 3;
     const records = [];
     let attempted = 0;
+    let requestFailures = 0;
     for (let start = 0; start < Math.min(candidates.length, candidateBudget) && records.length < 20; start += batchSize) {
       const batch = candidates.slice(start, Math.min(start + batchSize, candidateBudget));
       const settled = await Promise.all(batch.map(async market => {
@@ -179,7 +198,11 @@ export default async function (req, res) {
             encodeURIComponent(String(market.state_id)) + "&commodityId=" +
             encodeURIComponent(String(commodity.cmdt_id)) + "&includeExcel=false";
           const payload = await apiJson(endpoint, 10000);
-          if (!payload || payload.success !== true || !Array.isArray(payload.data)) return [];
+          if (!payload || payload.success !== true || !Array.isArray(payload.data)) {
+            requestFailures++;
+            console.warn("AGMARKNET market history had no usable response", String(market.market_name || market.market_id));
+            return [];
+          }
           const out = [];
           for (const row of payload.data) {
             const latest = latestReported(row, payload.columns);
@@ -202,6 +225,7 @@ export default async function (req, res) {
           }
           return out;
         } catch (error) {
+          requestFailures++;
           console.warn("AGMARKNET market history skipped", String(market.market_name || market.market_id), String(error.message || error).slice(0, 160));
           return [];
         }
@@ -213,8 +237,20 @@ export default async function (req, res) {
     records.sort((a, b) => b.arrivalDate.localeCompare(a.arrivalDate) ||
       a.state.localeCompare(b.state) || a.market.localeCompare(b.market));
     const limitedRecords = records.slice(0, 20);
+    if (!limitedRecords.length && requestFailures > 0) {
+      return res.status(502).json({
+        available:false,
+        error:"agmarknet_upstream_unavailable",
+        message:"AGMARKNET did not provide usable responses for the checked markets. This is a source connection/rate-limit problem, not proof that prices were zero or absent. Retry in a moment or narrow the market filter.",
+        source:"AGMARKNET 2.0",
+        sourceUrl:"https://agmarknet.gov.in/home",
+        candidateMarketsChecked:attempted,
+        failedRequests:requestFailures
+      });
+    }
     const latestDate = limitedRecords.reduce((latest, row) => row.arrivalDate > latest ? row.arrivalDate : latest, "");
-    const sourceNote = "Official AGMARKNET 2.0 market-wise prices, drawn from its last-week report. Each row shows the latest numeric report available for that market; the date can differ across markets. Values are per quintal where the source reports Rs./Quintal, not live intraday quotes. 'NR' means no report.";
+    let sourceNote = "Official AGMARKNET 2.0 market-wise prices, drawn from its last-week report. Each row shows the latest numeric report available for that market; the date can differ across markets. Values are per quintal where the source reports Rs./Quintal, not live intraday quotes. 'NR' means no report.";
+    if (requestFailures > 0) sourceNote += " Some market requests failed; only markets with a successful official response are shown.";
     return res.json({
       available: true,
       source: "AGMARKNET 2.0",
@@ -223,6 +259,8 @@ export default async function (req, res) {
       records: limitedRecords,
       total: limitedRecords.length,
       candidateMarketsChecked: attempted,
+      failedRequests: requestFailures,
+      partialData: requestFailures > 0,
       latestReportDate: latestDate || null,
       filters: { state: state ? state.state_name : null, district: districtInput || null, commodity: commodity.cmdt_name },
       fetchedAt: new Date().toISOString(),
