@@ -224,7 +224,7 @@ export default async function (req, res) {
             district: districtMeta ? districtMeta.district_name : "",
             market: market.market_name || "",
             commodity: commodity.cmdt_name,
-            variety: row.variety && row.variety !== "Unknown" ? row.variety : "",
+            variety: row.variety && row.variety !== "Unknown" ? row.variety : "Variety not specified",
             grade: "",
             arrivalDate: latest.date,
             price: latest.price,

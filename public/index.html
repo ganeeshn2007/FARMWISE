@@ -2886,8 +2886,9 @@ renderPests(PESTS);
       if(!response.ok || !data.available)throw new Error(data.message||"Market data is unavailable.");
       var incomingRows=(data.records||[]).map(function(row){return Object.assign({},row,{category:categoryFor(row.commodity)});});
       if(append){
-        var existingKeys=new Set(priorRows.map(function(row){return [row.state,row.market,row.commodity].join("|").toLowerCase();}));
-        marketRows=priorRows.concat(incomingRows.filter(function(row){var key=[row.state,row.market,row.commodity].join("|").toLowerCase();if(existingKeys.has(key))return false;existingKeys.add(key);return true;}));
+        var recordKey=function(row){return [row.state,row.market,row.commodity,row.variety,row.arrivalDate,row.price,row.unit].join("|").toLowerCase();};
+        var existingKeys=new Set(priorRows.map(recordKey));
+        marketRows=priorRows.concat(incomingRows.filter(function(row){var key=recordKey(row);if(existingKeys.has(key))return false;existingKeys.add(key);return true;}));
       }else marketRows=incomingRows;
       window.marketRecords=marketRows;
       window.mktSimulated=marketRows;
