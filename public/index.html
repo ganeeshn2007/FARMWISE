@@ -649,13 +649,13 @@ body{
   <div class="ch">
     <div class="ct"><div class="ico">💹</div>Commodity Market Prices</div>
     <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
-      <span id="mktTime" class="note">AGMARKNET last-week report · latest reported price per market, not a live quote</span>
       <button id="mktRefreshBtn" class="btn btn-primary btn-sm">↺ Refresh</button>
       <button id="mktLoadMoreBtn" class="btn btn-ghost btn-sm" style="display:none;">Load More Markets</button>
       <button id="mktAiBtn" class="btn btn-gold btn-sm">Market data summary</button>
       <button id="mktExportCsvBtn" class="btn btn-ghost btn-sm">📥 Export official data CSV</button>
     </div>
   </div>
+  <p id="mktTime" class="note" style="margin:-4px 0 12px;">AGMARKNET · latest reported price per market, not a live quote</p>
   <div class="g4" style="margin-bottom:14px;gap:10px;">
     <div><label class="field-lbl">Filter category</label>
       <select id="mktFilter" class="inp" style="appearance:none;cursor:pointer;">
@@ -671,15 +671,21 @@ body{
     <div><label class="field-lbl">District or Market (optional)</label><input id="mktDistrict" class="inp" maxlength="80" placeholder="e.g. Kolar or Bengaluru"/></div>
     <div><label class="field-lbl">Crop / commodity (official list)</label><input id="mktCommodity" class="inp" list="mktCommodityOptions" maxlength="100" autocomplete="off" placeholder="Search all crops: Tomato, Onion, Wheat…"/><datalist id="mktCommodityOptions"></datalist><p id="mktCommodityCount" class="note" style="margin:5px 0 0;">Loading official national crop list…</p></div>
   </div>
-  <p class="note" id="marketCoverageNote" style="margin:0 0 8px;line-height:1.5;">All India is the default region. The crop picker loads every commodity name currently listed by official AGMARKNET. Choose any one crop/commodity to load its reported prices across India; use Load More Markets to continue through nationwide markets. Official source limits mean different crops are queried one at a time.</p><p id="marketStatus" class="note" style="margin:0 0 6px;line-height:1.55;" aria-live="polite">Connecting to official AGMARKNET market prices…</p><p class="note" style="margin:0 0 12px;"><a href="https://agmarknet.gov.in/home" target="_blank" rel="noopener noreferrer">Open official AGMARKNET price reports ↗</a> · <a href="https://www.data.gov.in/resource/current-daily-price-various-commodities-various-markets-mandi" target="_blank" rel="noopener noreferrer">data.gov.in daily mandi dataset ↗</a></p>
+  <details id="marketDetails" style="margin:0 0 12px;">
+    <summary style="cursor:pointer;color:var(--muted);font-size:.8rem;">Data source, coverage and report status</summary>
+    <div style="padding:8px 0 0;">
+      <p class="note" id="marketCoverageNote" style="margin:0 0 6px;line-height:1.5;">All India is the default region. The crop picker loads every commodity name currently listed by official AGMARKNET. Choose a crop to load its reported prices across India; use Load More Markets to continue through nationwide markets.</p>
+      <p id="marketStatus" class="note" style="margin:0 0 6px;line-height:1.55;" aria-live="polite">Connecting to official AGMARKNET market prices…</p>
+      <p class="note" style="margin:0;"><a href="https://agmarknet.gov.in/home" target="_blank" rel="noopener noreferrer">Official AGMARKNET price reports ↗</a> · <a href="https://www.data.gov.in/resource/current-daily-price-various-commodities-various-markets-mandi" target="_blank" rel="noopener noreferrer">data.gov.in daily mandi dataset ↗</a></p>
+    </div>
+  </details>
   <div style="overflow-x:auto;">
     <table class="hist-table">
       <thead><tr><th>Commodity / Variety</th><th>State</th><th>Market</th><th>Latest reported price</th><th>Report date</th></tr></thead>
       <tbody id="mktBody"></tbody>
     </table>
   </div>
-  <div class="sp-lg"></div>
-  <div class="ib" id="mktAiBox" style="display:none;"><b style="font-size:.85rem;">Market data summary</b><div id="mktAiText" class="note" style="margin-top:7px;white-space:pre-wrap;"></div></div>
+  <div class="ib" id="mktAiBox" style="display:none;margin-top:12px;"><b style="font-size:.85rem;">Market data summary</b><div id="mktAiText" class="note" style="margin-top:7px;white-space:pre-wrap;"></div></div>
 </div>
 
 <!-- PEST LIBRARY -->
